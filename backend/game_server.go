@@ -1,0 +1,422 @@
+package main
+
+import (
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"github.com/google/uuid"
+	"math/rand/v2"
+	"net/http"
+)
+
+type GameServer struct {
+	config *Config
+	db     *sql.DB
+}
+
+type User struct {
+	Nickname string `json:"nickname"`
+	Email    string `json:"email"`
+	Id       string `json:"id"`
+}
+
+type LoginRequest struct {
+	AccessToken string `json:"accessToken"`
+}
+
+type LoginResponse struct {
+}
+
+func (server *GameServer) Close() error {
+	err := server.db.Close()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (server *GameServer) login(ctx *RequestContext, req *LoginRequest) (resp *LoginResponse, err error) {
+	if req.AccessToken == "" {
+		return nil, &HttpError{"Missing access token", http.StatusBadRequest}
+	}
+
+	userInfoReq, err := http.NewRequest(http.MethodGet, "https://www.googleapis.com/oauth2/v1/userinfo", nil)
+	if err != nil {
+		return nil, err
+	}
+	userInfoReq.Header.Add("Authorization", "Bearer "+req.AccessToken)
+	userInfoRes, err := http.DefaultClient.Do(userInfoReq)
+	if err != nil {
+		return nil, err
+	}
+	if userInfoRes.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get user info from access token: %d", userInfoRes.StatusCode)
+	}
+	defer userInfoRes.Body.Close()
+
+	userInfoResponse := struct {
+		Id            string `json:"id"`
+		Email         string `json:"email"`
+		VerifiedEmail bool   `json:"verified_email"`
+		Picture       string `json:"picture"`
+	}{}
+	err = json.NewDecoder(userInfoRes.Body).Decode(&userInfoResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode userinfo response: %v", err)
+	}
+
+	googleUserId := userInfoResponse.Id
+	if googleUserId == "" {
+		return nil, fmt.Errorf("failed to get user id from user info")
+	}
+
+	stmt, err := server.db.Prepare("SELECT id FROM users WHERE google_user_id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare statement: %v", err)
+	}
+	defer stmt.Close()
+
+	row := stmt.QueryRow(googleUserId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to excute statement: %v", err)
+	}
+
+	var userId string
+	err = row.Scan(&userId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("google user is not registered (%s): %v", googleUserId, err)
+		}
+		return nil, fmt.Errorf("failed to excute statement: %v", err)
+	}
+
+	session := &Session{
+		UserId: userId,
+	}
+	sessionStr, err := server.createSession(session)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session cookie: %v", err)
+	}
+
+	http.SetCookie(ctx.HttpResponse, &http.Cookie{
+		Name:     "eot-session",
+		Value:    sessionStr,
+		Secure:   !server.config.DisableSecureCookie,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+	return &LoginResponse{}, nil
+}
+
+type CreateGameRequest struct {
+	Name       string `json:"name"`
+	NumPlayers int    `json:"numPlayers"`
+	MapName    string `json:"mapName"`
+}
+
+type CreateGameResponse struct {
+	Id string `json:"id"`
+}
+
+func (server *GameServer) createGame(ctx *RequestContext, req *CreateGameRequest) (resp *CreateGameResponse, err error) {
+	stmt, err := server.db.Prepare("INSERT INTO games (id,name,num_players,map_name,owner_user_id,started) VALUES (?,?,?,?,?,0)")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate id: %v", err)
+	}
+	_, err = stmt.Exec(id.String(), req.Name, req.NumPlayers, req.MapName, ctx.User.Id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert game row: %v", err)
+	}
+
+	stmt, err = server.db.Prepare("INSERT INTO game_player_map (game_id,player_user_id) VALUES(?,?)")"
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(id.String(), ctx.User.Id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert game_player_map row: %v", err)
+	}
+
+	return &CreateGameResponse{Id: id.String()}, nil
+}
+
+type JoinGameRequest struct {
+	GameId string `json:"gameId"`
+}
+type JoinGameResponse struct {
+}
+
+func (server *GameServer) joinGame(ctx *RequestContext, req *JoinGameRequest) (resp *JoinGameResponse, err error) {
+	stmt, err := server.db.Prepare("SELECT (num_players,started) FROM games WHERE id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	row := stmt.QueryRow(req.GameId)
+	var numPlayers int
+	var startedFlag int
+	err = row.Scan(&numPlayers, &startedFlag)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
+		}
+		return nil, fmt.Errorf("failed to fetch game row: %v", err)
+	}
+
+	if startedFlag != 0 {
+		return nil, &HttpError{"game has already started", http.StatusBadRequest}
+	}
+
+	joinedUsers, err := server.getJoinedUsers(req.GameId)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, ok := joinedUsers[ctx.User.Id]; ok {
+		return nil, &HttpError{"you have already joined this game", http.StatusBadRequest}
+	}
+	if len(joinedUsers) >= numPlayers {
+		return nil, &HttpError{"this game is already full", http.StatusBadRequest}
+	}
+
+	stmt, err = server.db.Prepare("INSERT INTO game_player_map (game_id,player_user_id) VALUES (?,?)")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(req.GameId, ctx.User.Id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+
+	return &JoinGameResponse{}, nil
+}
+
+func (server *GameServer) getJoinedUsers(gameId string) (map[string]bool, error) {
+	joinedUsers := make(map[string]bool)
+	stmt, err := server.db.Prepare("SELECT (player_user_id) FROM game_player_map WHERE game_id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query(gameId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+	for rows.Next() {
+		var userId string
+		err = rows.Scan(&userId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan row: %v", err)
+		}
+		joinedUsers[userId] = true
+	}
+	return joinedUsers, nil
+}
+
+type LeaveGameRequest struct {
+	GameId string `json:"gameId"`
+}
+type LeaveGameResponse struct {
+}
+
+func (server *GameServer) leaveGame(ctx *RequestContext, req *LeaveGameRequest) (resp *LeaveGameResponse, err error) {
+	stmt, err := server.db.Prepare("SELECT (owner_user_id,num_players,started) FROM games WHERE id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	row := stmt.QueryRow(req.GameId)
+	var ownerUserId string
+	var numPlayers int
+	var startedFlag int
+	err = row.Scan(&ownerUserId, &numPlayers, &startedFlag)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
+		}
+		return nil, fmt.Errorf("failed to fetch game row: %v", err)
+	}
+
+	if startedFlag != 0 {
+		return nil, &HttpError{"game has already started", http.StatusBadRequest}
+	}
+	if ownerUserId == ctx.User.Id {
+		return nil, &HttpError{"you cannot leave a game that you created", http.StatusBadRequest}
+	}
+
+	joinedUsers, err := server.getJoinedUsers(req.GameId)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, ok := joinedUsers[ctx.User.Id]; !ok {
+		return nil, &HttpError{"you are not joined to this game", http.StatusBadRequest}
+	}
+
+	stmt, err = server.db.Prepare("DELETE FROM game_player_map WHERE game_id=? AND player_user_id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(req.GameId, ctx.User.Id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+
+	return &LeaveGameResponse{}, nil
+}
+
+type StartGameRequest struct {
+	GameId string `json:"gameId"`
+}
+type StartGameResponse struct {
+}
+
+func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) (resp *StartGameResponse, err error) {
+	stmt, err := server.db.Prepare("SELECT (owner_user_id,num_players,started) FROM games WHERE id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	row := stmt.QueryRow(req.GameId)
+	var ownerUserId string
+	var numPlayers int
+	var startedFlag int
+	err = row.Scan(&ownerUserId, &numPlayers, &startedFlag)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
+		}
+		return nil, fmt.Errorf("failed to fetch game row: %v", err)
+	}
+
+	if startedFlag != 0 {
+		return nil, &HttpError{"game has already started", http.StatusBadRequest}
+	}
+	if ownerUserId != ctx.User.Id {
+		return nil, &HttpError{"you are not the owner of this game", http.StatusBadRequest}
+	}
+
+	joinedUsers, err := server.getJoinedUsers(req.GameId)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(joinedUsers) != numPlayers {
+		return nil, &HttpError{"game is not full", http.StatusBadRequest}
+	}
+
+	stmt, err = server.db.Prepare("UPDATE games SET started=1 WHERE id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(req.GameId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+
+	// Randomize initial player order
+	playerOrder := make([]string, 0, len(joinedUsers))
+	for userId := range joinedUsers {
+		playerOrder = append(playerOrder, userId)
+	}
+	rand.Shuffle(len(playerOrder), func(i, j int) {
+		playerOrder[i], playerOrder[j] = playerOrder[j], playerOrder[i]
+	})
+
+	// Setup initial game state
+	gameState := &GameState{
+		ActivePlayer:  playerOrder[0],
+		PlayerOrder:   playerOrder,
+		PlayerShares:  make(map[string]int),
+		PlayerLoco:    make(map[string]int),
+		PlayerIncome:  make(map[string]int),
+		PlayerActions: make(map[string]string),
+		PlayerCash:    make(map[string]int),
+		AuctionState:  nil,
+		GamePhase:     1,
+		PlayerLinks:   make(map[string][]*Link),
+		Urbanizations: nil,
+	}
+	for _, userId := range playerOrder {
+		gameState.PlayerShares[userId] = 2
+		gameState.PlayerLoco[userId] = 1
+		gameState.PlayerIncome[userId] = 0
+		gameState.PlayerCash[userId] = 10
+	}
+
+	gameStateStr, err := json.Marshal(gameState)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal game state: %v", err)
+	}
+	stmt, err = server.db.Prepare("UPDATE games SET game_state=? WHERE id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(string(gameStateStr), req.GameId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+
+	// Notify first player it is their turn
+	err = server.notifyPlayer(req.GameId, playerOrder[0])
+	if err != nil {
+		return nil, fmt.Errorf("failed to notify user it's their turn: %v", err)
+	}
+
+	return &StartGameResponse{}, nil
+}
+
+type ViewGameRequest struct {
+	GameId string `json:"gameId"`
+}
+type ViewGameResponse struct {
+	Started bool `json:"started"`
+	NumPlayers int `json:"numPlayers"`
+	MapName string `json:"mapName"`
+	OwnerUser *User `json:"ownerUser"`
+	JoinUsers []*User `json:"joinedUsers"`
+	GameState *GameState `json:"gameState"`
+}
+func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (resp *ViewGameResponse, err error) {
+	stmt, err := server.db.Prepare("SELECT (owner_user_id,num_players,map_name,started,game_state) FROM games WHERE id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	row := stmt.QueryRow(req.GameId)
+	var numPlayers int
+	var startedFlag int
+	err = row.Scan(&ownerUserId, &numPlayers, &startedFlag)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
+		}
+		return nil, fmt.Errorf("failed to fetch game row: %v", err)
+	}
+
+	if startedFlag != 0 {
+		return nil, &HttpError{"game has already started", http.StatusBadRequest}
+	}
+	if ownerUserId != ctx.User.Id {
+		return nil, &HttpError{"you are not the owner of this game", http.StatusBadRequest}
+	}
+
+	joinedUsers, err := server.getJoinedUsers(req.GameId)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(joinedUsers) != numPlayers {
+		return nil, &HttpError{"game is not full", http.StatusBadRequest}
+	}
