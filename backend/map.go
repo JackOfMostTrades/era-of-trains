@@ -34,7 +34,7 @@ type BasicMap struct {
 	// Rectangular array height*width in size (y dimension is first)
 	Hexes         [][]HexType        `json:"hexes"`
 	Cities        []BasicCity        `json:"cities"`
-	StartingCubes []StartingCubeSpec `json:"StartingCubes"`
+	StartingCubes []StartingCubeSpec `json:"startingCubes"`
 }
 
 type HexType int
