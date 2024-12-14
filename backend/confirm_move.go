@@ -63,7 +63,7 @@ type ConfirmMoveResponse struct {
 }
 
 func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveRequest) (resp *ConfirmMoveResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT (owner_user_id,num_players,map_name,started,game_state) FROM games WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT (owner_user_id,num_players,map_name,started,finished,game_state) FROM games WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -74,13 +74,21 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 	var numPlayers int
 	var mapName string
 	var startedFlag int
+	var finishedFlag int
 	var gameStateStr string
-	err = row.Scan(&ownerUserId, &numPlayers, &mapName, &startedFlag, &gameStateStr)
+	err = row.Scan(&ownerUserId, &numPlayers, &mapName, &startedFlag, &finishedFlag, &gameStateStr)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
 		}
 		return nil, fmt.Errorf("failed to fetch game row: %v", err)
+	}
+
+	if startedFlag == 0 {
+		return nil, &HttpError{fmt.Sprintf("cannot make a move if game hasn't started yet: %s", req.GameId), http.StatusBadRequest}
+	}
+	if finishedFlag != 0 {
+		return nil, &HttpError{fmt.Sprintf("cannot make a move if game has finished yet: %s", req.GameId), http.StatusBadRequest}
 	}
 
 	gameState := new(GameState)
@@ -117,21 +125,38 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 		return nil, fmt.Errorf("failed to marshal game state: %v", err)
 	}
 
-	stmt, err = server.db.Prepare("UPDATE games SET game_state=? WHERE id=?")
+	// Determine if the game is over
+	turnLimit := 10
+	if len(gameState.PlayerOrder) == 6 {
+		turnLimit = 6
+	} else if len(gameState.PlayerOrder) == 5 {
+		turnLimit = 7
+	} else if len(gameState.PlayerOrder) == 4 {
+		turnLimit = 8
+	}
+	if gameState.TurnNumber > turnLimit {
+		finishedFlag = 1
+	}
+
+	stmt, err = server.db.Prepare("UPDATE games SET game_state=?,finished=? WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(string(newGameStateStr), req.GameId)
+	_, err = stmt.Exec(string(newGameStateStr), finishedFlag, req.GameId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
 
-	// Notify the next player that it is their turn if the active player changed
-	if gameState.ActivePlayer != ctx.User.Id {
-		err = server.notifyPlayer(req.GameId, gameState.ActivePlayer)
-		if err != nil {
-			return nil, fmt.Errorf("failed to notify user it's their turn: %v", err)
+	if finishedFlag != 0 {
+		// FIXME: Notify all players that game is finished
+	} else {
+		// Notify the next player that it is their turn if the active player changed
+		if gameState.ActivePlayer != ctx.User.Id {
+			err = server.notifyPlayer(req.GameId, gameState.ActivePlayer)
+			if err != nil {
+				return nil, fmt.Errorf("failed to notify user it's their turn: %v", err)
+			}
 		}
 	}
 
@@ -691,8 +716,6 @@ func (gameState *GameState) executeGoodsGrowthPhase(theMap *BasicMap) error {
 	gameState.TurnNumber += 1
 	gameState.GamePhase = SHARES_GAME_PHASE
 	gameState.ActivePlayer = gameState.PlayerOrder[0]
-
-	// FIXME: Handle end of game
 
 	return nil
 }

@@ -7,10 +7,12 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS games (
     id text,
+    name text,
     num_players int,
     map_name text,
     owner_user_id text,
     started int,
+    finished int,
     game_state text
 );
 

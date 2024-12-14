@@ -120,7 +120,7 @@ type CreateGameResponse struct {
 }
 
 func (server *GameServer) createGame(ctx *RequestContext, req *CreateGameRequest) (resp *CreateGameResponse, err error) {
-	stmt, err := server.db.Prepare("INSERT INTO games (id,name,num_players,map_name,owner_user_id,started) VALUES (?,?,?,?,?,0)")
+	stmt, err := server.db.Prepare("INSERT INTO games (id,name,num_players,map_name,owner_user_id,started,finished) VALUES (?,?,?,?,?,0,0)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -413,6 +413,7 @@ type ViewGameRequest struct {
 }
 type ViewGameResponse struct {
 	Started     bool       `json:"started"`
+	Finished    bool       `json:"finished"`
 	NumPlayers  int        `json:"numPlayers"`
 	MapName     string     `json:"mapName"`
 	OwnerUser   *User      `json:"ownerUser"`
@@ -421,7 +422,7 @@ type ViewGameResponse struct {
 }
 
 func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (resp *ViewGameResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT (owner_user_id,num_players,map_name,started,game_state) FROM games WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT (owner_user_id,num_players,map_name,started,finished,game_state) FROM games WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -431,8 +432,9 @@ func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (r
 	var numPlayers int
 	var mapName string
 	var startedFlag int
+	var finishedFlag int
 	var gameStateStr string
-	err = row.Scan(&ownerUserId, &numPlayers, &mapName, &startedFlag, &gameStateStr)
+	err = row.Scan(&ownerUserId, &numPlayers, &mapName, &startedFlag, &finishedFlag, &gameStateStr)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
@@ -466,6 +468,7 @@ func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (r
 
 	res := &ViewGameResponse{
 		Started:     startedFlag != 0,
+		Finished:    finishedFlag != 0,
 		NumPlayers:  numPlayers,
 		MapName:     mapName,
 		OwnerUser:   owner,
