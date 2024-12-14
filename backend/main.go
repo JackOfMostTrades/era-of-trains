@@ -149,9 +149,15 @@ func main() {
 		panic(fmt.Errorf("failed to run bootstrap.sql: %v", err))
 	}
 
+	maps, err := loadMaps()
+	if err != nil {
+		panic(fmt.Errorf("failed to load maps: %v", err))
+	}
+
 	server := &GameServer{
 		config: config,
 		db:     db,
+		maps:   maps,
 	}
 	defer server.Close()
 
@@ -165,9 +171,7 @@ func main() {
 	mux.HandleFunc("/api/confirmMove", func(writer http.ResponseWriter, request *http.Request) {
 
 	})
-	mux.HandleFunc("/api/viewGame", func(writer http.ResponseWriter, request *http.Request) {
-
-	})
+	mux.HandleFunc("/api/viewGame", jsonHandler(server, server.viewGame))
 
 	err = http.ListenAndServe("localhost:8080", mux)
 	if err != http.ErrServerClosed {

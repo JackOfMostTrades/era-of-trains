@@ -12,6 +12,7 @@ import (
 type GameServer struct {
 	config *Config
 	db     *sql.DB
+	maps   map[string]*BasicMap
 }
 
 type User struct {
@@ -134,7 +135,7 @@ func (server *GameServer) createGame(ctx *RequestContext, req *CreateGameRequest
 		return nil, fmt.Errorf("failed to insert game row: %v", err)
 	}
 
-	stmt, err = server.db.Prepare("INSERT INTO game_player_map (game_id,player_user_id) VALUES(?,?)")"
+	stmt, err = server.db.Prepare("INSERT INTO game_player_map (game_id,player_user_id) VALUES(?,?)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -199,28 +200,6 @@ func (server *GameServer) joinGame(ctx *RequestContext, req *JoinGameRequest) (r
 	return &JoinGameResponse{}, nil
 }
 
-func (server *GameServer) getJoinedUsers(gameId string) (map[string]bool, error) {
-	joinedUsers := make(map[string]bool)
-	stmt, err := server.db.Prepare("SELECT (player_user_id) FROM game_player_map WHERE game_id=?")
-	if err != nil {
-		return nil, fmt.Errorf("failed to prepare query: %v", err)
-	}
-	defer stmt.Close()
-	rows, err := stmt.Query(gameId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute query: %v", err)
-	}
-	for rows.Next() {
-		var userId string
-		err = rows.Scan(&userId)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan row: %v", err)
-		}
-		joinedUsers[userId] = true
-	}
-	return joinedUsers, nil
-}
-
 type LeaveGameRequest struct {
 	GameId string `json:"gameId"`
 }
@@ -281,7 +260,7 @@ type StartGameResponse struct {
 }
 
 func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) (resp *StartGameResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT (owner_user_id,num_players,started) FROM games WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT (owner_user_id,num_players,map_name,started) FROM games WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -289,8 +268,9 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 	row := stmt.QueryRow(req.GameId)
 	var ownerUserId string
 	var numPlayers int
+	var mapName string
 	var startedFlag int
-	err = row.Scan(&ownerUserId, &numPlayers, &startedFlag)
+	err = row.Scan(&ownerUserId, &numPlayers, &mapName, &startedFlag)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
@@ -335,23 +315,74 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 
 	// Setup initial game state
 	gameState := &GameState{
-		ActivePlayer:  playerOrder[0],
-		PlayerOrder:   playerOrder,
-		PlayerShares:  make(map[string]int),
-		PlayerLoco:    make(map[string]int),
-		PlayerIncome:  make(map[string]int),
-		PlayerActions: make(map[string]string),
-		PlayerCash:    make(map[string]int),
-		AuctionState:  nil,
-		GamePhase:     1,
-		PlayerLinks:   make(map[string][]*Link),
-		Urbanizations: nil,
+		ActivePlayer:     playerOrder[0],
+		PlayerOrder:      playerOrder,
+		PlayerShares:     make(map[string]int),
+		PlayerLoco:       make(map[string]int),
+		PlayerIncome:     make(map[string]int),
+		PlayerActions:    make(map[string]SpecialAction),
+		PlayerCash:       make(map[string]int),
+		AuctionState:     nil,
+		GamePhase:        SHARES_GAME_PHASE,
+		TurnNumber:       1,
+		MovingGoodsRound: 0,
+		PlayerLinks:      make(map[string][]*Link),
+		Urbanizations:    nil,
+		CubeBag: map[Color]int{
+			BLACK:  16,
+			RED:    20,
+			YELLOW: 20,
+			BLUE:   20,
+			PURPLE: 20,
+		},
+		Cubes:           nil,
+		GoodsGrowth:     make([][]Color, 20),
+		ProductionCubes: nil,
 	}
 	for _, userId := range playerOrder {
 		gameState.PlayerShares[userId] = 2
 		gameState.PlayerLoco[userId] = 1
 		gameState.PlayerIncome[userId] = 0
 		gameState.PlayerCash[userId] = 10
+	}
+
+	// Populate the goods growth table
+	for i := 0; i < 12; i++ {
+		gameState.GoodsGrowth[i] = make([]Color, 3)
+		for j := 0; j < 3; j++ {
+			cube, err := gameState.drawCube()
+			if err != nil {
+				return nil, fmt.Errorf("failed to draw cube: %v", err)
+			}
+			gameState.GoodsGrowth[i][j] = cube
+		}
+	}
+	for i := 12; i < 20; i++ {
+		gameState.GoodsGrowth[i] = make([]Color, 2)
+		for j := 0; j < 2; j++ {
+			cube, err := gameState.drawCube()
+			if err != nil {
+				return nil, fmt.Errorf("failed to draw cube: %v", err)
+			}
+			gameState.GoodsGrowth[i][j] = cube
+		}
+	}
+
+	theMap := server.maps[mapName]
+	if theMap == nil {
+		return nil, fmt.Errorf("failed to lookup map: %s", mapName)
+	}
+	for _, startingCubeSpec := range theMap.StartingCubes {
+		for i := 0; i < startingCubeSpec.Number; i++ {
+			cube, err := gameState.drawCube()
+			if err != nil {
+				return nil, fmt.Errorf("failed to draw cube: %v", err)
+			}
+			gameState.Cubes = append(gameState.Cubes, &BoardCube{
+				Color: cube,
+				Hex:   startingCubeSpec.Coordinate,
+			})
+		}
 	}
 
 	gameStateStr, err := json.Marshal(gameState)
@@ -381,13 +412,14 @@ type ViewGameRequest struct {
 	GameId string `json:"gameId"`
 }
 type ViewGameResponse struct {
-	Started bool `json:"started"`
-	NumPlayers int `json:"numPlayers"`
-	MapName string `json:"mapName"`
-	OwnerUser *User `json:"ownerUser"`
-	JoinUsers []*User `json:"joinedUsers"`
-	GameState *GameState `json:"gameState"`
+	Started     bool       `json:"started"`
+	NumPlayers  int        `json:"numPlayers"`
+	MapName     string     `json:"mapName"`
+	OwnerUser   *User      `json:"ownerUser"`
+	JoinedUsers []*User    `json:"joinedUsers"`
+	GameState   *GameState `json:"gameState"`
 }
+
 func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (resp *ViewGameResponse, err error) {
 	stmt, err := server.db.Prepare("SELECT (owner_user_id,num_players,map_name,started,game_state) FROM games WHERE id=?")
 	if err != nil {
@@ -395,9 +427,12 @@ func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (r
 	}
 	defer stmt.Close()
 	row := stmt.QueryRow(req.GameId)
+	var ownerUserId string
 	var numPlayers int
+	var mapName string
 	var startedFlag int
-	err = row.Scan(&ownerUserId, &numPlayers, &startedFlag)
+	var gameStateStr string
+	err = row.Scan(&ownerUserId, &numPlayers, &mapName, &startedFlag, &gameStateStr)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
@@ -405,18 +440,38 @@ func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (r
 		return nil, fmt.Errorf("failed to fetch game row: %v", err)
 	}
 
-	if startedFlag != 0 {
-		return nil, &HttpError{"game has already started", http.StatusBadRequest}
-	}
-	if ownerUserId != ctx.User.Id {
-		return nil, &HttpError{"you are not the owner of this game", http.StatusBadRequest}
-	}
-
-	joinedUsers, err := server.getJoinedUsers(req.GameId)
+	owner, err := server.getUserById(ownerUserId)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch owner: %v", err)
 	}
 
-	if len(joinedUsers) != numPlayers {
-		return nil, &HttpError{"game is not full", http.StatusBadRequest}
+	joinedUserIds, err := server.getJoinedUsers(req.GameId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch joined users: %v", err)
 	}
+	joinedUsers := make([]*User, 0, len(joinedUserIds))
+	for userId := range joinedUserIds {
+		user, err := server.getUserById(userId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user %s: %v", userId, err)
+		}
+		joinedUsers = append(joinedUsers, user)
+	}
+
+	gameState := new(GameState)
+	err = json.Unmarshal([]byte(gameStateStr), gameState)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse game state: %v", err)
+	}
+
+	res := &ViewGameResponse{
+		Started:     startedFlag != 0,
+		NumPlayers:  numPlayers,
+		MapName:     mapName,
+		OwnerUser:   owner,
+		JoinedUsers: joinedUsers,
+		GameState:   gameState,
+	}
+
+	return res, nil
+}
