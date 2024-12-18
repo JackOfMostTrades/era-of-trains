@@ -1,7 +1,8 @@
-import {createContext, useEffect, useState} from "react";
+import {createContext, ReactNode, useEffect, useState} from "react";
+import {Login, Logout, WhoAmI, WhoAmIResponse} from "./api/api.ts";
 
 interface UserSession {
-    userInfo?: {User: string}
+    userInfo?: WhoAmIResponse
     loading?: boolean
 }
 
@@ -39,20 +40,11 @@ export function oauthSignIn() {
 }
 
 export async function logout() {
-    let res = await fetch('/api/logout', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
-    });
-    if (!res) {
-        throw new Error("failed to logout");
-    }
+    await Logout({});
     window.location.reload();
 }
 
-export function UserSessionProvider({ children }) {
+export function UserSessionProvider({ children }: {children: ReactNode}) {
     let [userSession, setUserSession] = useState<UserSession>({loading: true});
 
     useEffect(() => {
@@ -61,33 +53,18 @@ export function UserSessionProvider({ children }) {
                 let params = new URLSearchParams(window.location.hash.substring(1));
                 let accessToken = params.get("access_token");
                 if (accessToken) {
-                    let res = await fetch('/api/login', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({"accessToken": accessToken})
-                    });
-                    if (!res) {
-                        throw new Error("failed to login");
-                    }
+                    await Login({accessToken: accessToken});
                     window.location.hash = '';
                 }
             }
 
-            let res = await fetch('/api/whoami', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({})
-            });
-            if (!res.ok) {
+            try {
+                let res = await WhoAmI({});
+                setUserSession({loading: false, userInfo: res});
+            } catch (e) {
                 setUserSession({loading: false});
                 return;
             }
-            let user = await res.json();
-            setUserSession({loading: false, userInfo: user});
         })();
     }, []);
 

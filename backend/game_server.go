@@ -430,6 +430,7 @@ type ViewGameRequest struct {
 	GameId string `json:"gameId"`
 }
 type ViewGameResponse struct {
+	Name        string     `json:"name"`
 	Started     bool       `json:"started"`
 	Finished    bool       `json:"finished"`
 	NumPlayers  int        `json:"numPlayers"`
@@ -440,19 +441,20 @@ type ViewGameResponse struct {
 }
 
 func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (resp *ViewGameResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT owner_user_id,num_players,map_name,started,finished,game_state FROM games WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT name,owner_user_id,num_players,map_name,started,finished,game_state FROM games WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
 	defer stmt.Close()
 	row := stmt.QueryRow(req.GameId)
+	var name string
 	var ownerUserId string
 	var numPlayers int
 	var mapName string
 	var startedFlag int
 	var finishedFlag int
-	var gameStateStr string
-	err = row.Scan(&ownerUserId, &numPlayers, &mapName, &startedFlag, &finishedFlag, &gameStateStr)
+	var gameStateStr sql.NullString
+	err = row.Scan(&name, &ownerUserId, &numPlayers, &mapName, &startedFlag, &finishedFlag, &gameStateStr)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
@@ -478,13 +480,17 @@ func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (r
 		joinedUsers = append(joinedUsers, user)
 	}
 
-	gameState := new(GameState)
-	err = json.Unmarshal([]byte(gameStateStr), gameState)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse game state: %v", err)
+	var gameState *GameState
+	if gameStateStr.Valid {
+		gameState = new(GameState)
+		err = json.Unmarshal([]byte(gameStateStr.String), gameState)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse game state: %v", err)
+		}
 	}
 
 	res := &ViewGameResponse{
+		Name:        name,
 		Started:     startedFlag != 0,
 		Finished:    finishedFlag != 0,
 		NumPlayers:  numPlayers,

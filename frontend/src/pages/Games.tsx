@@ -11,31 +11,17 @@ import {
     TableRow
 } from "semantic-ui-react";
 import {useEffect, useState} from "react";
-
-interface GameSummary {
-    id: string;
-    name: string;
-}
-interface ListGamesResponse {
-    games?: GameSummary[];
-}
+import {Link} from "react-router";
+import {ListGames, ListGamesResponse} from "../api/api.ts";
 
 function Games() {
     let [games, setGames] = useState<ListGamesResponse|undefined>(undefined);
     useEffect(() => {
-        (async () => {
-            let res = await fetch('/api/listGames', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({})
-            })
-            if (!res.ok) {
-                throw new Error("got non-ok response");
-            }
-            setGames(await res.json());
-        })();
+        ListGames({}).then(res => {
+            setGames(res);
+        }).catch(err => {
+            console.error(err);
+        });
     }, []);
 
     let table;
@@ -54,7 +40,7 @@ function Games() {
                 {games.games?.map(game => <TableRow>
                     <TableCell>{game.id}</TableCell>
                     <TableCell>{game.name}</TableCell>
-                    <TableCell>Click me</TableCell>
+                    <TableCell><Link to={`/games/${game.id}`}>Click me</Link></TableCell>
                 </TableRow>)}
             </TableBody>
         </Table>;
@@ -62,7 +48,9 @@ function Games() {
 
     return <Container text style={{marginTop: '7em'}}>
         <Header as='h1'>Games</Header>
-        <Button primary>Start New Game</Button>
+        <Link to="/games/new">
+            <Button primary>Start New Game</Button>
+        </Link>
         {table}
     </Container>
 }

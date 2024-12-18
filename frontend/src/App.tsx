@@ -11,6 +11,8 @@ import Games from "./pages/Games.tsx";
 import {NavLink} from "react-router";
 import {useContext} from "react";
 import UserSessionContext from "./UserSessionContext.tsx";
+import NewGamePage from "./pages/NewGamePage.tsx";
+import ViewGamePage from "./pages/ViewGamePage.tsx";
 
 function UserMenu() {
     let userSessionContext = useContext(UserSessionContext)
@@ -69,6 +71,8 @@ function App() {
                 <MainMenu />
 
                 <Routes>
+                    <Route path="/games/new" element={<NewGamePage />}/>
+                    <Route path="/games/:gameId" element={<ViewGamePage />}/>
                     <Route path="/games" element={<Games />}/>
                     <Route path="/" element={<Home />}/>
                 </Routes>
