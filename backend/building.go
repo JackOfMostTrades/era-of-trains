@@ -29,26 +29,19 @@ type PlacementResult struct {
 	LinksToDelete  []*Link
 }
 
-type InvalidPlacementErrorType struct {
-}
-
-func (*InvalidPlacementErrorType) Error() string {
-	return "invalid placement"
-}
-
-var InvalidPlacementError = &InvalidPlacementErrorType{}
+var ErrInvalidPlacement = errors.New("invalid placement")
 
 func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownPlacement) error {
 	ts := performer.mapState[townPlacement.Hex.Y][townPlacement.Hex.X]
 
 	if !ts.HasTown || len(ts.Routes)+len(townPlacement.Tracks) > 4 {
-		return InvalidPlacementError
+		return ErrInvalidPlacement
 	}
 	// Verify that none of the new routes overlap with existing routes
 	for _, direction := range townPlacement.Tracks {
 		for _, existingRoute := range ts.Routes {
 			if existingRoute.Right == direction {
-				return InvalidPlacementError
+				return ErrInvalidPlacement
 			}
 		}
 	}
@@ -60,7 +53,7 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 		cost = 3
 	}
 	if cost > performer.gameState.PlayerCash[performer.gameState.ActivePlayer] {
-		return InvalidPlacementError
+		return ErrInvalidPlacement
 	}
 	performer.gameState.PlayerCash[performer.gameState.ActivePlayer] -= cost
 
@@ -88,7 +81,7 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 				if route.Left == direction.opposite() || route.Right == direction.opposite() {
 					// Check that we are not joining into a different player's track
 					if route.Link.Owner != performer.gameState.ActivePlayer {
-						return InvalidPlacementError
+						return ErrInvalidPlacement
 					}
 
 					link = route.Link
@@ -123,13 +116,13 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 	ts := performer.mapState[trackPlacement.Hex.Y][trackPlacement.Hex.X]
 
 	if ts.HasTown || len(ts.Routes)+len(trackPlacement.Tracks) > 2 {
-		return InvalidPlacementError
+		return ErrInvalidPlacement
 	}
 	// Verify that none of the new routes overlap with existing routes
 	for _, newRoute := range trackPlacement.Tracks {
 		for _, existingRoute := range ts.Routes {
 			if existingRoute.Left == newRoute[0] || existingRoute.Left == newRoute[1] || existingRoute.Right == newRoute[0] || existingRoute.Right == newRoute[1] {
-				return InvalidPlacementError
+				return ErrInvalidPlacement
 			}
 		}
 	}
@@ -145,7 +138,7 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 		} else if hexType == MOUNTAIN_HEX_TYPE {
 			cost = 4
 		} else {
-			return InvalidPlacementError
+			return ErrInvalidPlacement
 		}
 	} else {
 		// FIXME: Figure out crossing vs coexisting cost
@@ -153,7 +146,7 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 	}
 
 	if cost > performer.gameState.PlayerCash[performer.gameState.ActivePlayer] {
-		return InvalidPlacementError
+		return ErrInvalidPlacement
 	}
 	performer.gameState.PlayerCash[performer.gameState.ActivePlayer] -= cost
 
@@ -186,7 +179,7 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 			for _, existingRoute := range leftTileState.Routes {
 				if existingRoute.Left.opposite() == newRoute[0] || existingRoute.Right.opposite() == newRoute[0] {
 					if existingRoute.Link.Owner != performer.gameState.ActivePlayer {
-						return InvalidPlacementError
+						return ErrInvalidPlacement
 					}
 					link = existingRoute.Link
 					link.Steps = append(link.Steps, newRoute[1])
@@ -212,7 +205,7 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 			for _, existingRoute := range rightTileState.Routes {
 				if existingRoute.Left.opposite() == newRoute[1] || existingRoute.Right.opposite() == newRoute[1] {
 					if existingRoute.Link.Owner != performer.gameState.ActivePlayer {
-						return InvalidPlacementError
+						return ErrInvalidPlacement
 					}
 					if link == nil {
 						link = existingRoute.Link
@@ -233,7 +226,7 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 			}
 			if link == nil {
 				// No link from left side, no link from right side: invalid placement
-				return InvalidPlacementError
+				return ErrInvalidPlacement
 			}
 		}
 
@@ -335,7 +328,7 @@ func performBuildAction(theMap *BasicMap, gameState *GameState, buildAction *Bui
 	for _, townPlacement := range buildAction.TownPlacements {
 		err := performer.attemptTownPlacement(townPlacement)
 		if err != nil {
-			if errors.Is(err, InvalidPlacementError) {
+			if errors.Is(err, ErrInvalidPlacement) {
 				return &HttpError{"invalid tile placement", http.StatusBadRequest}
 			}
 			return err
@@ -344,7 +337,7 @@ func performBuildAction(theMap *BasicMap, gameState *GameState, buildAction *Bui
 	for _, trackPlacement := range buildAction.TrackPlacements {
 		err := performer.attemptTrackPlacement(trackPlacement)
 		if err != nil {
-			if errors.Is(err, InvalidPlacementError) {
+			if errors.Is(err, ErrInvalidPlacement) {
 				return &HttpError{"invalid tile placement", http.StatusBadRequest}
 			}
 			return err

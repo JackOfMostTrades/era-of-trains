@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	_ "modernc.org/sqlite"
 	"net/http"
@@ -27,6 +28,9 @@ func (e *HttpError) Error() string {
 func (server *GameServer) assertAuthentication(ctx *RequestContext) error {
 	cookie, err := ctx.HttpRequest.Cookie("eot-session")
 	if err != nil {
+		if errors.Is(err, http.ErrNoCookie) {
+			return &HttpError{description: "Unauthenticated", code: http.StatusUnauthorized}
+		}
 		return &HttpError{description: "Failed to parse cookies", code: http.StatusInternalServerError}
 	}
 	session := cookie.Value
@@ -163,14 +167,14 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/login", jsonHandlerUnAuthenticated(server.login))
+	mux.HandleFunc("/api/logout", jsonHandlerUnAuthenticated(server.logout))
 	mux.HandleFunc("/api/whoami", jsonHandler(server, whoami))
 	mux.HandleFunc("/api/createGame", jsonHandler(server, server.createGame))
 	mux.HandleFunc("/api/joinGame", jsonHandler(server, server.joinGame))
 	mux.HandleFunc("/api/leaveGame", jsonHandler(server, server.leaveGame))
 	mux.HandleFunc("/api/startGame", jsonHandler(server, server.startGame))
-	mux.HandleFunc("/api/confirmMove", func(writer http.ResponseWriter, request *http.Request) {
-
-	})
+	mux.HandleFunc("/api/listGames", jsonHandler(server, server.listGames))
+	mux.HandleFunc("/api/confirmMove", jsonHandler(server, server.confirmMove))
 	mux.HandleFunc("/api/viewGame", jsonHandler(server, server.viewGame))
 
 	err = http.ListenAndServe("localhost:8080", mux)
