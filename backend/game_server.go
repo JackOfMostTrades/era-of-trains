@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"math/rand/v2"
+	"math/rand"
 	"net/http"
 )
 
@@ -326,7 +326,7 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 		GamePhase:        SHARES_GAME_PHASE,
 		TurnNumber:       1,
 		MovingGoodsRound: 0,
-		PlayerLinks:      make(map[string][]*Link),
+		Links:            nil,
 		Urbanizations:    nil,
 		CubeBag: map[Color]int{
 			BLACK:  16,

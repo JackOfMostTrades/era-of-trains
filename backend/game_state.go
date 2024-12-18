@@ -12,18 +12,37 @@ type Coordinate struct {
 type Direction int
 
 const (
-	SOUTH Direction = iota
-	SOUTH_WEST
-	NORTH_WEST
-	NORTH
+	NORTH Direction = iota
 	NORTH_EAST
 	SOUTH_EAST
+	SOUTH
+	SOUTH_WEST
+	NORTH_WEST
 )
 
+func (d Direction) opposite() Direction {
+	switch d {
+	case NORTH:
+		return SOUTH
+	case NORTH_EAST:
+		return SOUTH_WEST
+	case SOUTH_EAST:
+		return NORTH_WEST
+	case SOUTH:
+		return NORTH
+	case SOUTH_WEST:
+		return NORTH_EAST
+	case NORTH_WEST:
+		return SOUTH_EAST
+	}
+	panic(fmt.Errorf("unhandeled direction: %v", d))
+}
+
 type Link struct {
-	SourceHex       Coordinate  `json:"sourceHex"`
-	SourceDirection Direction   `json:"sourceDirection"`
-	Steps           []Direction `json:"steps"`
+	SourceHex Coordinate  `json:"sourceHex"`
+	Steps     []Direction `json:"steps"`
+	Owner     string      `json:"owner"`
+	Complete  bool        `json:"complete"`
 }
 
 type Urbanization struct {
@@ -80,8 +99,8 @@ type GameState struct {
 	// Which users did loco during move goods (to ensure they don't double-loco)
 	PlayerHasDoneLoco map[string]bool `json:"playerHasDoneLoco"`
 
-	PlayerLinks   map[string][]*Link `json:"playerLinks"`
-	Urbanizations []*Urbanization    `json:"urbanizations"`
+	Links         []*Link         `json:"links"`
+	Urbanizations []*Urbanization `json:"urbanizations"`
 	// Map from color to number of cubes of that color in the bag
 	CubeBag map[Color]int `json:"cubeBag"`
 	// Cubes present on the board

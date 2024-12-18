@@ -31,9 +31,23 @@ type ChooseAction struct {
 	Action SpecialAction `json:"action"`
 }
 
+type TownPlacement struct {
+	// New tracks being added to the town; existing tracks do not get specified here
+	Tracks []Direction `json:"tracks"`
+	Hex    Coordinate  `json:"hex"`
+}
+
+type TrackPlacement struct {
+	// Simple builds have a single track; direct builds of complex track will have two
+	// Upgrades only have the new tracks
+	Tracks [][2]Direction `json:"tracks"`
+	Hex    Coordinate     `json:"hex"`
+}
+
 type BuildAction struct {
-	Links        []*Link       `json:"links"`
-	Urbanization *Urbanization `json:"urbanization"`
+	TownPlacements  []*TownPlacement  `json:"townPlacements"`
+	TrackPlacements []*TrackPlacement `json:"trackPlacements"`
+	Urbanization    *Urbanization     `json:"urbanization"`
 }
 
 type MoveGoodsAction struct {
@@ -88,7 +102,7 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 		return nil, &HttpError{fmt.Sprintf("cannot make a move if game hasn't started yet: %s", req.GameId), http.StatusBadRequest}
 	}
 	if finishedFlag != 0 {
-		return nil, &HttpError{fmt.Sprintf("cannot make a move if game has finished yet: %s", req.GameId), http.StatusBadRequest}
+		return nil, &HttpError{fmt.Sprintf("cannot make a move if game has finished: %s", req.GameId), http.StatusBadRequest}
 	}
 
 	gameState := new(GameState)
@@ -149,7 +163,16 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 	}
 
 	if finishedFlag != 0 {
-		// FIXME: Notify all players that game is finished
+		userIds, err := server.getJoinedUsers(req.GameId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get game users: %v", err)
+		}
+		for userId := range userIds {
+			err = server.notifyPlayer(req.GameId, userId)
+			if err != nil {
+				return nil, fmt.Errorf("failed to notify user of game end: %v", err)
+			}
+		}
 	} else {
 		// Notify the next player that it is their turn if the active player changed
 		if gameState.ActivePlayer != ctx.User.Id {
@@ -432,7 +455,10 @@ func (gameState *GameState) handleBuildAction(theMap *BasicMap, buildAction *Bui
 		gameState.Urbanizations = append(gameState.Urbanizations, buildAction.Urbanization)
 	}
 
-	// FIXME: Handle validating and then adding link and taking user's cash
+	err := performBuildAction(theMap, gameState, buildAction)
+	if err != nil {
+		return err
+	}
 
 	// If this was the first build player, just advance to the first player in normal order
 	if gameState.PlayerActions[gameState.ActivePlayer] == FIRST_BUILD_SPECIAL_ACTION {
@@ -507,7 +533,88 @@ func (gameState *GameState) handleMoveGoodsAction(theMap *BasicMap, moveGoodsAct
 		}
 	} else if moveGoodsAction.Color != NONE_COLOR {
 
-		// FIXME: Handle this delivery
+		deliveryGraph := gameState.computeDeliveryGraph()
+
+		// Verify that there is a cube on the board of a matching color and the start location
+		foundCube := false
+		for idx, boardCube := range gameState.Cubes {
+			if boardCube.Color == moveGoodsAction.Color && boardCube.Hex == moveGoodsAction.StartingLocation {
+				gameState.Cubes = DeleteFromSliceUnordered(idx, gameState.Cubes)
+				foundCube = true
+				break
+			}
+		}
+		if !foundCube {
+			return &HttpError{"no such cube", http.StatusBadRequest}
+		}
+
+		loc := moveGoodsAction.StartingLocation
+		for idx, step := range moveGoodsAction.Path {
+			if _, ok := deliveryGraph.hexToDirectionToLink[loc]; !ok {
+				return &HttpError{"invalid path", http.StatusBadRequest}
+			}
+			if _, ok := deliveryGraph.hexToDirectionToLink[loc][step]; !ok {
+				return &HttpError{"invalid path", http.StatusBadRequest}
+			}
+
+			link := deliveryGraph.hexToDirectionToLink[loc][step]
+			loc = link.destination
+
+			hex := theMap.Hexes[loc.Y][loc.X]
+			var cityColor Color = NONE_COLOR
+			if hex == TOWN_HEX_TYPE {
+				var urbColor Color = NONE_COLOR
+				for _, urb := range gameState.Urbanizations {
+					if urb.Hex == loc {
+						switch urb.City {
+						case 0:
+							urbColor = RED
+						case 1:
+							urbColor = BLUE
+						case 2:
+							urbColor = BLACK
+						case 3:
+							urbColor = BLACK
+						case 4:
+							urbColor = YELLOW
+						case 5:
+							urbColor = PURPLE
+						case 6:
+							urbColor = BLACK
+						case 7:
+							urbColor = BLACK
+						}
+						break
+					}
+				}
+				cityColor = urbColor
+			} else if hex == CITY_HEX_TYPE {
+				var theCity *BasicCity = nil
+				for _, city := range theMap.Cities {
+					if city.Coordinate == loc {
+						theCity = &city
+						break
+					}
+				}
+				if theCity == nil {
+					return fmt.Errorf("could not find city at coordinate: %v", loc)
+				}
+				cityColor = theCity.Color
+			} else {
+				return &HttpError{"invalid path", http.StatusBadRequest}
+			}
+
+			if cityColor == moveGoodsAction.Color && idx != len(moveGoodsAction.Path)-1 {
+				return &HttpError{"cannot pass through city matching the cube color", http.StatusBadRequest}
+			}
+			if cityColor != moveGoodsAction.Color && idx == len(moveGoodsAction.Path)-1 {
+				return &HttpError{"ending city must match cube color", http.StatusBadRequest}
+			}
+
+			if link.player != "" {
+				gameState.PlayerIncome[link.player] += 1
+			}
+		}
 
 	} else {
 		// Pass action, do nothing here
@@ -564,6 +671,10 @@ func (gameState *GameState) handleMoveGoodsAction(theMap *BasicMap, moveGoodsAct
 				}
 			} else {
 				// End of phase
+				err := gameState.executeIncomeAndExpenses()
+				if err != nil {
+					return err
+				}
 				gameState.GamePhase = GOODS_GROWTH_GAME_PHASE
 				produceGoodsPlayer := ""
 				for userId, action := range gameState.PlayerActions {
@@ -598,6 +709,20 @@ func (gameState *GameState) handleMoveGoodsAction(theMap *BasicMap, moveGoodsAct
 		}
 	}
 
+	return nil
+}
+
+func (gameState *GameState) executeIncomeAndExpenses() error {
+	for _, player := range gameState.PlayerOrder {
+		cash := gameState.PlayerCash[player] + gameState.PlayerIncome[player] - gameState.PlayerLoco[player] - gameState.PlayerShares[player]
+		if cash < 0 {
+			gameState.PlayerCash[player] = 0
+			gameState.PlayerIncome[player] += cash // cash is negative, so this drops income by the deficit
+			// FIXME: Handle bankruptcy
+		} else {
+			gameState.PlayerCash[player] = cash
+		}
+	}
 	return nil
 }
 

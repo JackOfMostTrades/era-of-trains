@@ -51,7 +51,7 @@ const (
 
 func loadMaps() (map[string]*BasicMap, error) {
 	maps := make(map[string]*BasicMap)
-	rustBelt, err := loadMap("maps/rust_belt.json")
+	rustBelt, err := loadBasicMap("maps/rust_belt.json")
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func loadMaps() (map[string]*BasicMap, error) {
 	return maps, nil
 }
 
-func loadMap(filename string) (*BasicMap, error) {
+func loadBasicMap(filename string) (*BasicMap, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
