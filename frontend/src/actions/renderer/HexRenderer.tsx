@@ -1,4 +1,4 @@
-import {Color, Coordinate, Direction} from "../../api/api.ts";
+import {Color, Coordinate, Direction, PlayerColor} from "../../api/api.ts";
 import {HexType} from "../../map.ts";
 import {ReactNode} from "react";
 
@@ -10,6 +10,20 @@ export function colorToHtml(color: Color): string {
         case Color.RED: return '#d41e2d';
         case Color.PURPLE: return '#8d5a95';
         case Color.YELLOW: return '#f5ac11';
+    }
+}
+
+export function playerColorToHtml(color: PlayerColor|undefined): string {
+    if (color === undefined) {
+        return '#222222';
+    }
+    switch (color) {
+        case PlayerColor.BLUE: return '#00839d';
+        case PlayerColor.GREEN: return "#80bd1d";
+        case PlayerColor.YELLOW: return '#f3db70';
+        case PlayerColor.PINK: return '#bf88a9';
+        case PlayerColor.GRAY: return '#96a496';
+        case PlayerColor.ORANGE: return '#db7e2a';
     }
 }
 
@@ -201,7 +215,7 @@ export class HexRenderer {
         this.height = Math.max(this.height, hex.y);
     }
 
-    public renderTownTrack(hex: Coordinate, direction: Direction, player: string) {
+    public renderTownTrack(hex: Coordinate, direction: Direction, playerColor: PlayerColor|undefined) {
         let xpos = hex.x*17.321;
         if ((hex.y % 2) === 1) {
             xpos += 8.661;
@@ -209,14 +223,13 @@ export class HexRenderer {
         let ypos = hex.y*5;
 
         let offset = hexEdgeOffset(direction);
-        // FIXME: render with player color
-        this.paths.push(<line stroke='#222222' strokeWidth={1} x1={xpos+5.7735} y1={ypos+5} x2={xpos+offset.dx} y2={ypos+offset.dy} />);
+        this.paths.push(<line stroke={playerColorToHtml(playerColor)} strokeWidth={1} x1={xpos+5.7735} y1={ypos+5} x2={xpos+offset.dx} y2={ypos+offset.dy} />);
 
         this.width = Math.max(this.width, hex.x);
         this.height = Math.max(this.height, hex.y);
     }
 
-    public renderTrack(hex: Coordinate, left: Direction, right: Direction, player: string) {
+    public renderTrack(hex: Coordinate, left: Direction, right: Direction, playerColor: PlayerColor|undefined) {
         let xpos = hex.x*17.321;
         if ((hex.y % 2) === 1) {
             xpos += 8.661;
@@ -225,8 +238,7 @@ export class HexRenderer {
 
         let leftOffset = hexEdgeOffset(left);
         let rightOffset = hexEdgeOffset(right);
-        // FIXME: render with player color
-        this.paths.push(<line stroke='#222222' strokeWidth={1} x1={xpos+leftOffset.dx} y1={ypos+leftOffset.dy} x2={xpos+rightOffset.dx} y2={ypos+rightOffset.dy} />);
+        this.paths.push(<path stroke={playerColorToHtml(playerColor)} strokeWidth={1} fill="none" d={`M ${xpos+leftOffset.dx} ${ypos+leftOffset.dy} Q ${xpos+5.7735} ${ypos+5} ${xpos+rightOffset.dx} ${ypos+rightOffset.dy}`} />);
 
         this.width = Math.max(this.width, hex.x);
         this.height = Math.max(this.height, hex.y);

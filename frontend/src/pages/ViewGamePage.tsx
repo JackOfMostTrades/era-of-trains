@@ -11,6 +11,7 @@ import ViewMapComponent from "./ViewMapComponent.tsx";
 import MoveGoodsActionSelector from "../actions/MoveGoodsActionSelector.tsx";
 import GoodsGrowthTable from "./GoodsGrowthTable.tsx";
 import ProductionAction from "../actions/ProductionAction.tsx";
+import {playerColorToHtml} from "../actions/renderer/HexRenderer.tsx";
 
 function WaitingForPlayersPage({game, onJoin}: {game: ViewGameResponse, onJoin: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
@@ -99,9 +100,10 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
 
     let playerColumns: ReactNode[] = [];
     for (let player of game.joinedUsers) {
+        let playerColorHtml = playerColorToHtml(game.gameState.playerColor[player.id]);
         playerColumns.push(<GridColumn>
             <Segment>
-                Player: {player.nickname}<br/>
+                Player: <div style={{height: '1em', width: '1em', borderRadius: '50%', display: 'inline-block', backgroundColor: playerColorHtml}} /> {player.nickname}<br/>
                 Cash: ${game.gameState.playerCash[player.id]}<br/>
                 Shares: {game.gameState.playerShares[player.id]}<br/>
                 Income: {game.gameState.playerIncome[player.id]}<br/>

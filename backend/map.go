@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"strconv"
 )
 
 type Color int
@@ -15,6 +16,24 @@ const (
 	BLUE
 	PURPLE
 )
+
+func (c Color) String() string {
+	switch c {
+	case NONE_COLOR:
+		return "NONE"
+	case BLACK:
+		return "BLACK"
+	case RED:
+		return "RED"
+	case YELLOW:
+		return "YELLOW"
+	case BLUE:
+		return "BLUE"
+	case PURPLE:
+		return "PURPLE"
+	}
+	return strconv.Itoa(int(c))
+}
 
 type BasicCity struct {
 	Color      Color      `json:"color"`

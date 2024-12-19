@@ -20,3 +20,11 @@ CREATE TABLE IF NOT EXISTS game_player_map (
     game_id text,
     player_user_id text
 );
+
+CREATE TABLE IF NOT EXISTS game_log (
+    game_id text,
+    timestamp integer, --Epoch seconds
+    user_id text,
+    action text,
+    description text
+);

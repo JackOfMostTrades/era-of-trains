@@ -331,10 +331,24 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 		playerOrder[i], playerOrder[j] = playerOrder[j], playerOrder[i]
 	})
 
+	// Randomize player colors
+	shuffledColors := make([]int, 6) // 6 colors available to players, regardless of player count
+	for idx := 0; idx < len(shuffledColors); idx++ {
+		shuffledColors[idx] = idx
+	}
+	rand.Shuffle(len(shuffledColors), func(i, j int) {
+		shuffledColors[i], shuffledColors[j] = shuffledColors[j], shuffledColors[i]
+	})
+	playerColor := make(map[string]int)
+	for idx, playerId := range playerOrder {
+		playerColor[playerId] = shuffledColors[idx]
+	}
+
 	// Setup initial game state
 	gameState := &GameState{
 		ActivePlayer:      playerOrder[0],
 		PlayerOrder:       playerOrder,
+		PlayerColor:       playerColor,
 		PlayerShares:      make(map[string]int),
 		PlayerLoco:        make(map[string]int),
 		PlayerIncome:      make(map[string]int),

@@ -104,7 +104,7 @@ export function TrackSelector(props: Props) {
             let renderer = new HexRenderer(false);
             renderer.renderHex({x: 0, y: 0}, HexType.PLAINS);
             for (let route of rotatedTrack) {
-                renderer.renderTrack({x: 0, y: 0}, route[0], route[1], "");
+                renderer.renderTrack({x: 0, y: 0}, route[0], route[1], undefined);
             }
             let classNames = "track-select";
             if (id === props.selected) {
@@ -133,7 +133,7 @@ export function TownTrackSelector(props: Props) {
             let renderer = new HexRenderer(false);
             renderer.renderHex({x: 0, y: 0}, HexType.TOWN);
             for (let route of rotatedTrack) {
-                renderer.renderTownTrack({x: 0, y: 0}, route, "");
+                renderer.renderTownTrack({x: 0, y: 0}, route, undefined);
             }
             let classNames = "track-select";
             if (id === props.selected) {

@@ -81,6 +81,7 @@ const (
 
 type GameState struct {
 	ActivePlayer  string                   `json:"activePlayer"`
+	PlayerColor   map[string]int           `json:"playerColor"`
 	PlayerOrder   []string                 `json:"playerOrder"`
 	PlayerShares  map[string]int           `json:"playerShares"`
 	PlayerLoco    map[string]int           `json:"playerLoco"`

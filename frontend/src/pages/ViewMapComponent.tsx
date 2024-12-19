@@ -62,11 +62,11 @@ class RenderMapBuilder {
     }
 
     public renderTownTrack(hex: Coordinate, direction: Direction, player: string) {
-        this.hexRenderer.renderTownTrack(hex, direction, player);
+        this.hexRenderer.renderTownTrack(hex, direction, this.game.gameState?.playerColor[player]);
     }
 
     public renderTrack(hex: Coordinate, left: Direction, right: Direction, player: string) {
-        this.hexRenderer.renderTrack(hex, left, right, player);
+        this.hexRenderer.renderTrack(hex, left, right, this.game.gameState?.playerColor[player]);
     }
 
     public renderCubes(hex: Coordinate, cubes: Color[]) {

@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
+	"time"
 )
 
 type ActionName string
@@ -76,6 +78,60 @@ type ConfirmMoveRequest struct {
 type ConfirmMoveResponse struct {
 }
 
+type confirmMoveHandler struct {
+	server         *GameServer
+	theMap         *BasicMap
+	gameState      *GameState
+	logs           []string
+	playerIdToNick map[string]string
+}
+
+func newConfirmMoveHandler(server *GameServer, gameId string, theMap *BasicMap, gameState *GameState) (*confirmMoveHandler, error) {
+	handler := &confirmMoveHandler{
+		server:         server,
+		theMap:         theMap,
+		gameState:      gameState,
+		playerIdToNick: make(map[string]string),
+	}
+
+	stmt, err := server.db.Prepare("SELECT id,nickname FROM users INNER JOIN game_player_map ON users.id=game_player_map.player_user_id WHERE game_player_map.game_id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query(gameId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var userId string
+		var nickname string
+		err = rows.Scan(&userId, &nickname)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read query result: %v", err)
+		}
+		handler.playerIdToNick[userId] = nickname
+	}
+
+	return handler, nil
+}
+
+func (handler *confirmMoveHandler) Log(format string, a ...any) {
+	handler.logs = append(handler.logs, fmt.Sprintf(format, a...))
+}
+
+func (handler *confirmMoveHandler) PlayerNick(playerId string) string {
+	if nick, ok := handler.playerIdToNick[playerId]; ok {
+		return nick
+	}
+	return "<unknown: " + playerId + ">"
+}
+
+func (handler *confirmMoveHandler) ActivePlayerNick() string {
+	return handler.PlayerNick(handler.gameState.ActivePlayer)
+}
+
 func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveRequest) (resp *ConfirmMoveResponse, err error) {
 	stmt, err := server.db.Prepare("SELECT owner_user_id,num_players,map_name,started,finished,game_state FROM games WHERE id=?")
 	if err != nil {
@@ -114,19 +170,26 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 		return nil, &HttpError{fmt.Sprintf("user [%s] is not the active player [%s]", ctx.User.Id, gameState.ActivePlayer), http.StatusPreconditionFailed}
 	}
 
+	theMap := server.maps[mapName]
+
+	handler, err := newConfirmMoveHandler(server, req.GameId, theMap, gameState)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize handler: %v", err)
+	}
+
 	switch req.ActionName {
 	case SharesActionName:
-		err = gameState.handleSharesAction(req.SharesAction)
+		err = handler.handleSharesAction(req.SharesAction)
 	case BidActionName:
-		err = gameState.handleBidAction(req.BidAction)
+		err = handler.handleBidAction(req.BidAction)
 	case ChooseActionName:
-		err = gameState.handleChooseAction(req.ChooseAction)
+		err = handler.handleChooseAction(req.ChooseAction)
 	case BuildActionName:
-		err = gameState.handleBuildAction(server.maps[mapName], req.BuildAction)
+		err = handler.handleBuildAction(req.BuildAction)
 	case MoveGoodsActionName:
-		err = gameState.handleMoveGoodsAction(server.maps[mapName], req.MoveGoodsAction)
+		err = handler.handleMoveGoodsAction(req.MoveGoodsAction)
 	case ProduceGoodsActionName:
-		err = gameState.handleProduceGoodsAction(server.maps[mapName], req.ProduceGoodsAction)
+		err = handler.handleProduceGoodsAction(req.ProduceGoodsAction)
 	default:
 		err = &HttpError{fmt.Sprintf("invalid action: %s", req.ActionName), http.StatusBadRequest}
 	}
@@ -152,6 +215,22 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 		finishedFlag = 1
 	}
 
+	// Log the action
+	stmt, err = server.db.Prepare("INSERT INTO game_log (game_id,timestamp,user_id,action,description) VALUES(?, ?, ?, ?, ?)")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	reqString, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialze the request for logging: %v", err)
+	}
+	_, err = stmt.Exec(req.GameId, time.Now().Unix(), ctx.User.Id, string(reqString), strings.Join(handler.logs, "\n"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+
+	// Update the game state
 	stmt, err = server.db.Prepare("UPDATE games SET game_state=?,finished=? WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
@@ -162,6 +241,7 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
 
+	// Send notifications
 	if finishedFlag != 0 {
 		userIds, err := server.getJoinedUsers(req.GameId)
 		if err != nil {
@@ -186,7 +266,8 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 	return &ConfirmMoveResponse{}, nil
 }
 
-func (gameState *GameState) handleSharesAction(sharesAction *SharesAction) error {
+func (handler *confirmMoveHandler) handleSharesAction(sharesAction *SharesAction) error {
+	gameState := handler.gameState
 	if sharesAction == nil || sharesAction.Amount < 0 {
 		return &HttpError{"missing shares action", http.StatusBadRequest}
 	}
@@ -201,6 +282,8 @@ func (gameState *GameState) handleSharesAction(sharesAction *SharesAction) error
 	}
 	gameState.PlayerShares[currentPlayer] = newSharesCount
 	gameState.PlayerCash[currentPlayer] += 5 * sharesAction.Amount
+
+	handler.Log("%s takes %d shares.", handler.ActivePlayerNick(), sharesAction.Amount)
 
 	nextPlayerId := ""
 	for i := 0; i < len(gameState.PlayerOrder)-1; i++ {
@@ -220,7 +303,8 @@ func (gameState *GameState) handleSharesAction(sharesAction *SharesAction) error
 	return nil
 }
 
-func (gameState *GameState) handleBidAction(bidAction *BidAction) error {
+func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
+	gameState := handler.gameState
 	if bidAction == nil {
 		return &HttpError{"missing bid action", http.StatusBadRequest}
 	}
@@ -240,22 +324,26 @@ func (gameState *GameState) handleBidAction(bidAction *BidAction) error {
 				passCount += 1
 			}
 		}
+
+		lastBid := gameState.AuctionState[currentPlayer]
 		var cashToPay int
 		if passCount == 0 {
 			// Last player does not pay
 			cashToPay = 0
 		} else if (len(gameState.PlayerOrder) - passCount) >= 2 {
 			// Only two players left to pass, pay full price of the last bid
-			cashToPay = gameState.AuctionState[currentPlayer]
+			cashToPay = lastBid
 		} else {
 			// In the middle, pay half price (rounded up)
-			bid := gameState.AuctionState[currentPlayer]
-			cashToPay = bid/2 + (bid % 2)
+			cashToPay = lastBid/2 + (lastBid % 2)
 		}
 
 		gameState.PlayerCash[currentPlayer] -= cashToPay
 		// Set auction state to pass order (-1 first to pass, -2 second to pass, etc)
 		gameState.AuctionState[currentPlayer] = (-1 * passCount) - 1
+
+		handler.Log("%s passes, becoming player number %d and paying $%d based on their bid of $%d.", handler.ActivePlayerNick(),
+			len(gameState.PlayerOrder)-passCount, cashToPay, lastBid)
 
 		// If all but one other play has passed, that player implicitly passes since there's no one else left
 		if passCount == len(gameState.PlayerOrder)-2 {
@@ -264,6 +352,9 @@ func (gameState *GameState) handleBidAction(bidAction *BidAction) error {
 				if bidAmount := gameState.AuctionState[playerId]; bidAmount >= 0 {
 					gameState.PlayerCash[playerId] -= bidAmount
 					gameState.AuctionState[playerId] = (-1 * passCount) - 2
+
+					handler.Log("%s becomes first player as last player to not pass, and pays $%d.",
+						handler.PlayerNick(playerId), bidAmount)
 				}
 			}
 			gotoNextPhase = true
@@ -275,6 +366,7 @@ func (gameState *GameState) handleBidAction(bidAction *BidAction) error {
 
 	} else if bidAction.Amount == 0 {
 		// Bid amount of 0 indicates use of turn-order-pass
+		handler.Log("%s uses turn-order pass.", handler.ActivePlayerNick())
 
 		if gameState.PlayerActions[currentPlayer] != TURN_ORDER_PASS_SPECIAL_ACTION {
 			return &HttpError{"current player cannot use turn-order pass", http.StatusBadRequest}
@@ -303,6 +395,8 @@ func (gameState *GameState) handleBidAction(bidAction *BidAction) error {
 
 		// Update this user's bid
 		gameState.AuctionState[currentPlayer] = bidAction.Amount
+
+		handler.Log("%s bids $%d.", handler.ActivePlayerNick(), bidAction.Amount)
 	}
 
 	if gotoNextPhase {
@@ -363,7 +457,8 @@ func (gameState *GameState) handleBidAction(bidAction *BidAction) error {
 	return nil
 }
 
-func (gameState *GameState) handleChooseAction(chooseAction *ChooseAction) error {
+func (handler *confirmMoveHandler) handleChooseAction(chooseAction *ChooseAction) error {
+	gameState := handler.gameState
 	if chooseAction == nil {
 		return &HttpError{"missing choose action", http.StatusBadRequest}
 	}
@@ -395,10 +490,13 @@ func (gameState *GameState) handleChooseAction(chooseAction *ChooseAction) error
 
 	// Set the chosen action
 	gameState.PlayerActions[gameState.ActivePlayer] = chooseAction.Action
+	handler.Log("%s chooses special action \"%s\".", handler.ActivePlayerNick(), chooseAction.Action)
+
 	// Apply any immediate effects
 	if chooseAction.Action == LOCO_SPECIAL_ACTION {
 		if gameState.PlayerLoco[gameState.ActivePlayer] < 6 {
 			gameState.PlayerLoco[gameState.ActivePlayer] += 1
+			handler.Log("%s's loco increases to %d.", handler.ActivePlayerNick(), gameState.PlayerLoco[gameState.ActivePlayer])
 		}
 	}
 
@@ -438,38 +536,16 @@ func (gameState *GameState) handleChooseAction(chooseAction *ChooseAction) error
 	return nil
 }
 
-func (gameState *GameState) handleBuildAction(theMap *BasicMap, buildAction *BuildAction) error {
+func (handler *confirmMoveHandler) handleBuildAction(buildAction *BuildAction) error {
+	gameState := handler.gameState
 	if buildAction == nil {
 		return &HttpError{"missing build action", http.StatusBadRequest}
 	}
 	if gameState.GamePhase != BUILDING_GAME_PHASE {
 		return &HttpError{fmt.Sprintf("invalid action for current phase %d", gameState.GamePhase), http.StatusPreconditionFailed}
 	}
-	if buildAction.Urbanization != nil && gameState.PlayerActions[gameState.ActivePlayer] != URBANIZATION_SPECIAL_ACTION {
-		return &HttpError{"cannot urbanize without special action", http.StatusBadRequest}
-	}
 
-	if buildAction.Urbanization != nil {
-		if buildAction.Urbanization.City < 0 || buildAction.Urbanization.City >= 8 {
-			return &HttpError{fmt.Sprintf("invalid city: %d", buildAction.Urbanization.City), http.StatusBadRequest}
-		}
-
-		for _, existingUrb := range gameState.Urbanizations {
-			if existingUrb.Hex == buildAction.Urbanization.Hex {
-				return &HttpError{"cannot urbanize on top of existing urbanization", http.StatusBadRequest}
-			}
-			if existingUrb.City == buildAction.Urbanization.City {
-				return &HttpError{"requested city has already been urbanized", http.StatusBadRequest}
-			}
-		}
-		if theMap.Hexes[buildAction.Urbanization.Hex.Y][buildAction.Urbanization.Hex.X] != TOWN_HEX_TYPE {
-			return &HttpError{"must urbanize on town hex", http.StatusBadRequest}
-		}
-
-		gameState.Urbanizations = append(gameState.Urbanizations, buildAction.Urbanization)
-	}
-
-	err := performBuildAction(theMap, gameState, buildAction)
+	err := handler.performBuildAction(buildAction)
 	if err != nil {
 		return err
 	}
@@ -508,6 +584,7 @@ func (gameState *GameState) handleBuildAction(theMap *BasicMap, buildAction *Bui
 		// End of phase
 		if nextPlayer == "" {
 			gameState.GamePhase = MOVING_GOODS_GAME_PHASE
+			gameState.MovingGoodsRound = 0
 			firstMovePlayer := ""
 			for userId, action := range gameState.PlayerActions {
 				if action == FIRST_MOVE_SPECIAL_ACTION {
@@ -529,7 +606,9 @@ func (gameState *GameState) handleBuildAction(theMap *BasicMap, buildAction *Bui
 	return nil
 }
 
-func (gameState *GameState) handleMoveGoodsAction(theMap *BasicMap, moveGoodsAction *MoveGoodsAction) error {
+func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGoodsAction) error {
+	gameState := handler.gameState
+	theMap := handler.theMap
 	if moveGoodsAction == nil {
 		return &HttpError{"missing build action", http.StatusBadRequest}
 	}
@@ -545,6 +624,8 @@ func (gameState *GameState) handleMoveGoodsAction(theMap *BasicMap, moveGoodsAct
 		if gameState.PlayerLoco[gameState.ActivePlayer] < 6 {
 			gameState.PlayerLoco[gameState.ActivePlayer] += 1
 		}
+		handler.Log("%s skipped delivering a good and increased their loco to %d",
+			handler.ActivePlayerNick(), gameState.PlayerCash[gameState.ActivePlayer])
 	} else if moveGoodsAction.Color != NONE_COLOR {
 
 		deliveryGraph := gameState.computeDeliveryGraph()
@@ -628,10 +709,15 @@ func (gameState *GameState) handleMoveGoodsAction(theMap *BasicMap, moveGoodsAct
 			if link.player != "" {
 				gameState.PlayerIncome[link.player] += 1
 			}
+
 		}
+
+		handler.Log("%s delivered a good cube delivering a good and increased their loco to %d",
+			handler.ActivePlayerNick(), gameState.PlayerCash[gameState.ActivePlayer])
 
 	} else {
 		// Pass action, do nothing here
+		handler.Log("%s skipped their move good action.", handler.ActivePlayerNick())
 	}
 
 	// If this was the first move player, just advance to the first player in normal order
@@ -686,7 +772,7 @@ func (gameState *GameState) handleMoveGoodsAction(theMap *BasicMap, moveGoodsAct
 			} else {
 				// End of phase
 				gameState.PlayerHasDoneLoco = make(map[string]bool)
-				err := gameState.executeIncomeAndExpenses()
+				err := handler.executeIncomeAndExpenses()
 				if err != nil {
 					return err
 				}
@@ -700,7 +786,7 @@ func (gameState *GameState) handleMoveGoodsAction(theMap *BasicMap, moveGoodsAct
 				}
 
 				if produceGoodsPlayer == "" {
-					err := gameState.executeGoodsGrowthPhase(theMap)
+					err := handler.executeGoodsGrowthPhase(theMap)
 					if err != nil {
 						return err
 					}
@@ -727,12 +813,16 @@ func (gameState *GameState) handleMoveGoodsAction(theMap *BasicMap, moveGoodsAct
 	return nil
 }
 
-func (gameState *GameState) executeIncomeAndExpenses() error {
+func (handler *confirmMoveHandler) executeIncomeAndExpenses() error {
+	gameState := handler.gameState
 	for _, player := range gameState.PlayerOrder {
 		cash := gameState.PlayerCash[player] + gameState.PlayerIncome[player] - gameState.PlayerLoco[player] - gameState.PlayerShares[player]
+		handler.Log("%s gains $%d in income, pays $%d for loco and $%d for shares.",
+			handler.PlayerNick(player), gameState.PlayerIncome[player], gameState.PlayerLoco[player], gameState.PlayerShares[player])
 		if cash < 0 {
 			gameState.PlayerCash[player] = 0
 			gameState.PlayerIncome[player] += cash // cash is negative, so this drops income by the deficit
+			handler.Log("%s loses %d in income to pay for excess expenses.", handler.PlayerNick(player), -1*cash)
 			// FIXME: Handle bankruptcy
 		} else {
 			gameState.PlayerCash[player] = cash
@@ -741,7 +831,8 @@ func (gameState *GameState) executeIncomeAndExpenses() error {
 	return nil
 }
 
-func (gameState *GameState) handleProduceGoodsAction(theMap *BasicMap, produceGoodsAction *ProduceGoodsAction) error {
+func (handler *confirmMoveHandler) handleProduceGoodsAction(produceGoodsAction *ProduceGoodsAction) error {
+	gameState := handler.gameState
 	if produceGoodsAction == nil {
 		return &HttpError{"missing build action", http.StatusBadRequest}
 	}
@@ -765,10 +856,22 @@ func (gameState *GameState) handleProduceGoodsAction(theMap *BasicMap, produceGo
 			return &HttpError{fmt.Sprintf("goods growth location not empty: (%d,%d)", destination.X, destination.Y), http.StatusBadRequest}
 		}
 		col[destination.Y] = gameState.ProductionCubes[idx]
+
+		var cityLabel string
+		if destination.X < 6 {
+			cityLabel = fmt.Sprintf("light city %d", destination.X+1)
+		} else if destination.X < 12 {
+			cityLabel = fmt.Sprintf("dark city %d", destination.X-5)
+		} else {
+			cityLabel = fmt.Sprintf("new city %c", 'A'+destination.X-12)
+		}
+
+		handler.Log("%s adds a %s cube to %s (spot %d) on the goods growth table using the production action.",
+			handler.ActivePlayerNick(), gameState.ProductionCubes[idx].String(), cityLabel, destination.Y+1)
 	}
 
 	gameState.ProductionCubes = nil
-	err := gameState.executeGoodsGrowthPhase(theMap)
+	err := handler.executeGoodsGrowthPhase(handler.theMap)
 	if err != nil {
 		return err
 	}
@@ -799,7 +902,8 @@ func (gameState *GameState) getCoordinateForCity(theMap *BasicMap, cityNum int) 
 	return Coordinate{X: -1, Y: -1}
 }
 
-func (gameState *GameState) executeGoodsGrowthPhase(theMap *BasicMap) error {
+func (handler *confirmMoveHandler) executeGoodsGrowthPhase(theMap *BasicMap) error {
+	gameState := handler.gameState
 	numPlayers := len(gameState.PlayerOrder)
 
 	// Finds the city on the board for the given column (if present), finds the top cube for the goods growth row (if present), and moves it to the board
@@ -825,6 +929,8 @@ func (gameState *GameState) executeGoodsGrowthPhase(theMap *BasicMap) error {
 				Color: pickedColor,
 				Hex:   cord,
 			})
+			handler.Log("A %s cube was moved from the goods growth chart to hex (%d,%d).",
+				pickedColor.String(), cord.X, cord.Y)
 		}
 	}
 
@@ -834,6 +940,7 @@ func (gameState *GameState) executeGoodsGrowthPhase(theMap *BasicMap) error {
 		if err != nil {
 			return fmt.Errorf("failed to get random number: %v", err)
 		}
+		handler.Log("A %d was rolled for light cities on goods growth.", val+1)
 		pickCubeFromCol(val)
 		if 2 <= val && val < 6 {
 			pickCubeFromCol(val + 10)
@@ -846,6 +953,7 @@ func (gameState *GameState) executeGoodsGrowthPhase(theMap *BasicMap) error {
 		if err != nil {
 			return fmt.Errorf("failed to get random number: %v", err)
 		}
+		handler.Log("A %d was rolled for dark cities on goods growth.", val+1)
 		pickCubeFromCol(val + 6)
 		if 0 <= val && val < 4 {
 			pickCubeFromCol(val + 16)

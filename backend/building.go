@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"slices"
 )
@@ -305,9 +306,36 @@ func newBuildActionPerformer(theMap *BasicMap, gameState *GameState) *buildActio
 	return performer
 }
 
-func performBuildAction(theMap *BasicMap, gameState *GameState, buildAction *BuildAction) error {
+func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) error {
 
-	performer := newBuildActionPerformer(theMap, gameState)
+	performer := newBuildActionPerformer(handler.theMap, handler.gameState)
+	gameState := handler.gameState
+
+	// First handle urbanization
+	if buildAction.Urbanization != nil {
+		if gameState.PlayerActions[gameState.ActivePlayer] != URBANIZATION_SPECIAL_ACTION {
+			return &HttpError{"cannot urbanize without special action", http.StatusBadRequest}
+		}
+		if buildAction.Urbanization.City < 0 || buildAction.Urbanization.City >= 8 {
+			return &HttpError{fmt.Sprintf("invalid city: %d", buildAction.Urbanization.City), http.StatusBadRequest}
+		}
+
+		for _, existingUrb := range gameState.Urbanizations {
+			if existingUrb.Hex == buildAction.Urbanization.Hex {
+				return &HttpError{"cannot urbanize on top of existing urbanization", http.StatusBadRequest}
+			}
+			if existingUrb.City == buildAction.Urbanization.City {
+				return &HttpError{"requested city has already been urbanized", http.StatusBadRequest}
+			}
+		}
+		if handler.theMap.Hexes[buildAction.Urbanization.Hex.Y][buildAction.Urbanization.Hex.X] != TOWN_HEX_TYPE {
+			return &HttpError{"must urbanize on town hex", http.StatusBadRequest}
+		}
+
+		gameState.Urbanizations = append(gameState.Urbanizations, buildAction.Urbanization)
+		handler.Log("%s urbanizes new city %c on hex (%d,%d)",
+			handler.ActivePlayerNick(), 'A'+buildAction.Urbanization.City, buildAction.Urbanization.Hex.X, buildAction.Urbanization.Hex.Y)
+	}
 
 	// For each placement...
 	//   If it is a town...
@@ -325,6 +353,7 @@ func performBuildAction(theMap *BasicMap, gameState *GameState, buildAction *Bui
 	//          If stop on both sides, add new complete track
 	//          If track and stop, extend existing incomplete track as a completed link
 
+	startingCash := gameState.PlayerCash[gameState.ActivePlayer]
 	for _, townPlacement := range buildAction.TownPlacements {
 		err := performer.attemptTownPlacement(townPlacement)
 		if err != nil {
@@ -333,6 +362,8 @@ func performBuildAction(theMap *BasicMap, gameState *GameState, buildAction *Bui
 			}
 			return err
 		}
+		handler.Log("%s added track on town hex (%d,%d)",
+			handler.ActivePlayerNick(), townPlacement.Hex.X, townPlacement.Hex.Y)
 	}
 	for _, trackPlacement := range buildAction.TrackPlacements {
 		err := performer.attemptTrackPlacement(trackPlacement)
@@ -342,11 +373,18 @@ func performBuildAction(theMap *BasicMap, gameState *GameState, buildAction *Bui
 			}
 			return err
 		}
+		handler.Log("%s added track on hex (%d,%d)",
+			handler.ActivePlayerNick(), trackPlacement.Hex.X, trackPlacement.Hex.Y)
 	}
+
+	handler.Log("%s paid a total of $%d for track placements.", handler.ActivePlayerNick(),
+		startingCash-gameState.PlayerCash[gameState.ActivePlayer])
 
 	// Remove ownership of any incomplete links not extended
 	for _, link := range gameState.Links {
 		if !link.Complete && !performer.extendedLinks[link] {
+			handler.Log("%s lost ownership of an incomplete track that started at hex (%d,%d)",
+				handler.ActivePlayerNick(), link.SourceHex.X, link.SourceHex.Y)
 			link.Owner = ""
 		}
 	}

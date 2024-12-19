@@ -118,9 +118,19 @@ export interface BoardCube {
     hex: Coordinate;
 }
 
+export enum PlayerColor {
+    BLUE = 0,
+    GREEN,
+    YELLOW,
+    PINK,
+    GRAY,
+    ORANGE
+}
+
 export interface GameState {
     activePlayer: string;
     playerOrder: string[];
+    playerColor: { [playerId: string]: PlayerColor }
     playerShares: { [playerId: string]: number }
     playerLoco: { [playerId: string]: number }
     playerIncome: { [playerId: string]: number }
