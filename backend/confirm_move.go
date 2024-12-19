@@ -516,7 +516,7 @@ func (gameState *GameState) handleBuildAction(theMap *BasicMap, buildAction *Bui
 				}
 			}
 
-			if firstMovePlayer == "" {
+			if firstMovePlayer != "" {
 				gameState.ActivePlayer = firstMovePlayer
 			} else {
 				gameState.ActivePlayer = gameState.PlayerOrder[0]
@@ -685,6 +685,7 @@ func (gameState *GameState) handleMoveGoodsAction(theMap *BasicMap, moveGoodsAct
 				}
 			} else {
 				// End of phase
+				gameState.PlayerHasDoneLoco = make(map[string]bool)
 				err := gameState.executeIncomeAndExpenses()
 				if err != nil {
 					return err

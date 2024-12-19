@@ -226,10 +226,10 @@ export interface BuildAction {
 }
 
 export interface MoveGoodsAction {
-    startingLocation: Coordinate;
-    color: Color;
-    path: Direction[];
-    loco: boolean;
+    startingLocation?: Coordinate;
+    color?: Color;
+    path?: Direction[];
+    loco?: boolean;
 }
 
 export interface ProduceGoodsAction {

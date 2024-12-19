@@ -1,49 +1,14 @@
-import {BuildAction, ConfirmMove, Coordinate, Direction, User, ViewGameResponse} from "../api/api.ts";
-import {Button, ButtonGroup, Dropdown, DropdownItemProps, Header, Icon} from "semantic-ui-react";
+import {BuildAction, ConfirmMove, Coordinate, User, ViewGameResponse} from "../api/api.ts";
+import {Button, Header, Icon} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
+import {getTownRoutesFromId, getTrackRoutesFromId, TownTrackSelector, TrackSelector} from "./TrackSelector.tsx";
 
 interface Step {
     kind?: 'build_track' | 'build_town' | 'urbanize';
-    buildTrackSelection?: number;
-    buildTownSelection?: number;
-    urbanizationSelection?: number;
-}
-
-const TRACK_OPTIONS: DropdownItemProps[] = [
-    {
-        key: 0,
-        value: 0,
-        text: "Simple straight: north/south"
-    },
-    {
-        key: 1,
-        value: 1,
-        text: "Simple straight: northeast/southwest"
-    },
-    {
-        key: 2,
-        value: 2,
-        text: "Simple straight: northwest/southeast"
-    },
-    {
-        key: 3,
-        value: 3,
-        text: "Gentle: north/southeast"
-    }
-];
-function trackOptionToDirections(value: number): Array<[Direction, Direction]> {
-    switch (value) {
-        case 0: return [[Direction.SOUTH, Direction.NORTH]]
-        case 1: return [[Direction.NORTH_EAST, Direction.SOUTH_WEST]]
-        case 2: return [[Direction.NORTH_WEST, Direction.SOUTH_EAST]]
-        case 3: return [[Direction.NORTH, Direction.SOUTH_EAST]]
-    }
-    throw new Error("Unhandled value: " + value);
-}
-
-function townOptionToDirections(value: number): Array<Direction> {
-    throw new Error("Unhandled value: " + value);
+    buildTrackSelection: number;
+    buildTownSelection: number;
+    urbanizationSelection: number;
 }
 
 function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: () => Promise<void>}) {
@@ -59,10 +24,10 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
     useEffect(() => {
         const handler = (e:CustomEventInit<Coordinate>) => {
             if (e.detail) {
-                if (step.kind === 'build_track' && step.buildTrackSelection !== undefined) {
+                if (step.kind === 'build_track' && step.buildTrackSelection) {
                     let newAction = Object.assign({}, action);
                     newAction.trackPlacements.push({
-                        tracks: trackOptionToDirections(step.buildTrackSelection),
+                        tracks: getTrackRoutesFromId(step.buildTrackSelection),
                         hex: e.detail,
                     });
                     setStep({});
@@ -72,7 +37,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                 if (step.kind === 'build_town' && step.buildTownSelection) {
                     let newAction = Object.assign({}, action);
                     newAction.townPlacements.push({
-                        tracks: townOptionToDirections(step.buildTownSelection),
+                        tracks: getTownRoutesFromId(step.buildTownSelection),
                         hex: e.detail,
                     });
                     setStep({});
@@ -114,21 +79,35 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
         if (step.kind === 'build_track') {
             content = <>
                 <p>Select track to build, then click on hex:</p>
-                <Dropdown selection
-                          value={step.buildTrackSelection}
-                          options={TRACK_OPTIONS}
-                          onChange={(_, { value }) => {
-                              setStep({kind: 'build_track', buildTrackSelection: value as number});
-                          }} />
-                <Button negative onClick={() => setStep({})}>Cancel</Button>
+                <TrackSelector selected={step.buildTrackSelection} onChange={(value) => {
+                    setStep({kind: 'build_track', buildTrackSelection: value, buildTownSelection: 0, urbanizationSelection: 0});
+                }} />
+                <Button negative onClick={() => setStep({buildTrackSelection: 0, buildTownSelection: 0, urbanizationSelection: 0})}>Cancel</Button>
             </>
         } else if (step.kind === 'build_town') {
             content = <p>
-                <Button negative onClick={() => setStep({})}>Cancel</Button>
+                <p>Select town to build, then click on hex:</p>
+                <TownTrackSelector selected={step.buildTownSelection} onChange={(value) => {
+                    setStep({
+                        kind: 'build_town',
+                        buildTrackSelection: 0,
+                        buildTownSelection: value,
+                        urbanizationSelection: 0
+                    });
+                }}/>
+                <Button negative onClick={() => setStep({
+                    buildTrackSelection: 0,
+                    buildTownSelection: 0,
+                    urbanizationSelection: 0
+                })}>Cancel</Button>
             </p>
         } else if (step.kind === 'urbanize') {
             content = <p>
-                <Button negative onClick={() => setStep({})}>Cancel</Button>
+                <Button negative onClick={() => setStep({
+                    buildTrackSelection: 0,
+                    buildTownSelection: 0,
+                    urbanizationSelection: 0
+                })}>Cancel</Button>
             </p>
         } else {
             let urbanizeButton: ReactNode = undefined;
@@ -140,7 +119,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
 
             content = <>
                 <p>Select build step:</p>
-                <ButtonGroup>
+                <div>
                     <Button secondary icon onClick={() => {
                         setStep({kind: 'build_track', buildTrackSelection: 0});
                     }}><Icon name='train' /> Build Track</Button>
@@ -161,13 +140,15 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                         });
                     }}>Finish Action</Button>
                     <Button negative loading={loading} onClick={() => {
-                        setAction({
+                        let newAction: BuildAction = {
                             townPlacements: [],
                             trackPlacements: [],
                             urbanization: undefined,
-                        });
+                        };
+                        setAction(newAction);
+                        document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
                     }}>Restart Action</Button>
-                </ButtonGroup>
+                </div>
             </>;
         }
     }
