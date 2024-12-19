@@ -3,7 +3,7 @@ import {ReactNode, useContext, useEffect, useState} from "react";
 import {useParams} from "react-router";
 import {Color, Coordinate, JoinGame, LeaveGame, StartGame, User, ViewGame, ViewGameResponse} from "../api/api.ts";
 import UserSessionContext from "../UserSessionContext.tsx";
-import maps, {BasicCity, HexType} from "../map.ts"
+import maps, {BasicMap, HexType} from "../map.ts"
 
 function WaitingForPlayersPage({game, onJoin}: {game: ViewGameResponse, onJoin: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
@@ -78,12 +78,102 @@ function WaitingForStartPage({game, onStart}: {game: ViewGameResponse, onStart: 
 function colorToHtml(color: Color): string {
     switch (color) {
         case Color.NONE: return '#ffffff';
-        case Color.BLACK: return "#222222";
+        case Color.BLACK: return "#444444";
         case Color.BLUE: return '#00a2d3';
         case Color.RED: return '#d41e2d';
         case Color.PURPLE: return '#8d5a95';
         case Color.YELLOW: return '#f5ac11';
     }
+}
+
+interface CityState {
+    label: string
+    color: Color
+    darkCity: boolean
+}
+
+function coordinateToKey(coordinate: Coordinate): string {
+    return coordinate.x + "," + coordinate.y;
+}
+
+function getCityState(game: ViewGameResponse, map: BasicMap, coordinate: Coordinate): CityState|undefined {
+    if (game.gameState && game.gameState.urbanizations) {
+        for (let urb of game.gameState.urbanizations) {
+            if (urb.hex.x === coordinate.x && urb.hex.y === coordinate.y) {
+                let label: string;
+                let color: Color;
+                let darkCity: boolean;
+                switch (urb.city) {
+                    case 0:
+                        label = 'A';
+                        color = Color.RED;
+                        darkCity = false;
+                        break;
+                    case 1:
+                        label = 'B';
+                        color = Color.BLUE;
+                        darkCity = false;
+                        break;
+                    case 2:
+                        label = 'C';
+                        color = Color.BLACK;
+                        darkCity = false;
+                        break;
+                    case 3:
+                        label = 'D';
+                        color = Color.BLACK;
+                        darkCity = false;
+                        break;
+                    case 4:
+                        label = 'E';
+                        color = Color.YELLOW;
+                        darkCity = true;
+                        break;
+                    case 5:
+                        label = 'F';
+                        color = Color.PURPLE;
+                        darkCity = true;
+                        break;
+                    case 6:
+                        label = 'G';
+                        color = Color.BLACK;
+                        darkCity = true;
+                        break;
+                    case 7:
+                        label = 'H';
+                        color = Color.BLACK;
+                        darkCity = true;
+                        break;
+                }
+                return {
+                    label: label,
+                    color: color,
+                    darkCity: darkCity
+                };
+            }
+        }
+    }
+
+    for (let city of map.cities) {
+        if (city.coordinate.x === coordinate.x && city.coordinate.y === coordinate.y) {
+            let label = city.goodsGrowth.map(n => (n%6)+1).join(',');
+            let color = city.color;
+            let darkCity = false;
+            for (let goodsGrowth of city.goodsGrowth) {
+                if (goodsGrowth >= 6) {
+                    darkCity = true;
+                    break;
+                }
+            }
+            return {
+                label: label,
+                color: color,
+                darkCity: darkCity
+            };
+        }
+    }
+
+    return undefined;
 }
 
 function ViewMapPage({game, onUpdate}: {game: ViewGameResponse, onUpdate: () => Promise<void>}) {
@@ -110,22 +200,7 @@ function ViewMapPage({game, onUpdate}: {game: ViewGameResponse, onUpdate: () => 
                 continue;
             }
 
-            let city: BasicCity|undefined;
-            for (let c of map.cities) {
-                if (c.coordinate.x === x && c.coordinate.y === y) {
-                    city = c;
-                    break;
-                }
-            }
-            let darkCity = false;
-            if (city) {
-                for (let growthNumber of city.goodsGrowth) {
-                    if (growthNumber >= 6) {
-                        darkCity = true;
-                        break;
-                    }
-                }
-            }
+            let cityState: CityState|undefined = getCityState(game, map, {x: x, y: y});
 
             let color: string;
             switch (hex) {
@@ -133,7 +208,7 @@ function ViewMapPage({game, onUpdate}: {game: ViewGameResponse, onUpdate: () => 
                     color = '#579ba8';
                     break;
                 case HexType.RIVER:
-                    color = '#2e867a';
+                    color = '#537845';
                     break;
                 case HexType.PLAINS:
                     color = '#99c37b';
@@ -146,7 +221,7 @@ function ViewMapPage({game, onUpdate}: {game: ViewGameResponse, onUpdate: () => 
                     break;
                 case HexType.CITY:
                     color = '#ffffff';
-                    if (darkCity) {
+                    if (cityState && cityState.darkCity) {
                         color = '#222222';
                     }
                     break;
@@ -165,33 +240,74 @@ function ViewMapPage({game, onUpdate}: {game: ViewGameResponse, onUpdate: () => 
             if (hex == HexType.TOWN) {
                 paths.push(<circle cx={xpos+5.7735} cy={ypos+5} r={2.5} fill='#FFFFFF' onClick={onClick} />);
             } else if (hex == HexType.CITY) {
-                let city: BasicCity|undefined;
-                for (let c of map.cities) {
-                    if (c.coordinate.x === x && c.coordinate.y === y) {
-                        city = c;
-                        break;
-                    }
-                }
-                if (city) {
-                    let cityColor = colorToHtml(city.color);
+                if (cityState) {
+                    let cityColor = colorToHtml(cityState.color);
                     let strokeColor: string = '#222222';
-                    if (darkCity) {
+                    if (cityState.darkCity) {
                         strokeColor = '#ffffff';
                     }
                     let points = `${xpos + 0.8},${ypos + 5} ${xpos + 3.225},${ypos + 0.8} ${xpos + 8.075},${ypos + 0.8} ${xpos + 10.747},${ypos + 5} ${xpos + 8.075},${ypos + 9.2} ${xpos + 3.225},${ypos + 9.2}`
                     paths.push(<polygon stroke={strokeColor} strokeWidth={0.2} fill={cityColor} points={points} onClick={onClick}/>);
                     paths.push(<circle cx={xpos + 5.7735} cy={ypos + 5} r={2.5} fill='#FFFFFF' onClick={onClick}/>);
-                    paths.push(<text fontSize={2.5} x={xpos + 5.7735} y={ypos+5.3} dominant-baseline="middle" text-anchor="middle">{city.goodsGrowth
-                            .map(n => ((n%6)+1)).join(",")}</text>);
+                    paths.push(<text fontSize={2.5} x={xpos + 5.7735} y={ypos+5.3} dominant-baseline="middle" text-anchor="middle">{cityState.label}</text>);
                 }
             }
         }
     }
+
+    if (game.gameState) {
+        if (game.gameState.links) {
+            for (let link of game.gameState.links) {
+                // FIXME: Render links
+            }
+        }
+
+        if (game.gameState.cubes) {
+            let coordByKey: { [key: string]: Coordinate } = {};
+            let cubesByKey: { [key: string]: Color[] } = {};
+            for (let cube of game.gameState.cubes) {
+                let key = `${cube.hex.x},${cube.hex.y}`
+                coordByKey[key] = cube.hex;
+                if (!cubesByKey[key]) {
+                    cubesByKey[key] = [];
+                }
+                cubesByKey[key].push(cube.color);
+            }
+
+            for (let key of Object.keys(coordByKey)) {
+                let hex = coordByKey[key];
+                let cubes = cubesByKey[key];
+
+                let xpos = hex.x*17.321;
+                if ((hex.y % 2) === 1) {
+                    xpos += 8.661;
+                }
+                let ypos = hex.y*5;
+
+                // Center the xpos
+                xpos += (11.547-cubes.length*2.5+0.5)/2;
+
+                for (let i = 0; i < cubes.length; i++) {
+                    let cube = cubes[i];
+                    let points = `${xpos+i*2.5},${ypos+0.5} ${xpos+2+i*2.5},${ypos+0.5} ${xpos+2+i*2.5},${ypos+2.5} ${xpos+i*2.5},${ypos+2.5}`
+                    paths.push(<polygon stroke='#222222' strokeWidth={0.25} fill={colorToHtml(cube)} points={points} filter="url(#cube-shadow)"/>);
+                }
+            }
+        }
+    }
+
     let mapRender = <svg
         xmlns="http://www.w3.org/2000/svg"
-        width={(map.width*17.321 + 8.661)*6}
-        height={map.height*60}
-        viewBox={`0 0 ${map.width*17.321 + 8.661} ${map.height*10}`}>
+        width={(map.width * 17.321 + 8.661) * 6}
+        height={map.height * 60}
+        viewBox={`0 0 ${map.width * 17.321 + 8.661} ${map.height * 10}`}>
+        <defs>
+            <filter id="cube-shadow" width="2.5" height="2.5">
+                <feOffset in="SourceAlpha" dx="0.5" dy="0.5"/>
+                <feGaussianBlur stdDeviation="0.25"/>
+                <feBlend in="SourceGraphic" in2="blurOut"/>
+            </filter>
+        </defs>
         {paths}
     </svg>;
 

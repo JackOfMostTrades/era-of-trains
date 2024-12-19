@@ -89,7 +89,7 @@
   ],
   "startingCubes": [
     {
-      "number": 2, "coordinate": {"x": 4, "y": 11}
+      "number": 2, "coordinate": {"x": 3, "y": 11}
     },
     {
       "number": 2, "coordinate": {"x": 2, "y": 19}
@@ -101,7 +101,7 @@
       "number": 2, "coordinate": {"x": 1, "y": 14}
     },
     {
-      "number": 2, "coordinate": {"x": 1, "y": 5}
+      "number": 2, "coordinate": {"x": 0, "y": 5}
     },
     {
       "number": 2, "coordinate": {"x": 1, "y": 0}

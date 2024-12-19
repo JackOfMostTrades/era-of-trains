@@ -135,7 +135,7 @@ export interface GameState {
     // Map from color to number of cubes of that color in the bag
     cubeBag: { [ color: string ]: number }
     // Cubes present on the board
-    cubes: BoardCube[];
+    cubes?: BoardCube[];
     // Cubes present on the goods-growth chart, 1-6 white, 7-12 black, 13-20 new cities
     goodsGrowth: Color[][]
     // If cubes have been drawn for the production action, these are the cubes
@@ -153,7 +153,7 @@ export interface ViewGameResponse {
     mapName: string;
     ownerUser: User;
     joinedUsers: User[];
-    gameState: GameState;
+    gameState?: GameState;
 }
 
 export function ViewGame(req: ViewGameRequest): Promise<ViewGameResponse> {
