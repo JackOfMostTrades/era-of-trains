@@ -2,6 +2,7 @@ import {Button, Container, Grid, GridColumn, GridRow, Header, List, ListItem, Lo
 import {ReactNode, useContext, useEffect, useState} from "react";
 import {useParams} from "react-router";
 import {
+    BuildAction,
     Color,
     Coordinate,
     GamePhase,
@@ -16,6 +17,8 @@ import UserSessionContext from "../UserSessionContext.tsx";
 import maps, {BasicMap, HexType} from "../map.ts"
 import ChooseShares from "../actions/ChooseShares.tsx";
 import AuctionAction from "../actions/AuctionAction.tsx";
+import SpecialActionChooser from "../actions/SpecialActionChooser.tsx";
+import BuildActionSelector from "../actions/BuildActionSelector.tsx";
 
 function WaitingForPlayersPage({game, onJoin}: {game: ViewGameResponse, onJoin: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
@@ -185,7 +188,15 @@ function getCityState(game: ViewGameResponse, map: BasicMap, coordinate: Coordin
 }
 
 function ViewMapPage({game, onUpdate}: {game: ViewGameResponse, onUpdate: () => Promise<void>}) {
-    let [lastClick, setLastClick] = useState<Coordinate>({x: 0, y: 0});
+    let [pendingBuildAction, setPendingBuildAction] = useState<BuildAction|undefined>(undefined);
+
+    useEffect(() => {
+        const handler = (e:CustomEventInit<BuildAction>) => {
+            setPendingBuildAction(e.detail);
+        };
+        document.addEventListener('pendingBuildAction', handler);
+        return () => document.removeEventListener('pendingBuildAction', handler);
+    }, []);
 
     let map = maps[game.mapName];
     let paths: ReactNode[] = []
@@ -228,7 +239,13 @@ function ViewMapPage({game, onUpdate}: {game: ViewGameResponse, onUpdate: () => 
             }
             let ypos = y*5;
 
-            const onClick = () => setLastClick({x: x, y: y});
+            const onClick = () => {
+                let event = new CustomEvent('mapClickEvent', { detail: {
+                        x: x,
+                        y: y,
+                    }});
+                document.dispatchEvent(event);
+            }
 
             let points = `${xpos},${ypos+5} ${xpos+2.887},${ypos} ${xpos+8.661},${ypos} ${xpos+11.547},${ypos+5} ${xpos+8.661},${ypos+10} ${xpos+2.887},${ypos+10}`
             paths.push(<polygon stroke='#000000' strokeWidth={0.1} fill={color} points={points} onClick={onClick}/>);
@@ -257,6 +274,8 @@ function ViewMapPage({game, onUpdate}: {game: ViewGameResponse, onUpdate: () => 
                 // FIXME: Render links
             }
         }
+
+        // FIXME: Render pending build action
 
         if (game.gameState.cubes) {
             let coordByKey: { [key: string]: Coordinate } = {};
@@ -308,7 +327,6 @@ function ViewMapPage({game, onUpdate}: {game: ViewGameResponse, onUpdate: () => 
     </svg>;
 
     return <>
-        <p>Last click: {JSON.stringify(lastClick)}</p>
         {mapRender}
     </>
 }
@@ -351,6 +369,12 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
             break;
         case GamePhase.AUCTION:
             actionHolder = <AuctionAction game={game} onDone={onConfirmMove} />
+            break;
+        case GamePhase.CHOOSE_SPECIAL_ACTIONS:
+            actionHolder = <SpecialActionChooser game={game} onDone={onConfirmMove} />
+            break;
+        case GamePhase.BUILDING:
+            actionHolder = <BuildActionSelector game={game} onDone={onConfirmMove} />
             break;
     }
 

@@ -87,7 +87,7 @@ export enum GamePhase {
     MOVING_GOODS ,
     GOODS_GROWTH ,
 }
-enum Direction {
+export enum Direction {
     NORTH = 0,
     NORTH_EAST,
     SOUTH_EAST,
@@ -215,14 +215,14 @@ export interface TownPlacement {
 }
 
 export interface TrackPlacement {
-    tracks: Direction[][2];
+    tracks: Array<[Direction, Direction]>;
     hex: Coordinate;
 }
 
 export interface BuildAction {
     townPlacements: TownPlacement[];
     trackPlacements: TrackPlacement[];
-    urbanization: Urbanization;
+    urbanization?: Urbanization;
 }
 
 export interface MoveGoodsAction {
