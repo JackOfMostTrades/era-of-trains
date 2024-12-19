@@ -244,7 +244,7 @@ func (gameState *GameState) handleBidAction(bidAction *BidAction) error {
 		if passCount == 0 {
 			// Last player does not pay
 			cashToPay = 0
-		} else if (len(gameState.AuctionState) - passCount) >= 2 {
+		} else if (len(gameState.PlayerOrder) - passCount) >= 2 {
 			// Only two players left to pass, pay full price of the last bid
 			cashToPay = gameState.AuctionState[currentPlayer]
 		} else {
@@ -257,7 +257,19 @@ func (gameState *GameState) handleBidAction(bidAction *BidAction) error {
 		// Set auction state to pass order (-1 first to pass, -2 second to pass, etc)
 		gameState.AuctionState[currentPlayer] = (-1 * passCount) - 1
 
-		if passCount == len(gameState.AuctionState)-1 {
+		// If all but one other play has passed, that player implicitly passes since there's no one else left
+		if passCount == len(gameState.PlayerOrder)-2 {
+			// Implicitly pass the remaining player
+			for _, playerId := range gameState.PlayerOrder {
+				if bidAmount := gameState.AuctionState[playerId]; bidAmount >= 0 {
+					gameState.PlayerCash[playerId] -= bidAmount
+					gameState.AuctionState[playerId] = (-1 * passCount) - 2
+				}
+			}
+			gotoNextPhase = true
+		}
+		// FIXME: This shouldn't be reachable; it shouldn't be possible that there is only one player left who has to pass? TBD if this can be dropped
+		if passCount == len(gameState.PlayerOrder)-1 {
 			gotoNextPhase = true
 		}
 
@@ -295,12 +307,13 @@ func (gameState *GameState) handleBidAction(bidAction *BidAction) error {
 
 	if gotoNextPhase {
 		// Get the new player order from the auction state
+		gameState.PlayerOrder = gameState.PlayerOrder[:len(gameState.AuctionState)]
 		for userId, bidAmount := range gameState.AuctionState {
 			gameState.PlayerOrder[(-1*bidAmount)-1] = userId
 		}
 		// Then reset the auction state
-		for _, userId := range gameState.PlayerOrder {
-			gameState.AuctionState[userId] = 0
+		for userId := range gameState.AuctionState {
+			delete(gameState.AuctionState, userId)
 		}
 		// Set the active player to the new first player
 		gameState.ActivePlayer = gameState.PlayerOrder[0]
