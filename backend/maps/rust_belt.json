@@ -27,7 +27,7 @@
   "cities": [
     {
       "color": 2,
-      "coordinate": {"x": 4, "y": 11},
+      "coordinate": {"x": 3, "y": 11},
       "goodsGrowth": [0]
     },
     {
@@ -47,7 +47,7 @@
     },
     {
       "color": 4,
-      "coordinate": {"x": 1, "y": 5},
+      "coordinate": {"x": 0, "y": 5},
       "goodsGrowth": [4]
     },
     {

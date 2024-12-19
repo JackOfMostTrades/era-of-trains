@@ -1,16 +1,10 @@
-import {
-    Container,
-
-    Icon, Label, Loader,
-    Menu, MenuItem, MenuMenu,
-} from 'semantic-ui-react'
+import {Container, Icon, Label, Loader, Menu, MenuItem, MenuMenu,} from 'semantic-ui-react'
 import {BrowserRouter as Router, Route, Routes} from 'react-router-dom';
-import {logout, oauthSignIn, UserSessionProvider} from "./UserSessionContext.tsx";
+import UserSessionContext, {logout, oauthSignIn, UserSessionProvider} from "./UserSessionContext.tsx";
 import Home from "./pages/Home.tsx";
 import Games from "./pages/Games.tsx";
 import {NavLink} from "react-router";
 import {useContext} from "react";
-import UserSessionContext from "./UserSessionContext.tsx";
 import NewGamePage from "./pages/NewGamePage.tsx";
 import ViewGamePage from "./pages/ViewGamePage.tsx";
 
@@ -27,7 +21,7 @@ function UserMenu() {
         return <>
             <MenuItem>
                 <Label color="black">
-                    <Icon name='user' /> {userSessionContext.userInfo.User}
+                    <Icon name='user' /> {userSessionContext.userInfo.user.nickname}
                 </Label>
             </MenuItem>
             <MenuItem
@@ -70,12 +64,14 @@ function App() {
             <div>
                 <MainMenu />
 
-                <Routes>
-                    <Route path="/games/new" element={<NewGamePage />}/>
-                    <Route path="/games/:gameId" element={<ViewGamePage />}/>
-                    <Route path="/games" element={<Games />}/>
-                    <Route path="/" element={<Home />}/>
-                </Routes>
+                <Container text style={{marginTop: '7em'}}>
+                    <Routes>
+                        <Route path="/games/new" element={<NewGamePage />}/>
+                        <Route path="/games/:gameId" element={<ViewGamePage />}/>
+                        <Route path="/games" element={<Games />}/>
+                        <Route path="/" element={<Home />}/>
+                    </Routes>
+                </Container>
             </div>
         </Router>
     </UserSessionProvider>

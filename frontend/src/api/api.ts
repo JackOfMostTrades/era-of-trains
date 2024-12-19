@@ -31,7 +31,7 @@ export interface WhoAmIRequest {
 
 }
 export interface WhoAmIResponse {
-    User: string
+    user: User
 }
 
 export function WhoAmI(req: WhoAmIRequest): Promise<WhoAmIResponse> {
@@ -87,7 +87,7 @@ enum Direction {
     SOUTH_WEST,
     NORTH_WEST
 }
-enum Color {
+export enum Color {
     NONE = 0,
     BLACK,
     RED,
@@ -145,6 +145,7 @@ export interface ViewGameRequest {
     gameId: string;
 }
 export interface ViewGameResponse {
+    id: string;
     name: string;
     started: boolean;
     finished: boolean;

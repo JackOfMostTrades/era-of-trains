@@ -173,7 +173,7 @@ type JoinGameResponse struct {
 }
 
 func (server *GameServer) joinGame(ctx *RequestContext, req *JoinGameRequest) (resp *JoinGameResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT (num_players,started) FROM games WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT num_players,started FROM games WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -225,7 +225,7 @@ type LeaveGameResponse struct {
 }
 
 func (server *GameServer) leaveGame(ctx *RequestContext, req *LeaveGameRequest) (resp *LeaveGameResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT (owner_user_id,num_players,started) FROM games WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT owner_user_id,num_players,started FROM games WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -278,7 +278,7 @@ type StartGameResponse struct {
 }
 
 func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) (resp *StartGameResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT (owner_user_id,num_players,map_name,started) FROM games WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT owner_user_id,num_players,map_name,started FROM games WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -430,6 +430,7 @@ type ViewGameRequest struct {
 	GameId string `json:"gameId"`
 }
 type ViewGameResponse struct {
+	Id          string     `json:"id"`
 	Name        string     `json:"name"`
 	Started     bool       `json:"started"`
 	Finished    bool       `json:"finished"`
@@ -490,6 +491,7 @@ func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (r
 	}
 
 	res := &ViewGameResponse{
+		Id:          req.GameId,
 		Name:        name,
 		Started:     startedFlag != 0,
 		Finished:    finishedFlag != 0,

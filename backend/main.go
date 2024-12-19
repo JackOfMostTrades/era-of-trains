@@ -119,12 +119,12 @@ type WhoAmIRequest struct {
 }
 
 type WhoAmIResponse struct {
-	User string
+	User *User `json:"user"`
 }
 
 func whoami(ctx *RequestContext, req *WhoAmIRequest) (resp *WhoAmIResponse, err error) {
 	return &WhoAmIResponse{
-		User: ctx.User.Nickname,
+		User: ctx.User,
 	}, nil
 }
 

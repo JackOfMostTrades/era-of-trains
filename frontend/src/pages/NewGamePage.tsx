@@ -1,4 +1,4 @@
-import {Button, Container, Dropdown, Form, FormField, Header, Input} from "semantic-ui-react";
+import {Button, Dropdown, Form, FormField, Header, Input} from "semantic-ui-react";
 import {useNavigate} from "react-router";
 import {CreateGame, CreateGameRequest} from "../api/api.ts";
 import {useState} from "react";
@@ -12,7 +12,7 @@ function NewGamePage() {
     });
     let [loading, setLoading] = useState<boolean>(false);
 
-    return <Container text style={{marginTop: '7em'}}>
+    return <>
         <Header as='h1'>New Game</Header>
         <Form>
             <FormField>
@@ -92,7 +92,7 @@ function NewGamePage() {
                 })
             }}>Create</Button>
         </Form>
-    </Container>
+    </>
 }
 
 export default NewGamePage

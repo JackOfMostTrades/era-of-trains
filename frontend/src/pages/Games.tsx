@@ -1,6 +1,5 @@
 import {
     Button,
-    Container,
     Header,
     Loader,
     Table,
@@ -46,13 +45,13 @@ function Games() {
         </Table>;
     }
 
-    return <Container text style={{marginTop: '7em'}}>
+    return <>
         <Header as='h1'>Games</Header>
         <Link to="/games/new">
             <Button primary>Start New Game</Button>
         </Link>
         {table}
-    </Container>
+    </>
 }
 
 export default Games
