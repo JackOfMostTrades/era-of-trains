@@ -79,6 +79,14 @@ export interface Coordinate {
     x: number
     y: number
 }
+export enum GamePhase {
+    SHARES  = 1,
+    AUCTION ,
+    CHOOSE_SPECIAL_ACTIONS ,
+    BUILDING ,
+    MOVING_GOODS ,
+    GOODS_GROWTH ,
+}
 enum Direction {
     NORTH = 0,
     NORTH_EAST,
@@ -120,9 +128,9 @@ export interface GameState {
     playerCash: { [playerId: string]: number }
 
     // Map from player ID to their last bid
-    auctionState: { [playerId: string]: number }
+    auctionState?: { [playerId: string]: number }
 
-    gamePhase: number;
+    gamePhase: GamePhase;
     turnNumber: number;
 
     // Which round of moving goods are we in (0 or 1)
@@ -233,12 +241,12 @@ export interface ProduceGoodsAction {
 export interface ConfirmMoveRequest {
     gameId: string
     actionName: ActionName
-    sharesAction: SharesAction
-    bidAction: BidAction
-    chooseAction: ChooseAction
-    buildAction: BuildAction
-    moveGoodsAction: MoveGoodsAction
-    produceGoodsAction: ProduceGoodsAction
+    sharesAction?: SharesAction
+    bidAction?: BidAction
+    chooseAction?: ChooseAction
+    buildAction?: BuildAction
+    moveGoodsAction?: MoveGoodsAction
+    produceGoodsAction?: ProduceGoodsAction
 }
 export interface ConfirmMoveResponse {
 }

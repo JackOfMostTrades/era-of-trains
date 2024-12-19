@@ -77,7 +77,7 @@ type ConfirmMoveResponse struct {
 }
 
 func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveRequest) (resp *ConfirmMoveResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT (owner_user_id,num_players,map_name,started,finished,game_state) FROM games WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT owner_user_id,num_players,map_name,started,finished,game_state FROM games WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -200,6 +200,7 @@ func (gameState *GameState) handleSharesAction(sharesAction *SharesAction) error
 		return &HttpError{"cannot take more than 15 shares", http.StatusBadRequest}
 	}
 	gameState.PlayerShares[currentPlayer] = newSharesCount
+	gameState.PlayerCash[currentPlayer] += 5 * sharesAction.Amount
 
 	nextPlayerId := ""
 	for i := 0; i < len(gameState.PlayerOrder)-1; i++ {

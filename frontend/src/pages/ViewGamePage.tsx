@@ -1,9 +1,21 @@
-import {Button, Grid, GridColumn, GridRow, Header, List, ListItem, Loader} from "semantic-ui-react";
+import {Button, Container, Grid, GridColumn, GridRow, Header, List, ListItem, Loader, Segment} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import {useParams} from "react-router";
-import {Color, Coordinate, JoinGame, LeaveGame, StartGame, User, ViewGame, ViewGameResponse} from "../api/api.ts";
+import {
+    Color,
+    Coordinate,
+    GamePhase,
+    JoinGame,
+    LeaveGame,
+    StartGame,
+    User,
+    ViewGame,
+    ViewGameResponse
+} from "../api/api.ts";
 import UserSessionContext from "../UserSessionContext.tsx";
 import maps, {BasicMap, HexType} from "../map.ts"
+import ChooseShares from "../actions/ChooseShares.tsx";
+import AuctionAction from "../actions/AuctionAction.tsx";
 
 function WaitingForPlayersPage({game, onJoin}: {game: ViewGameResponse, onJoin: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
@@ -92,10 +104,6 @@ interface CityState {
     darkCity: boolean
 }
 
-function coordinateToKey(coordinate: Coordinate): string {
-    return coordinate.x + "," + coordinate.y;
-}
-
 function getCityState(game: ViewGameResponse, map: BasicMap, coordinate: Coordinate): CityState|undefined {
     if (game.gameState && game.gameState.urbanizations) {
         for (let urb of game.gameState.urbanizations) {
@@ -177,19 +185,7 @@ function getCityState(game: ViewGameResponse, map: BasicMap, coordinate: Coordin
 }
 
 function ViewMapPage({game, onUpdate}: {game: ViewGameResponse, onUpdate: () => Promise<void>}) {
-    let userSession = useContext(UserSessionContext);
     let [lastClick, setLastClick] = useState<Coordinate>({x: 0, y: 0});
-    let activePlayer: User|undefined;
-    for (let player of game.joinedUsers) {
-        if (player.id === game.gameState.activePlayer) {
-            activePlayer = player;
-            break;
-        }
-    }
-    let myTurn = false;
-    if (activePlayer && userSession.userInfo?.user.id === activePlayer.id) {
-        myTurn = true;
-    }
 
     let map = maps[game.mapName];
     let paths: ReactNode[] = []
@@ -249,7 +245,7 @@ function ViewMapPage({game, onUpdate}: {game: ViewGameResponse, onUpdate: () => 
                     let points = `${xpos + 0.8},${ypos + 5} ${xpos + 3.225},${ypos + 0.8} ${xpos + 8.075},${ypos + 0.8} ${xpos + 10.747},${ypos + 5} ${xpos + 8.075},${ypos + 9.2} ${xpos + 3.225},${ypos + 9.2}`
                     paths.push(<polygon stroke={strokeColor} strokeWidth={0.2} fill={cityColor} points={points} onClick={onClick}/>);
                     paths.push(<circle cx={xpos + 5.7735} cy={ypos + 5} r={2.5} fill='#FFFFFF' onClick={onClick}/>);
-                    paths.push(<text fontSize={2.5} x={xpos + 5.7735} y={ypos+5.3} dominant-baseline="middle" text-anchor="middle">{cityState.label}</text>);
+                    paths.push(<text fontSize={2.5} x={xpos + 5.7735} y={ypos+5.3} dominantBaseline="middle" textAnchor="middle">{cityState.label}</text>);
                 }
             }
         }
@@ -312,9 +308,69 @@ function ViewMapPage({game, onUpdate}: {game: ViewGameResponse, onUpdate: () => 
     </svg>;
 
     return <>
-        <p>Active player: {activePlayer?.nickname}</p>
         <p>Last click: {JSON.stringify(lastClick)}</p>
         {mapRender}
+    </>
+}
+
+function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfirmMove: () => Promise<void>}) {
+    const userSession = useContext(UserSessionContext);
+
+    if (!game.gameState) {
+        return null;
+    }
+
+    let playerById: { [id: string]: User } = {};
+    for (let player of game.joinedUsers) {
+        playerById[player.id] = player;
+    }
+    let playerOrder: string[] = [];
+    for (let playerId of game.gameState.playerOrder) {
+        let player = playerById[playerId];
+        playerOrder.push(player.nickname);
+    }
+
+    let playerColumns: ReactNode[] = [];
+    for (let player of game.joinedUsers) {
+        playerColumns.push(<GridColumn>
+            <Segment>
+                Player: {player.nickname}<br/>
+                Cash: ${game.gameState.playerCash[player.id]}<br/>
+                Shares: {game.gameState.playerShares[player.id]}<br/>
+                Income: {game.gameState.playerIncome[player.id]}<br/>
+                Loco: {game.gameState.playerLoco[player.id]}<br/>
+                Special Action: {game.gameState.playerActions[player.id]}<br/>
+            </Segment>
+        </GridColumn>);
+    }
+
+    let actionHolder: ReactNode;
+    switch (game.gameState.gamePhase) {
+        case GamePhase.SHARES:
+            actionHolder = <ChooseShares game={game} onDone={onConfirmMove} />
+            break;
+        case GamePhase.AUCTION:
+            actionHolder = <AuctionAction game={game} onDone={onConfirmMove} />
+            break;
+    }
+
+    return <>
+        <Grid>
+            <GridRow columns="equal">
+                {playerColumns}
+            </GridRow>
+        </Grid>
+        <Container>
+            <Segment>
+                Player order: {playerOrder.join(", ")}<br/>
+                Active player: {playerById[game.gameState.activePlayer].nickname}<br/>
+                Game Phase: {game.gameState.gamePhase}<br/>
+                Turn: {game.gameState.turnNumber}<br/>
+            </Segment>
+            <Segment>
+                {actionHolder}
+            </Segment>
+        </Container>
     </>
 }
 
@@ -351,7 +407,10 @@ function ViewGamePage() {
             content = <WaitingForStartPage game={game} onStart={() => reload()}/>
         }
     } else {
-        content = <ViewMapPage game={game} onUpdate={() => reload()}/>
+        content = <>
+            <PlayerStatus game={game} onConfirmMove={() => reload()}/>
+            <ViewMapPage game={game} onUpdate={() => reload()}/>
+        </>
     }
 
     return <>

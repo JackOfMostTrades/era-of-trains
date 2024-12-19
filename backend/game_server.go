@@ -340,7 +340,7 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 		PlayerIncome:     make(map[string]int),
 		PlayerActions:    make(map[string]SpecialAction),
 		PlayerCash:       make(map[string]int),
-		AuctionState:     nil,
+		AuctionState:     make(map[string]int),
 		GamePhase:        SHARES_GAME_PHASE,
 		TurnNumber:       1,
 		MovingGoodsRound: 0,
