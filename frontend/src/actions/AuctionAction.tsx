@@ -49,40 +49,35 @@ function AuctionAction({game, onDone}: {game: ViewGameResponse, onDone: () => Pr
             })
         }
 
+        const doBid = (val: number) => {
+            setLoading(true);
+            ConfirmMove({
+                gameId: game.id,
+                actionName: "bid",
+                bidAction: {
+                    amount: val,
+                }
+            }).then(() => {
+                return onDone();
+            }).finally(() => {
+                setLoading(false);
+            });
+        }
+
+        let turnOrderPassButton: ReactNode;
+        if (game.gameState.playerActions[game.gameState.activePlayer] === 'turn_order_pass') {
+            turnOrderPassButton = <><Button secondary loading={loading} onClick={() => doBid(0)} /><br/></>
+        }
+
         content = <>
             <p>Choose your bid: </p>
             <Dropdown selection
                       value={amount}
                       onChange={(_, {value}) => setAmount(value as number)}
                       options={options}/><br/>
-            <Button primary loading={loading} onClick={() => {
-                setLoading(true);
-                ConfirmMove({
-                    gameId: game.id,
-                    actionName: "bid",
-                    bidAction: {
-                        amount: amount,
-                    }
-                }).then(() => {
-                    return onDone();
-                }).finally(() => {
-                    setLoading(false);
-                })
-            }}>Bid</Button><br/>
-            <Button secondary loading={loading} onClick={() => {
-                setLoading(true);
-                ConfirmMove({
-                    gameId: game.id,
-                    actionName: "bid",
-                    bidAction: {
-                        amount: -1,
-                    }
-                }).then(() => {
-                    return onDone();
-                }).finally(() => {
-                    setLoading(false);
-                })
-            }}>Pass</Button>
+            <Button primary loading={loading} onClick={() => doBid(amount)}>Bid</Button><br/>
+            {turnOrderPassButton}
+            <Button negative loading={loading} onClick={() => doBid(-1)}>Pass</Button>
         </>;
     }
 
