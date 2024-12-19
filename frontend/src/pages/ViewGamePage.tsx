@@ -9,6 +9,8 @@ import SpecialActionChooser from "../actions/SpecialActionChooser.tsx";
 import BuildActionSelector from "../actions/BuildActionSelector.tsx";
 import ViewMapComponent from "./ViewMapComponent.tsx";
 import MoveGoodsActionSelector from "../actions/MoveGoodsActionSelector.tsx";
+import GoodsGrowthTable from "./GoodsGrowthTable.tsx";
+import ProductionAction from "../actions/ProductionAction.tsx";
 
 function WaitingForPlayersPage({game, onJoin}: {game: ViewGameResponse, onJoin: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
@@ -126,6 +128,9 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
         case GamePhase.MOVING_GOODS:
             actionHolder = <MoveGoodsActionSelector game={game} onDone={onConfirmMove} />
             break;
+        case GamePhase.GOODS_GROWTH:
+            actionHolder = <ProductionAction game={game} onDone={onConfirmMove} />
+            break;
     }
 
     return <>
@@ -183,6 +188,7 @@ function ViewGamePage() {
     } else {
         content = <>
             <PlayerStatus game={game} onConfirmMove={() => reload()}/>
+            <GoodsGrowthTable game={game} />
             <ViewMapComponent game={game} onUpdate={() => reload()}/>
         </>
     }

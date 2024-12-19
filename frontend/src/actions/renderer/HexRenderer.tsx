@@ -2,7 +2,7 @@ import {Color, Coordinate, Direction} from "../../api/api.ts";
 import {HexType} from "../../map.ts";
 import {ReactNode} from "react";
 
-function colorToHtml(color: Color): string {
+export function colorToHtml(color: Color): string {
     switch (color) {
         case Color.NONE: return '#ffffff';
         case Color.BLACK: return "#444444";
@@ -306,8 +306,8 @@ export class HexRenderer {
         if (height == 1) {
             pixelHeight = 10;
         } else {
-            pixelHeight = height * 10;
-            if ((pixelHeight % 2) === 0) {
+            pixelHeight = (height+1)/2 * 10;
+            if ((height % 2) == 0) {
                 pixelHeight += 5;
             }
         }
