@@ -1,5 +1,5 @@
 import {ConfirmMove, Coordinate, ProduceGoodsAction, User, ViewGameResponse} from "../api/api.ts";
-import {Button, Grid, GridColumn, GridRow, Header, List} from "semantic-ui-react";
+import {Button, Grid, GridColumn, GridRow, Header} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
 import {colorToHtml} from "./renderer/HexRenderer.tsx";
@@ -16,7 +16,7 @@ function toCityLabel(n: number): string {
 
 function ProductionAction({game, onDone}: {game: ViewGameResponse, onDone: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
-    let [action, setAction] = useState<ProduceGoodsAction>({destination: []});
+    let [action, setAction] = useState<ProduceGoodsAction>({destinations: []});
     let [loading, setLoading] = useState<boolean>(false);
 
     if (!game.gameState || !game.gameState.productionCubes) {
@@ -25,10 +25,10 @@ function ProductionAction({game, onDone}: {game: ViewGameResponse, onDone: () =>
 
     useEffect(() => {
         const handler = (e:CustomEventInit<Coordinate>) => {
-            if (e.detail && action.destination.length < game.gameState.productionCubes.length) {
+            if (e.detail && action.destinations.length < game.gameState.productionCubes.length) {
                 let newAction = Object.assign({}, action);
-                newAction.destination = newAction.destination.slice();
-                newAction.destination.push(e.detail);
+                newAction.destinations = newAction.destinations.slice();
+                newAction.destinations.push(e.detail);
                 setAction(newAction);
             }
         };
@@ -54,16 +54,17 @@ function ProductionAction({game, onDone}: {game: ViewGameResponse, onDone: () =>
             <Grid>
                 <GridRow columns="equal">
                     <GridColumn>
-                        <div className="cubeSpot"><div className="cube" color={colorToHtml(game.gameState.productionCubes[0])}/></div>
-                        {action.destination.length >= 1 ? <p>Placing on {toCityLabel(action.destination[0].x)} in spot {action.destination[0].y+1}.</p> : null}
+                        <div className="cubeSpot"><div className="cube" style={{background: colorToHtml(game.gameState.productionCubes[0])}}/></div>
+                        {action.destinations.length >= 1 ? <p>Placing on {toCityLabel(action.destinations[0].x)} in spot {action.destinations[0].y+1}.</p> : null}
                     </GridColumn>
                     <GridColumn>
-                        <div className="cubeSpot"><div className="cube" color={colorToHtml(game.gameState.productionCubes[1])}/></div>
-                        {action.destination.length >= 2 ? <p>Placing on {toCityLabel(action.destination[1].x)} in spot {action.destination[1].y+1}.</p> : null}
+                        <div className="cubeSpot"><div className="cube" style={{background: colorToHtml(game.gameState.productionCubes[1])}}/></div>
+                        {action.destinations.length >= 2 ? <p>Placing on {toCityLabel(action.destinations[1].x)} in spot {action.destinations[1].y+1}.</p> : null}
                     </GridColumn>
                 </GridRow>
             </Grid>
-            <Button primary disabled={action.destination.length < game.gameState.productionCubes.length} loading={loading} onClick={() => {
+            <br/>
+            <Button primary disabled={action.destinations.length < game.gameState.productionCubes.length} loading={loading} onClick={() => {
                 setLoading(true);
                 ConfirmMove({
                     gameId: game.id,
@@ -74,14 +75,13 @@ function ProductionAction({game, onDone}: {game: ViewGameResponse, onDone: () =>
                 }).finally(() => {
                     setLoading(false);
                 });
-            }}>Confirm</Button><br/>
-            <Button negative onClick={() => setAction({destination: []})}>Restart</Button>
+            }}>Confirm</Button>
+            <Button negative onClick={() => setAction({destinations: []})}>Restart</Button>
         </>;
     }
 
     return <>
-        <Header as='h2'>Auction</Header>
-        <List>{currentBids}</List>
+        <Header as='h2'>Goods Growth</Header>
         {content}
     </>
 }

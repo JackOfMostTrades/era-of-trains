@@ -235,7 +235,7 @@ export interface MoveGoodsAction {
 export interface ProduceGoodsAction {
     // List (corresponding the cubes in the same order as ProductionCubes in the game state) with X,Y coordinates
     // corresponding to which city (X) and which spot (Y) within that city
-    destination: Coordinate[];
+    destinations: Coordinate[];
 }
 
 export interface ConfirmMoveRequest {

@@ -2,7 +2,13 @@ import {BuildAction, ConfirmMove, Coordinate, User, ViewGameResponse} from "../a
 import {Button, Header, Icon} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
-import {getTownRoutesFromId, getTrackRoutesFromId, TownTrackSelector, TrackSelector} from "./TrackSelector.tsx";
+import {
+    getTownRoutesFromId,
+    getTrackRoutesFromId,
+    NewCitySelector,
+    TownTrackSelector,
+    TrackSelector
+} from "./TrackSelector.tsx";
 
 interface Step {
     kind?: 'build_track' | 'build_town' | 'urbanize';
@@ -24,7 +30,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
     useEffect(() => {
         const handler = (e:CustomEventInit<Coordinate>) => {
             if (e.detail) {
-                if (step.kind === 'build_track' && step.buildTrackSelection) {
+                if (step.kind === 'build_track') {
                     let newAction = Object.assign({}, action);
                     newAction.trackPlacements.push({
                         tracks: getTrackRoutesFromId(step.buildTrackSelection),
@@ -34,7 +40,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                     setAction(newAction);
                     document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
                 }
-                if (step.kind === 'build_town' && step.buildTownSelection) {
+                if (step.kind === 'build_town') {
                     let newAction = Object.assign({}, action);
                     newAction.townPlacements.push({
                         tracks: getTownRoutesFromId(step.buildTownSelection),
@@ -44,7 +50,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                     setAction(newAction);
                     document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
                 }
-                if (step.kind === 'urbanize' && step.urbanizationSelection !== undefined) {
+                if (step.kind === 'urbanize') {
                     let newAction = Object.assign({}, action);
                     newAction.urbanization = {
                         city: step.urbanizationSelection,
@@ -103,6 +109,15 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
             </p>
         } else if (step.kind === 'urbanize') {
             content = <p>
+                <p>Select new city to build, then click on hex:</p>
+                <NewCitySelector selected={step.urbanizationSelection} onChange={(value) => {
+                    setStep({
+                        kind: 'urbanize',
+                        buildTrackSelection: 0,
+                        buildTownSelection: 0,
+                        urbanizationSelection: value
+                    });
+                }}/>
                 <Button negative onClick={() => setStep({
                     buildTrackSelection: 0,
                     buildTownSelection: 0,
@@ -113,7 +128,9 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
             let urbanizeButton: ReactNode = undefined;
             if (game.gameState.playerActions[game.gameState.activePlayer] === 'urbanization') {
                 urbanizeButton = <>
-                    <Button secondary disabled={!!action.urbanization}>Urbanize</Button>
+                    <Button secondary disabled={!!action.urbanization} icon onClick={() => {
+                        setStep({kind: 'urbanize', buildTrackSelection: 0, buildTownSelection: 0, urbanizationSelection: 0});
+                    }}><Icon name="home" /> Urbanize</Button>
                 </>
             }
 
