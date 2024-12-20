@@ -79,7 +79,6 @@ type ConfirmMoveResponse struct {
 }
 
 type confirmMoveHandler struct {
-	server         *GameServer
 	theMap         *BasicMap
 	gameState      *GameState
 	logs           []string
@@ -88,7 +87,6 @@ type confirmMoveHandler struct {
 
 func newConfirmMoveHandler(server *GameServer, gameId string, theMap *BasicMap, gameState *GameState) (*confirmMoveHandler, error) {
 	handler := &confirmMoveHandler{
-		server:         server,
 		theMap:         theMap,
 		gameState:      gameState,
 		playerIdToNick: make(map[string]string),
@@ -403,7 +401,8 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 		// Get the new player order from the auction state
 		gameState.PlayerOrder = gameState.PlayerOrder[:len(gameState.AuctionState)]
 		for userId, bidAmount := range gameState.AuctionState {
-			gameState.PlayerOrder[(-1*bidAmount)-1] = userId
+			// bidAmount of -1 should be first from end, bidAmount of -2 next from end, etc
+			gameState.PlayerOrder[len(gameState.AuctionState)+bidAmount] = userId
 		}
 		// Then reset the auction state
 		for userId := range gameState.AuctionState {

@@ -277,7 +277,7 @@ export interface GetGameLogsRequest {
     gameId: string;
 }
 export interface GetGameLogsResponse {
-    logs: GameLogEntry[];
+    logs?: GameLogEntry[];
 }
 export function GetGameLogs(req: GetGameLogsRequest): Promise<GetGameLogsResponse> {
     return doApiCall('/api/getGameLogs', req);

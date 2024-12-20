@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {GetGameLogs, GetGameLogsResponse} from "../api/api.ts";
-import {Loader, Segment, TextArea} from "semantic-ui-react";
+import {Header, Loader, Segment, TextArea} from "semantic-ui-react";
 
 function GameLogsComponent({ gameId, reloadTime }: {gameId: string, reloadTime: number}) {
     let [gameLogs, setGameLogs] = useState<GetGameLogsResponse|undefined>(undefined);
@@ -11,9 +11,10 @@ function GameLogsComponent({ gameId, reloadTime }: {gameId: string, reloadTime: 
     }, [gameId, reloadTime]);
 
     return <Segment>
+        <Header as='h2'>Logs</Header>
         {gameLogs === undefined ? <Loader active /> :
             <TextArea readOnly disabled style={{width: "100%", height: "30em"}} value={
-                gameLogs.logs.map(entry => `[${entry.timestamp}] (${entry.userId}) ${entry.description}`)
+                gameLogs.logs?.map(entry => `[${entry.timestamp}] (${entry.userId}) ${entry.description}`)
                     .join("\n")} />
         }
     </Segment>

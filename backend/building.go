@@ -311,7 +311,6 @@ func newBuildActionPerformer(theMap *BasicMap, gameState *GameState) *buildActio
 
 func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) error {
 
-	performer := newBuildActionPerformer(handler.theMap, handler.gameState)
 	gameState := handler.gameState
 
 	// First handle urbanization
@@ -339,6 +338,8 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 		handler.Log("%s urbanizes new city %c on hex (%d,%d)",
 			handler.ActivePlayerNick(), 'A'+buildAction.Urbanization.City, buildAction.Urbanization.Hex.X, buildAction.Urbanization.Hex.Y)
 	}
+
+	performer := newBuildActionPerformer(handler.theMap, handler.gameState)
 
 	// For each placement...
 	//   If it is a town...
