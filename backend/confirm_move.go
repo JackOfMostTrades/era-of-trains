@@ -645,6 +645,10 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 		handler.Log("%s delivered a %s good cube from (%d,%d)",
 			handler.ActivePlayerNick(), moveGoodsAction.Color.String(), moveGoodsAction.StartingLocation.X, moveGoodsAction.StartingLocation.Y)
 
+		if len(moveGoodsAction.Path) > gameState.PlayerLoco[gameState.ActivePlayer] {
+			return &HttpError{"cannot move good further than current loca", http.StatusBadRequest}
+		}
+
 		loc := moveGoodsAction.StartingLocation
 		for idx, step := range moveGoodsAction.Path {
 			if _, ok := deliveryGraph.hexToDirectionToLink[loc]; !ok {
