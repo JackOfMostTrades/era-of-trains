@@ -139,6 +139,14 @@ function ViewMapComponent({game, onUpdate}: {game: ViewGameResponse, onUpdate: (
                     }
                 }
 
+                // Render the last step in a completed link to a city
+                hex = applyDirection(hex, link.steps[link.steps.length-1]);
+                if (link.complete && map.hexes[hex.y][hex.x] === HexType.TOWN) {
+                    let cityState = getCityState(game, map, hex);
+                    if (!cityState) {
+                        renderer.renderTownTrack(hex, oppositeDirection(link.steps[link.steps.length - 1]), link.owner);
+                    }
+                }
             }
         }
 

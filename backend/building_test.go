@@ -274,3 +274,66 @@ func TestUrbanizeAndConnect(t *testing.T) {
 	assert.Equal(t, Coordinate{X: 0, Y: 0}, link.SourceHex)
 	assert.Equal(t, []Direction{SOUTH_EAST, NORTH_EAST}, link.Steps)
 }
+
+func TestBuildThroughTown(t *testing.T) {
+	playerId := "player1"
+	theMap := &BasicMap{
+		Width:  3,
+		Height: 2,
+		Hexes: [][]HexType{
+			{CITY_HEX_TYPE, TOWN_HEX_TYPE, CITY_HEX_TYPE},
+			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+		},
+		Cities: []BasicCity{
+			BasicCity{
+				Color:      PURPLE,
+				Coordinate: Coordinate{X: 0, Y: 0},
+			},
+			BasicCity{
+				Color:      PURPLE,
+				Coordinate: Coordinate{X: 2, Y: 0},
+			},
+		},
+	}
+	gameState := &GameState{
+		GamePhase:    BUILDING_GAME_PHASE,
+		ActivePlayer: playerId,
+		PlayerCash:   map[string]int{playerId: 10},
+	}
+
+	handler := &confirmMoveHandler{
+		theMap:    theMap,
+		gameState: gameState,
+	}
+	err := handler.performBuildAction(&BuildAction{
+		TownPlacements: []*TownPlacement{
+			{
+				Tracks: []Direction{SOUTH_WEST, SOUTH_EAST},
+				Hex:    Coordinate{X: 1, Y: 0},
+			},
+		},
+		TrackPlacements: []*TrackPlacement{
+			{
+				Tracks: [][2]Direction{{NORTH_WEST, NORTH_EAST}},
+				Hex:    Coordinate{X: 0, Y: 1},
+			},
+			{
+				Tracks: [][2]Direction{{NORTH_WEST, NORTH_EAST}},
+				Hex:    Coordinate{X: 1, Y: 1},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, 2, len(gameState.Links))
+	link := gameState.Links[0]
+	assert.Equal(t, true, link.Complete)
+	assert.Equal(t, playerId, link.Owner)
+	assert.Equal(t, Coordinate{X: 0, Y: 0}, link.SourceHex)
+	assert.Equal(t, []Direction{SOUTH_EAST, NORTH_EAST}, link.Steps)
+	link = gameState.Links[1]
+	assert.Equal(t, true, link.Complete)
+	assert.Equal(t, playerId, link.Owner)
+	assert.Equal(t, Coordinate{X: 1, Y: 0}, link.SourceHex)
+	assert.Equal(t, []Direction{SOUTH_EAST, NORTH_EAST}, link.Steps)
+}
