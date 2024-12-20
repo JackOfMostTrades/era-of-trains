@@ -66,16 +66,18 @@ function GoodsGrowthTable({ game }: {game: ViewGameResponse}) {
         tableRows.push(<TableRow key={i+5}><TableCell/><TableCell/>{cells}<TableCell/><TableCell/></TableRow>);
     }
     
-    return <Segment>
-        <div style={{overflowX: "scroll"}}>
-            <Header as='h2'>Goods Growth</Header>
-            <Table celled unstackable>
-                <TableBody>
-                    {tableRows}
-                </TableBody>
-            </Table>
-        </div>
-    </Segment>
+    return <div style={{maxWidth: "723px", margin: "auto"}}>
+        <Segment>
+            <div style={{overflowX: "scroll"}}>
+                <Header as='h2'>Goods Growth</Header>
+                <Table celled unstackable>
+                    <TableBody>
+                        {tableRows}
+                    </TableBody>
+                </Table>
+            </div>
+        </Segment>
+    </div>
 }
 
 export default GoodsGrowthTable

@@ -1,12 +1,27 @@
 import {ReactNode, useEffect, useState} from "react";
 import {GameLogEntry, GetGameLogs, GetGameLogsResponse, User, ViewGameResponse} from "../api/api.ts";
-import {Header, Loader, Segment, TextArea} from "semantic-ui-react";
+import {
+    Container,
+    Header,
+    Loader,
+    Segment,
+    Table,
+    TableBody,
+    TableCell,
+    TableHeader,
+    TableHeaderCell,
+    TableRow,
+} from "semantic-ui-react";
 
-function renderLogText(playerById: { [playerId: string]: User }, entry: GameLogEntry): string {
+function LogRow({playerById, entry}: {playerById: { [playerId: string]: User }, entry: GameLogEntry}) {
     let nick = playerById[entry.userId].nickname;
     let ts = new Date(entry.timestamp*1000).toLocaleString();
 
-    return `[${ts}] (${nick}) ${entry.description}\`)`;
+    return <TableRow>
+        <TableCell>{ts}</TableCell>
+        <TableCell>{nick}</TableCell>
+        <TableCell><div style={{whiteSpace: "pre-line"}}>{entry.description}</div></TableCell>
+    </TableRow>
 }
 
 function GameLogsComponent({ gameId, game, reloadTime }: {gameId: string, game: ViewGameResponse, reloadTime: number}) {
@@ -26,8 +41,29 @@ function GameLogsComponent({ gameId, game, reloadTime }: {gameId: string, game: 
             playerById[player.id] = player;
         }
 
-        content = <TextArea readOnly disabled style={{width: "100%", height: "30em"}} value={
-            gameLogs.logs?.map(entry => renderLogText(playerById, entry)).join("\n")} />
+        let entries: ReactNode[] = [];
+        if (gameLogs.logs) {
+            for (let idx = gameLogs.logs.length-1; idx >= 0; idx--) {
+                entries.push(<LogRow key={idx} playerById={playerById} entry={gameLogs.logs[idx]} />);
+            }
+        }
+
+        content = <Container>
+                <div style={{height: "30em", overflowY: "scroll"}}>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHeaderCell>When</TableHeaderCell>
+                                <TableHeaderCell>Who</TableHeaderCell>
+                                <TableHeaderCell>What</TableHeaderCell>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {entries}
+                        </TableBody>
+                    </Table>
+                </div>
+            </Container>
     }
 
     return <Segment>

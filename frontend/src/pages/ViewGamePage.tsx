@@ -1,4 +1,4 @@
-import {Button, Container, Header, List, ListItem, Loader, Segment, SegmentGroup} from "semantic-ui-react";
+import {Button, Header, List, ListItem, Loader, Segment, SegmentGroup} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import {useParams} from "react-router";
 import {GamePhase, JoinGame, LeaveGame, StartGame, User, ViewGame, ViewGameResponse} from "../api/api.ts";
@@ -146,18 +146,16 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
                 {playerColumns}
             </SegmentGroup>
         </Segment>
-        <Container>
-            <Segment>
-                <Header as='h2'>Game Status</Header>
-                Player order: {playerOrder.join(", ")}<br/>
-                Active player: {playerById[game.gameState.activePlayer].nickname}<br/>
-                Game Phase: {game.gameState.gamePhase}<br/>
-                Turn: {game.gameState.turnNumber}<br/>
-            </Segment>
-            <Segment>
-                {actionHolder}
-            </Segment>
-        </Container>
+        <Segment>
+            <Header as='h2'>Game Status</Header>
+            Player order: {playerOrder.join(", ")}<br/>
+            Active player: {playerById[game.gameState.activePlayer].nickname}<br/>
+            Game Phase: {game.gameState.gamePhase}<br/>
+            Turn: {game.gameState.turnNumber}<br/>
+        </Segment>
+        <Segment>
+            {actionHolder}
+        </Segment>
     </>
 }
 

@@ -1,7 +1,7 @@
 import {Coordinate, GameState, User, ViewGameResponse} from "../api/api.ts";
 import maps, {BasicMap} from "../map.ts";
 import {applyDirection} from "../util.ts";
-import {Header, List, ListItem, Segment} from "semantic-ui-react";
+import {Header, List, ListItem} from "semantic-ui-react";
 
 function isCity(gameState: GameState, map: BasicMap, hex: Coordinate): boolean {
     for (let urb of gameState.urbanizations) {
@@ -60,14 +60,14 @@ function FinalScore({game}: {game: ViewGameResponse}) {
         return scores[b] - scores[a];
     });
 
-    return <Segment>
+    return <>
         <Header as='h2'>Final Scores</Header>
         <List>
             {playerIds.map(playerId => {
                 return <ListItem>{playersById[playerId].nickname}: {scores[playerId]}</ListItem>
             })}
         </List>
-    </Segment>
+    </>
 }
 
 export default FinalScore
