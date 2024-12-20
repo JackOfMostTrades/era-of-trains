@@ -1,4 +1,4 @@
-import {Button, Container, Grid, GridColumn, GridRow, Header, List, ListItem, Loader, Segment} from "semantic-ui-react";
+import {Button, Container, Header, List, ListItem, Loader, Segment, SegmentGroup} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import {useParams} from "react-router";
 import {GamePhase, JoinGame, LeaveGame, StartGame, User, ViewGame, ViewGameResponse} from "../api/api.ts";
@@ -103,16 +103,14 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
     let playerColumns: ReactNode[] = [];
     for (let player of game.joinedUsers) {
         let playerColorHtml = playerColorToHtml(game.gameState.playerColor[player.id]);
-        playerColumns.push(<GridColumn key={player.id}>
-            <Segment>
+        playerColumns.push(<Segment key={player.id}>
                 Player: <div style={{height: '1em', width: '1em', borderRadius: '50%', display: 'inline-block', backgroundColor: playerColorHtml}} /> {player.nickname}<br/>
                 Cash: ${game.gameState.playerCash[player.id]}<br/>
                 Shares: {game.gameState.playerShares[player.id]}<br/>
                 Income: {game.gameState.playerIncome[player.id]}<br/>
                 Loco: {game.gameState.playerLoco[player.id]}<br/>
                 Special Action: {game.gameState.playerActions[player.id]}<br/>
-            </Segment>
-        </GridColumn>);
+            </Segment>);
     }
 
     let actionHolder: ReactNode;
@@ -142,13 +140,15 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
     }
 
     return <>
-        <Grid>
-            <GridRow columns="equal">
+        <Segment>
+            <Header as='h2'>Player Info</Header>
+            <SegmentGroup horizontal>
                 {playerColumns}
-            </GridRow>
-        </Grid>
+            </SegmentGroup>
+        </Segment>
         <Container>
             <Segment>
+                <Header as='h2'>Game Status</Header>
                 Player order: {playerOrder.join(", ")}<br/>
                 Active player: {playerById[game.gameState.activePlayer].nickname}<br/>
                 Game Phase: {game.gameState.gamePhase}<br/>
@@ -198,28 +198,20 @@ function ViewGamePage() {
     } else {
         content = <>
             <PlayerStatus game={game} onConfirmMove={() => reload()}/>
-            <GoodsGrowthTable game={game} />
             <ViewMapComponent game={game} />
-            <GameLogsComponent gameId={game.id} reloadTime={reloadTime} />
+            <GoodsGrowthTable game={game} />
+            <GameLogsComponent gameId={game.id} game={game} reloadTime={reloadTime} />
         </>
     }
 
     return <>
         <Header as='h1'>Game: {game.name}</Header>
-        <Grid columns="equal">
-            <GridRow>
-                <GridColumn>Map</GridColumn>
-                <GridColumn>{game.mapName}</GridColumn>
-            </GridRow>
-            <GridRow>
-                <GridColumn>Player Count</GridColumn>
-                <GridColumn>{game.numPlayers}</GridColumn>
-            </GridRow>
-            <GridRow>
-                <GridColumn>Table Owner</GridColumn>
-                <GridColumn>{game.ownerUser.nickname}</GridColumn>
-            </GridRow>
-        </Grid>
+        <Segment>
+            <Header as='h2'>Table Info</Header>
+            Map: {game.mapName}<br/>
+            Player Count: {game.numPlayers}<br/>
+            Table Owner: {game.ownerUser.nickname}<br/>
+        </Segment>
         {content}
     </>
 }

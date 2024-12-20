@@ -67,12 +67,14 @@ function GoodsGrowthTable({ game }: {game: ViewGameResponse}) {
     }
     
     return <Segment>
-        <Header as='h2'>Goods Growth</Header>
-        <Table celled>
-            <TableBody>
-                {tableRows}
-            </TableBody>
-        </Table>
+        <div style={{overflowX: "scroll"}}>
+            <Header as='h2'>Goods Growth</Header>
+            <Table celled unstackable>
+                <TableBody>
+                    {tableRows}
+                </TableBody>
+            </Table>
+        </div>
     </Segment>
 }
 

@@ -1,7 +1,7 @@
-import {Header, List, ListItem} from "semantic-ui-react";
+import {Container, Header, List, ListItem} from "semantic-ui-react";
 
 function Home() {
-    return <>
+    return <Container text>
         <Header as='h1'>Era of Trains</Header>
         <p>Currently only available by invitation.</p>
         <Header as='h2'>Known Issues</Header>
@@ -9,7 +9,7 @@ function Home() {
             <ListItem>Component limits are not enforced (town markers, number of tiles, etc.)</ListItem>
             <ListItem>Bankrupt players do not get eliminated (they just go into negative income)</ListItem>
         </List>
-    </>
+    </Container>
 }
 
 export default Home

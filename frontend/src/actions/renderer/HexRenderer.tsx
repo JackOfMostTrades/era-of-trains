@@ -342,8 +342,6 @@ export class HexRenderer {
 
         return <svg
             xmlns="http://www.w3.org/2000/svg"
-            width={pixelWidth * 6}
-            height={pixelHeight * 6}
             viewBox={`0 0 ${pixelWidth} ${pixelHeight}`}>
             <defs>
                 <filter id="cube-shadow" width="2.5" height="2.5">

@@ -71,7 +71,7 @@ function App() {
                 <div>
                     <MainMenu />
 
-                    <Container text style={{marginTop: '7em'}}>
+                    <Container style={{marginTop: '7em'}}>
                         <ErrorDisplay />
                         <Routes>
                             <Route path="/games/new" element={<NewGamePage />}/>

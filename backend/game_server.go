@@ -87,9 +87,35 @@ func (server *GameServer) login(ctx *RequestContext, req *LoginRequest) (resp *L
 	err = row.Scan(&userId)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &HttpError{fmt.Sprintf("google user is not registered (%s / %s)", googleUserId, userInfoResponse.Email), http.StatusPreconditionFailed}
+			// Fallback to finding a user row with matching email and no user ID
+			stmt, err := server.db.Prepare("SELECT id FROM users WHERE email=? AND google_user_id IS NULL")
+			if err != nil {
+				if err != nil {
+					return nil, fmt.Errorf("failed to excute statement: %v", err)
+				}
+			}
+			defer stmt.Close()
+			row = stmt.QueryRow(userInfoResponse.Email)
+			err = row.Scan(&userId)
+			if err != nil && err != sql.ErrNoRows {
+				if err != sql.ErrNoRows {
+					return nil, fmt.Errorf("failed to excute statement: %v", err)
+				}
+				return nil, &HttpError{fmt.Sprintf("google user is not registered (%s / %s)", googleUserId, userInfoResponse.Email), http.StatusPreconditionFailed}
+			}
+
+			stmt, err = server.db.Prepare("UPDATE users SET google_user_id=? WHERE id=?")
+			if err != nil {
+				return nil, fmt.Errorf("failed to excute statement: %v", err)
+			}
+			defer stmt.Close()
+			_, err = stmt.Exec(googleUserId, userId)
+			if err != nil {
+				return nil, fmt.Errorf("failed to excute statement: %v", err)
+			}
+		} else {
+			return nil, fmt.Errorf("failed to excute statement: %v", err)
 		}
-		return nil, fmt.Errorf("failed to excute statement: %v", err)
 	}
 
 	session := &Session{

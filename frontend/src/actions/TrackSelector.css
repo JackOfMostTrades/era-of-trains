@@ -1,6 +1,10 @@
 div.track-select {
-    display: inline-block;;
+    display: inline-block;
+    padding: 2px;
+    margin: 2px;
+    line-height: 0;
 }
 div.track-select.selected {
     border: 2px solid black;
+    margin: 0;
 }
