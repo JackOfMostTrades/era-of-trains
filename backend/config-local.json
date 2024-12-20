@@ -2,6 +2,9 @@
   "oidcProvider": "https://accounts.google.com/o/oauth2/v2/auth",
   "oidcClientId": "199571266655-i6p30a84n6bodq3bj3nn1j5bmdlc714i.apps.googleusercontent.com",
   "disableSecureCookie": true,
+  "email": {
+    "disabled": true
+  },
   "macKey": "IDYuy73hoWR53VVCKqhHb+Lkhour1Phkhtd6BAqoFN0=",
   "database": {
     "sqlitePath": "file:eot.db",

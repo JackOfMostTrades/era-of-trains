@@ -10,7 +10,6 @@ function Home() {
             <ListItem>Cost of placing tiles is not calculated correctly for direct builds of complex track</ListItem>
             <ListItem>Cost of placing tiles is not calculated correctly for upgrades to complex co-existing track</ListItem>
             <ListItem>Bankrupt players do not get eliminated (they just go into negative income)</ListItem>
-            <ListItem>Emails do not get sent out yet.</ListItem>
         </List>
     </>
 }
