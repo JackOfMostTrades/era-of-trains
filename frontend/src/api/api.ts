@@ -19,6 +19,12 @@ export interface ListGamesRequest {
 export interface GameSummary {
     id: string;
     name: string;
+    started: boolean;
+    finished: boolean;
+    numPlayers: number;
+    mapName: string;
+    ownerUser: User;
+    joinedUsers: User[];
 }
 export interface ListGamesResponse {
     games?: GameSummary[];

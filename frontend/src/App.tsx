@@ -9,6 +9,7 @@ import NewGamePage from "./pages/NewGamePage.tsx";
 import ViewGamePage from "./pages/ViewGamePage.tsx";
 import {ErrorContextProvider} from "./ErrorContext.tsx";
 import ErrorDisplay from "./components/ErrorDisplay.tsx";
+import About from "./pages/About.tsx";
 
 function UserMenu() {
     let userSessionContext = useContext(UserSessionContext)
@@ -47,6 +48,9 @@ function MainMenu() {
             <Menu.Item header>
                 <NavLink to='/'>Era of Trains</NavLink>
             </Menu.Item>
+            <Menu.Item header>
+                <NavLink to='/about'>About</NavLink>
+            </Menu.Item>
             {userSessionContext.userInfo ? <>
                 <Menu.Item>
                     <NavLink to='/games'>Games</NavLink>
@@ -73,6 +77,7 @@ function App() {
                             <Route path="/games/new" element={<NewGamePage />}/>
                             <Route path="/games/:gameId" element={<ViewGamePage />}/>
                             <Route path="/games" element={<Games />}/>
+                            <Route path="/about" element={<About />}/>
                             <Route path="/" element={<Home />}/>
                         </Routes>
                     </Container>

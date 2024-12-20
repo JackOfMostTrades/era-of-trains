@@ -9,7 +9,7 @@ import {
     TableHeaderCell,
     TableRow
 } from "semantic-ui-react";
-import {useEffect, useState} from "react";
+import {ReactNode, useEffect, useState} from "react";
 import {Link} from "react-router";
 import {ListGames, ListGamesResponse} from "../api/api.ts";
 
@@ -27,21 +27,39 @@ function Games() {
     if (!games) {
         table = <Loader active={true} />
     } else {
+        let rows: ReactNode[] = [];
+        for (let game of games.games) {
+            let status: string;
+            if (!game.started) {
+                if (game.joinedUsers.length < game.numPlayers) {
+                    status = 'Waiting for players';
+                } else {
+                    status = 'Waiting to start';
+                }
+            } else if (game.finished) {
+                status = 'Finished';
+            } else {
+                status = 'In progress';
+            }
+
+            rows.push(<TableRow>
+                <TableCell><Link to={`/games/${game.id}`}>{game.name}</Link></TableCell>
+                <TableCell>{game.numPlayers}</TableCell>
+                <TableCell>{game.mapName}</TableCell>
+                <TableCell>{status}</TableCell>
+            </TableRow>)
+        }
+
         table = <Table celled>
             <TableHeader>
                 <TableRow>
-                    <TableHeaderCell>Id</TableHeaderCell>
                     <TableHeaderCell>Name</TableHeaderCell>
-                    <TableHeaderCell>View</TableHeaderCell>
+                    <TableHeaderCell>Number of Players</TableHeaderCell>
+                    <TableHeaderCell>Map</TableHeaderCell>
+                    <TableHeaderCell>Status</TableHeaderCell>
                 </TableRow>
             </TableHeader>
-            <TableBody>
-                {games.games?.map(game => <TableRow>
-                    <TableCell>{game.id}</TableCell>
-                    <TableCell>{game.name}</TableCell>
-                    <TableCell><Link to={`/games/${game.id}`}>Click me</Link></TableCell>
-                </TableRow>)}
-            </TableBody>
+            <TableBody>{rows}</TableBody>
         </Table>;
     }
 

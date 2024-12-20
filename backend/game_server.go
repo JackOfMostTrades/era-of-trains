@@ -87,7 +87,7 @@ func (server *GameServer) login(ctx *RequestContext, req *LoginRequest) (resp *L
 	err = row.Scan(&userId)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("google user is not registered (%s): %v", googleUserId, err)
+			return nil, &HttpError{fmt.Sprintf("google user is not registered (%s / %s)", googleUserId, userInfoResponse.Email), http.StatusPreconditionFailed}
 		}
 		return nil, fmt.Errorf("failed to excute statement: %v", err)
 	}
@@ -138,7 +138,7 @@ type CreateGameResponse struct {
 }
 
 func (server *GameServer) createGame(ctx *RequestContext, req *CreateGameRequest) (resp *CreateGameResponse, err error) {
-	stmt, err := server.db.Prepare("INSERT INTO games (id,name,num_players,map_name,owner_user_id,started,finished) VALUES (?,?,?,?,?,0,0)")
+	stmt, err := server.db.Prepare("INSERT INTO games (id,created_at,name,num_players,map_name,owner_user_id,started,finished) VALUES (?,?,?,?,?,?,0,0)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -148,7 +148,7 @@ func (server *GameServer) createGame(ctx *RequestContext, req *CreateGameRequest
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate id: %v", err)
 	}
-	_, err = stmt.Exec(id.String(), req.Name, req.NumPlayers, req.MapName, ctx.User.Id)
+	_, err = stmt.Exec(id.String(), time.Now().Unix(), req.Name, req.NumPlayers, req.MapName, ctx.User.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert game row: %v", err)
 	}
@@ -538,7 +538,7 @@ type ListGamesResponse struct {
 }
 
 func (server *GameServer) listGames(ctx *RequestContext, req *ListGamesRequest) (resp *ListGamesResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT id,name,owner_user_id,num_players,map_name,started,finished FROM games")
+	stmt, err := server.db.Prepare("SELECT id,name,owner_user_id,num_players,map_name,started,finished FROM games ORDER by created_at DESC")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}

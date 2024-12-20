@@ -1,5 +1,6 @@
-import {createContext, ReactNode, useEffect, useState} from "react";
+import {createContext, ReactNode, useContext, useEffect, useState} from "react";
 import {Login, Logout, WhoAmI, WhoAmIResponse} from "./api/api.ts";
+import ErrorContext from "./ErrorContext.tsx";
 
 interface UserSession {
     userInfo?: WhoAmIResponse
@@ -46,6 +47,7 @@ export async function logout() {
 
 export function UserSessionProvider({ children }: {children: ReactNode}) {
     let [userSession, setUserSession] = useState<UserSession>({loading: true});
+    let {setError} = useContext(ErrorContext);
 
     useEffect(() => {
         (async () => {
@@ -53,8 +55,13 @@ export function UserSessionProvider({ children }: {children: ReactNode}) {
                 let params = new URLSearchParams(window.location.hash.substring(1));
                 let accessToken = params.get("access_token");
                 if (accessToken) {
-                    await Login({accessToken: accessToken});
-                    window.location.hash = '';
+                    try {
+                        await Login({accessToken: accessToken});
+                        window.location.hash = '';
+                    } catch (e) {
+                        setError(e);
+                        return;
+                    }
                 }
             }
 
