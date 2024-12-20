@@ -151,6 +151,13 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                             actionName: "build",
                             buildAction: action,
                         }).then(() => {
+                            let newAction: BuildAction = {
+                                townPlacements: [],
+                                trackPlacements: [],
+                                urbanization: undefined,
+                            };
+                            setAction(newAction);
+                            document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
                             return onDone();
                         }).finally(() => {
                             setLoading(false);

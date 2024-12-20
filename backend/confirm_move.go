@@ -625,7 +625,7 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 			gameState.PlayerLoco[gameState.ActivePlayer] += 1
 		}
 		handler.Log("%s skipped delivering a good and increased their loco to %d",
-			handler.ActivePlayerNick(), gameState.PlayerCash[gameState.ActivePlayer])
+			handler.ActivePlayerNick(), gameState.PlayerLoco[gameState.ActivePlayer])
 	} else if moveGoodsAction.Color != NONE_COLOR {
 
 		deliveryGraph := gameState.computeDeliveryGraph()
@@ -642,6 +642,9 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 		if !foundCube {
 			return &HttpError{"no such cube", http.StatusBadRequest}
 		}
+
+		handler.Log("%s delivered a %s good cube from (%d,%d)",
+			handler.ActivePlayerNick(), moveGoodsAction.Color.String(), moveGoodsAction.StartingLocation.X, moveGoodsAction.StartingLocation.Y)
 
 		loc := moveGoodsAction.StartingLocation
 		for idx, step := range moveGoodsAction.Path {
@@ -710,10 +713,10 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 				gameState.PlayerIncome[link.player] += 1
 			}
 
+			handler.Log("The cube moved to (%d,%d) giving one income to %s", loc.X, loc.Y, handler.PlayerNick(link.player))
 		}
 
-		handler.Log("%s delivered a good cube delivering a good and increased their loco to %d",
-			handler.ActivePlayerNick(), gameState.PlayerCash[gameState.ActivePlayer])
+		handler.Log("The cube finished its movement in (%d,%d)", loc.X, loc.Y)
 
 	} else {
 		// Pass action, do nothing here

@@ -81,13 +81,14 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 			for _, route := range next.Routes {
 				if route.Left == direction.opposite() || route.Right == direction.opposite() {
 					// Check that we are not joining into a different player's track
-					if route.Link.Owner != performer.gameState.ActivePlayer {
+					if route.Link.Owner != "" && route.Link.Owner != performer.gameState.ActivePlayer {
 						return ErrInvalidPlacement
 					}
 
 					link = route.Link
 					route.Link.Steps = append(route.Link.Steps, direction.opposite())
 					route.Link.Complete = true
+					route.Link.Owner = performer.gameState.ActivePlayer
 					isJoiningRoute = true
 					break
 				}
@@ -179,10 +180,11 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 		} else {
 			for _, existingRoute := range leftTileState.Routes {
 				if existingRoute.Left.opposite() == newRoute[0] || existingRoute.Right.opposite() == newRoute[0] {
-					if existingRoute.Link.Owner != performer.gameState.ActivePlayer {
+					if existingRoute.Link.Owner != "" && existingRoute.Link.Owner != performer.gameState.ActivePlayer {
 						return ErrInvalidPlacement
 					}
 					link = existingRoute.Link
+					link.Owner = performer.gameState.ActivePlayer
 					link.Steps = append(link.Steps, newRoute[1])
 					performer.extendedLinks[link] = true
 					break
@@ -205,11 +207,12 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 		} else {
 			for _, existingRoute := range rightTileState.Routes {
 				if existingRoute.Left.opposite() == newRoute[1] || existingRoute.Right.opposite() == newRoute[1] {
-					if existingRoute.Link.Owner != performer.gameState.ActivePlayer {
+					if existingRoute.Link.Owner != "" && existingRoute.Link.Owner != performer.gameState.ActivePlayer {
 						return ErrInvalidPlacement
 					}
 					if link == nil {
 						link = existingRoute.Link
+						link.Owner = performer.gameState.ActivePlayer
 						link.Steps = append(link.Steps, newRoute[0])
 						performer.extendedLinks[link] = true
 						break
@@ -218,7 +221,7 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 						performer.gameState.Links = DeleteFromSliceUnordered(
 							slices.Index(performer.gameState.Links, existingRoute.Link), performer.gameState.Links)
 						// Add the old link to the end of the new link
-						for idx := len(existingRoute.Link.Steps) - 1; idx >= 0; idx-- {
+						for idx := len(existingRoute.Link.Steps) - 2; idx >= 0; idx-- {
 							link.Steps = append(link.Steps, existingRoute.Link.Steps[idx].opposite())
 						}
 						link.Complete = true
@@ -382,7 +385,7 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 
 	// Remove ownership of any incomplete links not extended
 	for _, link := range gameState.Links {
-		if !link.Complete && !performer.extendedLinks[link] {
+		if !link.Complete && link.Owner == gameState.ActivePlayer && !performer.extendedLinks[link] {
 			handler.Log("%s lost ownership of an incomplete track that started at hex (%d,%d)",
 				handler.ActivePlayerNick(), link.SourceHex.X, link.SourceHex.Y)
 			link.Owner = ""
