@@ -199,7 +199,7 @@ function ViewGamePage() {
         content = <>
             <PlayerStatus game={game} onConfirmMove={() => reload()}/>
             <GoodsGrowthTable game={game} />
-            <ViewMapComponent game={game} onUpdate={() => reload()}/>
+            <ViewMapComponent game={game} />
             <GameLogsComponent gameId={game.id} reloadTime={reloadTime} />
         </>
     }

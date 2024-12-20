@@ -38,7 +38,10 @@ function AuctionAction({game, onDone}: {game: ViewGameResponse, onDone: () => Pr
         let currentCash = game.gameState.playerCash[game.gameState.activePlayer];
         let currentMaxBid = 0;
         for (let playerId of game.gameState.playerOrder) {
-            let bid = game.gameState.auctionState[playerId] || 0;
+            let bid = 0;
+            if (game.gameState.auctionState) {
+                bid = game.gameState.auctionState[playerId] || 0;
+            }
             currentMaxBid = Math.max(currentMaxBid, bid);
         }
 

@@ -80,13 +80,13 @@ function SpecialActionChooser({game, onDone}: {game: ViewGameResponse, onDone: (
                       value={action}
                       onChange={(_, {value}) => setAction(value as SpecialAction)}
                       options={options}/><br/>
-            <Button primary loading={loading} onClick={() => {
+            <Button primary loading={loading} disabled={!action} onClick={() => {
                 setLoading(true);
                 ConfirmMove({
                     gameId: game.id,
                     actionName: "choose_action",
                     chooseAction: {
-                        action: action,
+                        action: action as SpecialAction,
                     }
                 }).then(() => {
                     return onDone();

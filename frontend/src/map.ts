@@ -18,10 +18,10 @@ export interface BasicCity {
 }
 
 export class BasicMap {
-    public width: number;
-    public height: number;
-    public hexes: HexType[][];
-    public cities: BasicCity[];
+    public width: number = 0;
+    public height: number = 0;
+    public hexes: HexType[][] = [];
+    public cities: BasicCity[] = [];
 
     public static fromJson(src: any): BasicMap {
         let map = new BasicMap();

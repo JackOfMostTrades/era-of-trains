@@ -82,7 +82,7 @@ class RenderMapBuilder {
     }
 }
 
-function ViewMapComponent({game, onUpdate}: {game: ViewGameResponse, onUpdate: () => Promise<void>}) {
+function ViewMapComponent({game}: {game: ViewGameResponse}) {
     let [pendingBuildAction, setPendingBuildAction] = useState<BuildAction|undefined>(undefined);
     let [pendingMoveGoods, setPendingMoveGoods] = useState<MoveGoodsStep|undefined>(undefined)
 

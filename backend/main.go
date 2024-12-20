@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"log/slog"
 	_ "modernc.org/sqlite"
 	"net/http"
+	"net/http/cgi"
 	"os"
 	"sync"
 )
@@ -131,6 +133,22 @@ func whoami(ctx *RequestContext, req *WhoAmIRequest) (resp *WhoAmIResponse, err 
 }
 
 func main() {
+	flagSet := flag.NewFlagSet("eot", flag.ContinueOnError)
+	var httpMode bool = false
+	flagSet.BoolVar(&httpMode, "http", false, "Run HTTP server as an actual HTTP listener rather than in CGI mode.")
+
+	err := flagSet.Parse(os.Args[1:])
+	if err != nil {
+		panic(err)
+	}
+
+	if !httpMode {
+		err = os.Chdir("../../backend")
+		if err != nil {
+			panic(fmt.Errorf("failed to change directory: %v", err))
+		}
+	}
+
 	config := new(Config)
 	if f, err := os.Open("config-local.json"); err != nil {
 		panic(err)
@@ -180,16 +198,23 @@ func main() {
 	mux.HandleFunc("/api/viewGame", jsonHandler(server, server.viewGame))
 	mux.HandleFunc("/api/getGameLogs", jsonHandler(server, server.getGameLogs))
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		err = http.ListenAndServe("localhost:8080", mux)
-		if err != http.ErrServerClosed {
+	if httpMode {
+		wg := &sync.WaitGroup{}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err = http.ListenAndServe("localhost:8080", mux)
+			if err != http.ErrServerClosed {
+				panic(err)
+			}
+		}()
+
+		slog.Info("Listening on port 8080...")
+		wg.Wait()
+	} else {
+		err = cgi.Serve(mux)
+		if err != nil {
 			panic(err)
 		}
-	}()
-
-	slog.Info("Listening on port 8080...")
-	wg.Wait()
+	}
 }

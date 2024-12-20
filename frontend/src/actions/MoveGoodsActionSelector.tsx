@@ -23,7 +23,10 @@ function getDirectionFromSource(source: Coordinate, target: Coordinate): Directi
 }
 
 function computeNextStop(game: ViewGameResponse, current: Coordinate, direction: Direction): Coordinate|undefined {
-    for (let link of game.gameState?.links) {
+    if (!game.gameState || !game.gameState.links) {
+        return undefined;
+    }
+    for (let link of game.gameState.links) {
         if (!link.complete) {
             continue;
         }

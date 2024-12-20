@@ -26,7 +26,11 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
         trackPlacements: [],
         urbanization: undefined,
     });
-    let [step, setStep] = useState<Step>({})
+    let [step, setStep] = useState<Step>({
+        buildTrackSelection: 0,
+        buildTownSelection: 0,
+        urbanizationSelection: 0
+    })
     let [loading, setLoading] = useState<boolean>(false);
 
     useEffect(() => {
@@ -38,7 +42,11 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                         tracks: getTrackRoutesFromId(step.buildTrackSelection),
                         hex: e.detail,
                     });
-                    setStep({});
+                    setStep({
+                        buildTrackSelection: 0,
+                        buildTownSelection: 0,
+                        urbanizationSelection: 0
+                    });
                     setAction(newAction);
                     document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
                 }
@@ -48,7 +56,11 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                         tracks: getTownRoutesFromId(step.buildTownSelection),
                         hex: e.detail,
                     });
-                    setStep({});
+                    setStep({
+                        buildTrackSelection: 0,
+                        buildTownSelection: 0,
+                        urbanizationSelection: 0
+                    });
                     setAction(newAction);
                     document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
                 }
@@ -58,7 +70,11 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                         city: step.urbanizationSelection,
                         hex: e.detail,
                     };
-                    setStep({});
+                    setStep({
+                        buildTrackSelection: 0,
+                        buildTownSelection: 0,
+                        urbanizationSelection: 0
+                    });
                     setAction(newAction);
                     document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
                 }
@@ -140,10 +156,10 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                 <p>Select build step:</p>
                 <div>
                     <Button secondary icon onClick={() => {
-                        setStep({kind: 'build_track', buildTrackSelection: 0});
+                        setStep({kind: 'build_track', buildTrackSelection: 0, buildTownSelection: 0, urbanizationSelection: 0});
                     }}><Icon name='train' /> Build Track</Button>
                     <Button secondary icon onClick={() => {
-                        setStep({kind: 'build_town', buildTownSelection: 0})
+                        setStep({kind: 'build_town', buildTownSelection: 0, buildTrackSelection: 0, urbanizationSelection: 0})
                     }}><Icon name='circle' /> Build Town</Button>
                     {urbanizeButton}
                     <Button primary loading={loading} onClick={() => {

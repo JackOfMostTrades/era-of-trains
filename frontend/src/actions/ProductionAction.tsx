@@ -27,7 +27,7 @@ function ProductionAction({game, onDone}: {game: ViewGameResponse, onDone: () =>
 
     useEffect(() => {
         const handler = (e:CustomEventInit<Coordinate>) => {
-            if (e.detail && action.destinations.length < game.gameState.productionCubes.length) {
+            if (e.detail && game.gameState && game.gameState.productionCubes && action.destinations.length < game.gameState.productionCubes.length) {
                 let newAction = Object.assign({}, action);
                 newAction.destinations = newAction.destinations.slice();
                 newAction.destinations.push(e.detail);
