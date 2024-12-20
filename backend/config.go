@@ -17,13 +17,16 @@ type EmailConfig struct {
 	SmtpPassword string `json:"smtpPassword"`
 }
 
+type AuthenticationConfig struct {
+	DisableSecureCookie bool `json:"disableSecureCookie"`
+	EnableDevLogin      bool `json:"enableDevLogin"`
+}
+
 type Config struct {
-	OidcProvider        string          `json:"oidcProvider"`
-	OidcClientId        string          `json:"oidcClientId"`
-	DisableSecureCookie bool            `json:"disableSecureCookie"`
-	MacKey              string          `json:"macKey"`
-	WorkingDirectory    string          `json:"workingDirectory"`
-	CgiMode             bool            `json:"cgiMode"`
-	Email               *EmailConfig    `json:"email"`
-	Database            *DatabaseConfig `json:"database"`
+	Authentication   *AuthenticationConfig `json:"authentication"`
+	MacKey           string                `json:"macKey"`
+	WorkingDirectory string                `json:"workingDirectory"`
+	CgiMode          bool                  `json:"cgiMode"`
+	Email            *EmailConfig          `json:"email"`
+	Database         *DatabaseConfig       `json:"database"`
 }

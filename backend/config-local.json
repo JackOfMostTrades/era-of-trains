@@ -1,7 +1,8 @@
 {
-  "oidcProvider": "https://accounts.google.com/o/oauth2/v2/auth",
-  "oidcClientId": "199571266655-i6p30a84n6bodq3bj3nn1j5bmdlc714i.apps.googleusercontent.com",
-  "disableSecureCookie": true,
+  "authentication": {
+    "disableSecureCookie": true,
+    "enableDevLogin": true
+  },
   "email": {
     "disabled": true
   },

@@ -10,6 +10,7 @@ import ViewGamePage from "./pages/ViewGamePage.tsx";
 import {ErrorContextProvider} from "./ErrorContext.tsx";
 import ErrorDisplay from "./components/ErrorDisplay.tsx";
 import About from "./pages/About.tsx";
+import DevLogin from "./pages/DevLogin.tsx";
 
 function UserMenu() {
     let userSessionContext = useContext(UserSessionContext)
@@ -78,6 +79,7 @@ function App() {
                             <Route path="/games/:gameId" element={<ViewGamePage />}/>
                             <Route path="/games" element={<Games />}/>
                             <Route path="/about" element={<About />}/>
+                            <Route path="/dev/login/:nickname" element={<DevLogin />}/>
                             <Route path="/" element={<Home />}/>
                         </Routes>
                     </Container>

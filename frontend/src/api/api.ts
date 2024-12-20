@@ -46,7 +46,8 @@ export function WhoAmI(req: WhoAmIRequest): Promise<WhoAmIResponse> {
 }
 
 export interface LoginRequest {
-    accessToken: string
+    accessToken?: string
+    devNickname?: string
 }
 export interface LoginResponse {
 }

@@ -24,6 +24,8 @@ type User struct {
 
 type LoginRequest struct {
 	AccessToken string `json:"accessToken"`
+	// For development purpsose only. If devmode is enabled, sign-in with the given nickname, bypassing actual authentication
+	DevNickname string `json:"devNickname"`
 }
 
 type LoginResponse struct {
@@ -38,83 +40,99 @@ func (server *GameServer) Close() error {
 }
 
 func (server *GameServer) login(ctx *RequestContext, req *LoginRequest) (resp *LoginResponse, err error) {
-	if req.AccessToken == "" {
-		return nil, &HttpError{"Missing access token", http.StatusBadRequest}
-	}
-
-	userInfoReq, err := http.NewRequest(http.MethodGet, "https://www.googleapis.com/oauth2/v1/userinfo", nil)
-	if err != nil {
-		return nil, err
-	}
-	userInfoReq.Header.Add("Authorization", "Bearer "+req.AccessToken)
-	userInfoRes, err := http.DefaultClient.Do(userInfoReq)
-	if err != nil {
-		return nil, err
-	}
-	if userInfoRes.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get user info from access token: %d", userInfoRes.StatusCode)
-	}
-	defer userInfoRes.Body.Close()
-
-	userInfoResponse := struct {
-		Id            string `json:"id"`
-		Email         string `json:"email"`
-		VerifiedEmail bool   `json:"verified_email"`
-		Picture       string `json:"picture"`
-	}{}
-	err = json.NewDecoder(userInfoRes.Body).Decode(&userInfoResponse)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode userinfo response: %v", err)
-	}
-
-	googleUserId := userInfoResponse.Id
-	if googleUserId == "" {
-		return nil, fmt.Errorf("failed to get user id from user info")
-	}
-
-	stmt, err := server.db.Prepare("SELECT id FROM users WHERE google_user_id=?")
-	if err != nil {
-		return nil, fmt.Errorf("failed to prepare statement: %v", err)
-	}
-	defer stmt.Close()
-
-	row := stmt.QueryRow(googleUserId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to excute statement: %v", err)
-	}
-
 	var userId string
-	err = row.Scan(&userId)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			// Fallback to finding a user row with matching email and no user ID
-			stmt, err := server.db.Prepare("SELECT id FROM users WHERE email=? AND google_user_id IS NULL")
-			if err != nil {
+	if server.config.Authentication.EnableDevLogin && req.DevNickname != "" {
+		stmt, err := server.db.Prepare("SELECT id FROM users WHERE nickname=?")
+		if err != nil {
+			return nil, fmt.Errorf("failed to prepare statement: %v", err)
+		}
+		defer stmt.Close()
+		row := stmt.QueryRow(req.DevNickname)
+		err = row.Scan(&userId)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return nil, &HttpError{fmt.Sprintf("invalid nickname: %s", req.DevNickname), http.StatusBadRequest}
+			}
+			return nil, fmt.Errorf("failed to lookup user: %v", err)
+		}
+	} else {
+		if req.AccessToken == "" {
+			return nil, &HttpError{"Missing access token", http.StatusBadRequest}
+		}
+
+		userInfoReq, err := http.NewRequest(http.MethodGet, "https://www.googleapis.com/oauth2/v1/userinfo", nil)
+		if err != nil {
+			return nil, err
+		}
+		userInfoReq.Header.Add("Authorization", "Bearer "+req.AccessToken)
+		userInfoRes, err := http.DefaultClient.Do(userInfoReq)
+		if err != nil {
+			return nil, err
+		}
+		if userInfoRes.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("failed to get user info from access token: %d", userInfoRes.StatusCode)
+		}
+		defer userInfoRes.Body.Close()
+
+		userInfoResponse := struct {
+			Id            string `json:"id"`
+			Email         string `json:"email"`
+			VerifiedEmail bool   `json:"verified_email"`
+			Picture       string `json:"picture"`
+		}{}
+		err = json.NewDecoder(userInfoRes.Body).Decode(&userInfoResponse)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode userinfo response: %v", err)
+		}
+
+		googleUserId := userInfoResponse.Id
+		if googleUserId == "" {
+			return nil, fmt.Errorf("failed to get user id from user info")
+		}
+
+		stmt, err := server.db.Prepare("SELECT id FROM users WHERE google_user_id=?")
+		if err != nil {
+			return nil, fmt.Errorf("failed to prepare statement: %v", err)
+		}
+		defer stmt.Close()
+
+		row := stmt.QueryRow(googleUserId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to excute statement: %v", err)
+		}
+
+		err = row.Scan(&userId)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				// Fallback to finding a user row with matching email and no user ID
+				stmt, err := server.db.Prepare("SELECT id FROM users WHERE email=? AND google_user_id IS NULL")
+				if err != nil {
+					if err != nil {
+						return nil, fmt.Errorf("failed to excute statement: %v", err)
+					}
+				}
+				defer stmt.Close()
+				row = stmt.QueryRow(userInfoResponse.Email)
+				err = row.Scan(&userId)
+				if err != nil && err != sql.ErrNoRows {
+					if err != sql.ErrNoRows {
+						return nil, fmt.Errorf("failed to excute statement: %v", err)
+					}
+					return nil, &HttpError{fmt.Sprintf("google user is not registered (%s / %s)", googleUserId, userInfoResponse.Email), http.StatusPreconditionFailed}
+				}
+
+				stmt, err = server.db.Prepare("UPDATE users SET google_user_id=? WHERE id=?")
 				if err != nil {
 					return nil, fmt.Errorf("failed to excute statement: %v", err)
 				}
-			}
-			defer stmt.Close()
-			row = stmt.QueryRow(userInfoResponse.Email)
-			err = row.Scan(&userId)
-			if err != nil && err != sql.ErrNoRows {
-				if err != sql.ErrNoRows {
+				defer stmt.Close()
+				_, err = stmt.Exec(googleUserId, userId)
+				if err != nil {
 					return nil, fmt.Errorf("failed to excute statement: %v", err)
 				}
-				return nil, &HttpError{fmt.Sprintf("google user is not registered (%s / %s)", googleUserId, userInfoResponse.Email), http.StatusPreconditionFailed}
-			}
-
-			stmt, err = server.db.Prepare("UPDATE users SET google_user_id=? WHERE id=?")
-			if err != nil {
+			} else {
 				return nil, fmt.Errorf("failed to excute statement: %v", err)
 			}
-			defer stmt.Close()
-			_, err = stmt.Exec(googleUserId, userId)
-			if err != nil {
-				return nil, fmt.Errorf("failed to excute statement: %v", err)
-			}
-		} else {
-			return nil, fmt.Errorf("failed to excute statement: %v", err)
 		}
 	}
 
@@ -129,7 +147,7 @@ func (server *GameServer) login(ctx *RequestContext, req *LoginRequest) (resp *L
 	http.SetCookie(ctx.HttpResponse, &http.Cookie{
 		Name:     "eot-session",
 		Value:    sessionStr,
-		Secure:   !server.config.DisableSecureCookie,
+		Secure:   !server.config.Authentication.DisableSecureCookie,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 	})
@@ -145,7 +163,7 @@ func (server *GameServer) logout(ctx *RequestContext, req *LogoutRequest) (resp 
 	http.SetCookie(ctx.HttpResponse, &http.Cookie{
 		Name:     "eot-session",
 		Value:    "",
-		Secure:   !server.config.DisableSecureCookie,
+		Secure:   !server.config.Authentication.DisableSecureCookie,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 		Expires:  time.Unix(0, 0),
