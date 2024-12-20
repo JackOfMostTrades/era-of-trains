@@ -425,6 +425,15 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 			handler.ActivePlayerNick(), 'A'+buildAction.Urbanization.City, buildAction.Urbanization.Hex.X, buildAction.Urbanization.Hex.Y)
 	}
 
+	// Check the number of placements is valid
+	placementLimit := 3
+	if gameState.PlayerActions[gameState.ActivePlayer] == ENGINEER_SPECIAL_ACTION {
+		placementLimit = 4
+	}
+	if len(buildAction.TownPlacements)+len(buildAction.TrackPlacements) > placementLimit {
+		return &HttpError{fmt.Sprintf("cannot exceed track placement limit (%d)", placementLimit), http.StatusBadRequest}
+	}
+
 	performer := newBuildActionPerformer(handler.theMap, handler.gameState)
 
 	// For each placement...
