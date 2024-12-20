@@ -1,0 +1,70 @@
+import {Coordinate, GameState, User, ViewGameResponse} from "../api/api.ts";
+import maps, {BasicMap} from "../map.ts";
+import {applyDirection} from "../util.ts";
+import {Header, List, ListItem, Segment} from "semantic-ui-react";
+
+function isCity(gameState: GameState, map: BasicMap, hex: Coordinate): boolean {
+    for (let urb of gameState.urbanizations) {
+        if (urb.hex.x === hex.x && urb.hex.y === hex.y) {
+            return true;
+        }
+    }
+    for (let city of map.cities) {
+        if (city.coordinate.x === hex.x && city.coordinate.y === hex.y) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function FinalScore({game}: {game: ViewGameResponse}) {
+    if (!game.gameState) {
+        return;
+    }
+
+    let map = maps[game.mapName];
+
+    let scores: { [playerId: string]: number} = {}
+    for (let player of game.joinedUsers) {
+        let shares = game.gameState.playerShares[player.id];
+        let income = game.gameState.playerIncome[player.id];
+        let trackCount = 0;
+        for (let link of game.gameState.links) {
+            if (!link.complete || link.owner !== player.id) {
+                continue;
+            }
+
+            let hex = link.sourceHex;
+            for (let i = 0; i < link.steps.length; i++) {
+                if (!isCity(game.gameState, map, hex)) {
+                    trackCount += 1;
+                }
+                hex = applyDirection(hex, link.steps[i]);
+            }
+        }
+
+        scores[player.id] = income*3 - shares*3 + trackCount;
+    }
+
+    let playerIds = [];
+    let playersById: { [playerId: string]: User} = {};
+    for (let player of game.joinedUsers) {
+        playerIds.push(player.id);
+        playersById[player.id] = player;
+    }
+    playerIds.sort((a, b) => {
+        return scores[b] - scores[a];
+    });
+
+    return <Segment>
+        <Header as='h2'>Final Scores</Header>
+        <List>
+            {playerIds.map(playerId => {
+                return <ListItem>{playersById[playerId].nickname}: {scores[playerId]}</ListItem>
+            })}
+        </List>
+    </Segment>
+}
+
+export default FinalScore

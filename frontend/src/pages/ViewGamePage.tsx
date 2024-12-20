@@ -13,6 +13,7 @@ import GoodsGrowthTable from "./GoodsGrowthTable.tsx";
 import ProductionAction from "../actions/ProductionAction.tsx";
 import {playerColorToHtml} from "../actions/renderer/HexRenderer.tsx";
 import GameLogsComponent from "./GameLogsComponent.tsx";
+import FinalScore from "../actions/FinalScore.tsx";
 
 function WaitingForPlayersPage({game, onJoin}: {game: ViewGameResponse, onJoin: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
@@ -115,25 +116,29 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
     }
 
     let actionHolder: ReactNode;
-    switch (game.gameState.gamePhase) {
-        case GamePhase.SHARES:
-            actionHolder = <ChooseShares game={game} onDone={onConfirmMove} />
-            break;
-        case GamePhase.AUCTION:
-            actionHolder = <AuctionAction game={game} onDone={onConfirmMove} />
-            break;
-        case GamePhase.CHOOSE_SPECIAL_ACTIONS:
-            actionHolder = <SpecialActionChooser game={game} onDone={onConfirmMove} />
-            break;
-        case GamePhase.BUILDING:
-            actionHolder = <BuildActionSelector game={game} onDone={onConfirmMove} />
-            break;
-        case GamePhase.MOVING_GOODS:
-            actionHolder = <MoveGoodsActionSelector game={game} onDone={onConfirmMove} />
-            break;
-        case GamePhase.GOODS_GROWTH:
-            actionHolder = <ProductionAction game={game} onDone={onConfirmMove} />
-            break;
+    if (game.finished) {
+        actionHolder = <FinalScore game={game} />
+    } else {
+        switch (game.gameState.gamePhase) {
+            case GamePhase.SHARES:
+                actionHolder = <ChooseShares game={game} onDone={onConfirmMove}/>
+                break;
+            case GamePhase.AUCTION:
+                actionHolder = <AuctionAction game={game} onDone={onConfirmMove}/>
+                break;
+            case GamePhase.CHOOSE_SPECIAL_ACTIONS:
+                actionHolder = <SpecialActionChooser game={game} onDone={onConfirmMove}/>
+                break;
+            case GamePhase.BUILDING:
+                actionHolder = <BuildActionSelector game={game} onDone={onConfirmMove}/>
+                break;
+            case GamePhase.MOVING_GOODS:
+                actionHolder = <MoveGoodsActionSelector game={game} onDone={onConfirmMove}/>
+                break;
+            case GamePhase.GOODS_GROWTH:
+                actionHolder = <ProductionAction game={game} onDone={onConfirmMove}/>
+                break;
+        }
     }
 
     return <>
