@@ -8,7 +8,8 @@ async function doApiCall<ReqT, ResT>(requestPath: string, req: ReqT): Promise<Re
         body: JSON.stringify(req)
     })
     if (!res.ok) {
-        throw new Error("got non-ok response");
+        let body = await res.text();
+        throw new Error("got non-ok response: " + body);
     }
     return await res.json();
 }

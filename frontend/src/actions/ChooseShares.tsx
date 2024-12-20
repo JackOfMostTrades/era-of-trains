@@ -2,9 +2,11 @@ import {ConfirmMove, User, ViewGameResponse} from "../api/api.ts";
 import {Button, Dropdown, DropdownItemProps} from "semantic-ui-react";
 import {useContext, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
+import ErrorContext from "../ErrorContext.tsx";
 
 function ChooseShares({game, onDone}: {game: ViewGameResponse, onDone: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
+    let {setError} = useContext(ErrorContext);
     let [amount, setAmount] = useState<number>(0);
     let [loading, setLoading] = useState<boolean>(false);
 
@@ -50,6 +52,8 @@ function ChooseShares({game, onDone}: {game: ViewGameResponse, onDone: () => Pro
                 }
             }).then(() => {
                 return onDone();
+            }).catch(err => {
+                setError(err);
             }).finally(() => {
                 setLoading(false);
             })

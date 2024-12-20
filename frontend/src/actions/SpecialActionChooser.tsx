@@ -2,9 +2,11 @@ import {ConfirmMove, SpecialAction, User, ViewGameResponse} from "../api/api.ts"
 import {Button, Dropdown, DropdownItemProps, Header} from "semantic-ui-react";
 import {ReactNode, useContext, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
+import ErrorContext from "../ErrorContext.tsx";
 
 function SpecialActionChooser({game, onDone}: {game: ViewGameResponse, onDone: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
+    let {setError} = useContext(ErrorContext);
     let [action, setAction] = useState<SpecialAction|undefined>(undefined);
     let [loading, setLoading] = useState<boolean>(false);
 
@@ -88,6 +90,8 @@ function SpecialActionChooser({game, onDone}: {game: ViewGameResponse, onDone: (
                     }
                 }).then(() => {
                     return onDone();
+                }).catch(err => {
+                    setError(err);
                 }).finally(() => {
                     setLoading(false);
                 });

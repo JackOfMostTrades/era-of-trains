@@ -42,6 +42,9 @@ function FinalScore({game}: {game: ViewGameResponse}) {
                 }
                 hex = applyDirection(hex, link.steps[i]);
             }
+            if (!isCity(game.gameState, map, hex)) {
+                trackCount += 1;
+            }
         }
 
         scores[player.id] = income*3 - shares*3 + trackCount;

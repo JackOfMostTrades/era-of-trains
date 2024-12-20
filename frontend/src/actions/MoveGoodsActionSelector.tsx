@@ -3,6 +3,7 @@ import {Button, Header, Icon} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
 import {applyDirection, oppositeDirection} from "../util.ts";
+import ErrorContext from "../ErrorContext.tsx";
 
 export interface Step {
     selectedColor: Color;
@@ -42,6 +43,7 @@ function computeNextStop(game: ViewGameResponse, current: Coordinate, direction:
 
 function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
+    let {setError} = useContext(ErrorContext);
     let [step, setStep] = useState<Step>({selectedColor: Color.NONE, selectedOrigin: {x: 0, y: 0}, steps: [], currentCubePosition: {x: 0, y: 0}})
     let [loading, setLoading] = useState<boolean>(false);
 
@@ -122,6 +124,8 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                         let newStep = {selectedColor: Color.NONE, selectedOrigin: {x: 0, y: 0}, steps: [], currentCubePosition: {x: 0, y: 0}};
                         document.dispatchEvent(new CustomEvent('pendingMoveGoods', { detail: newStep }));
                         return onDone();
+                    }).catch(err => {
+                        setError(err);
                     }).finally(() => {
                         setLoading(false);
                     });
@@ -136,6 +140,8 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                         let newStep = {selectedColor: Color.NONE, selectedOrigin: {x: 0, y: 0}, steps: [], currentCubePosition: {x: 0, y: 0}};
                         document.dispatchEvent(new CustomEvent('pendingMoveGoods', { detail: newStep }));
                         return onDone();
+                    }).catch(err => {
+                        setError(err);
                     }).finally(() => {
                         setLoading(false);
                     });
@@ -150,6 +156,8 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                         let newStep = {selectedColor: Color.NONE, selectedOrigin: {x: 0, y: 0}, steps: [], currentCubePosition: {x: 0, y: 0}};
                         document.dispatchEvent(new CustomEvent('pendingMoveGoods', { detail: newStep }));
                         return onDone();
+                    }).catch(err => {
+                        setError(err);
                     }).finally(() => {
                         setLoading(false);
                     });

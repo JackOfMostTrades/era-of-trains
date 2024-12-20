@@ -7,6 +7,8 @@ import {NavLink} from "react-router";
 import {useContext} from "react";
 import NewGamePage from "./pages/NewGamePage.tsx";
 import ViewGamePage from "./pages/ViewGamePage.tsx";
+import {ErrorContextProvider} from "./ErrorContext.tsx";
+import ErrorDisplay from "./components/ErrorDisplay.tsx";
 
 function UserMenu() {
     let userSessionContext = useContext(UserSessionContext)
@@ -59,22 +61,25 @@ function MainMenu() {
 }
 
 function App() {
-    return <UserSessionProvider>
-        <Router>
-            <div>
-                <MainMenu />
+    return <ErrorContextProvider>
+        <UserSessionProvider>
+            <Router>
+                <div>
+                    <MainMenu />
 
-                <Container text style={{marginTop: '7em'}}>
-                    <Routes>
-                        <Route path="/games/new" element={<NewGamePage />}/>
-                        <Route path="/games/:gameId" element={<ViewGamePage />}/>
-                        <Route path="/games" element={<Games />}/>
-                        <Route path="/" element={<Home />}/>
-                    </Routes>
-                </Container>
-            </div>
-        </Router>
-    </UserSessionProvider>
+                    <Container text style={{marginTop: '7em'}}>
+                        <ErrorDisplay />
+                        <Routes>
+                            <Route path="/games/new" element={<NewGamePage />}/>
+                            <Route path="/games/:gameId" element={<ViewGamePage />}/>
+                            <Route path="/games" element={<Games />}/>
+                            <Route path="/" element={<Home />}/>
+                        </Routes>
+                    </Container>
+                </div>
+            </Router>
+        </UserSessionProvider>
+    </ErrorContextProvider>
 }
 
 export default App

@@ -9,6 +9,7 @@ import {
     TownTrackSelector,
     TrackSelector
 } from "./TrackSelector.tsx";
+import ErrorContext from "../ErrorContext.tsx";
 
 interface Step {
     kind?: 'build_track' | 'build_town' | 'urbanize';
@@ -19,6 +20,7 @@ interface Step {
 
 function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
+    let {setError} = useContext(ErrorContext);
     let [action, setAction] = useState<BuildAction>({
         townPlacements: [],
         trackPlacements: [],
@@ -157,8 +159,10 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                                 urbanization: undefined,
                             };
                             setAction(newAction);
-                            document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
+                            document.dispatchEvent(new CustomEvent('pendingBuildAction', {detail: newAction}));
                             return onDone();
+                        }).catch(err => {
+                            setError(err);
                         }).finally(() => {
                             setLoading(false);
                         });

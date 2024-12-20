@@ -3,6 +3,7 @@ import {Button, Grid, GridColumn, GridRow, Header} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
 import {colorToHtml} from "./renderer/HexRenderer.tsx";
+import ErrorContext from "../ErrorContext.tsx";
 
 function toCityLabel(n: number): string {
     if (n < 6) {
@@ -16,6 +17,7 @@ function toCityLabel(n: number): string {
 
 function ProductionAction({game, onDone}: {game: ViewGameResponse, onDone: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
+    let {setError} = useContext(ErrorContext);
     let [action, setAction] = useState<ProduceGoodsAction>({destinations: []});
     let [loading, setLoading] = useState<boolean>(false);
 
@@ -72,6 +74,8 @@ function ProductionAction({game, onDone}: {game: ViewGameResponse, onDone: () =>
                     produceGoodsAction: action,
                 }).then(() => {
                     return onDone();
+                }).catch(err => {
+                    setError(err);
                 }).finally(() => {
                     setLoading(false);
                 });
