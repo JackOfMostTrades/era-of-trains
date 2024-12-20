@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"log/slog"
 	_ "modernc.org/sqlite"
 	"net/http"
@@ -133,24 +133,12 @@ func whoami(ctx *RequestContext, req *WhoAmIRequest) (resp *WhoAmIResponse, err 
 }
 
 func main() {
-	flagSet := flag.NewFlagSet("eot", flag.ContinueOnError)
-	var httpMode bool = false
-	flagSet.BoolVar(&httpMode, "http", false, "Run HTTP server as an actual HTTP listener rather than in CGI mode.")
-
-	err := flagSet.Parse(os.Args[1:])
-	if err != nil {
-		panic(err)
+	configPath := "config-local.json"
+	if envConfigPath := os.Getenv("EOT_CONFIG_PATH"); envConfigPath != "" {
+		configPath = envConfigPath
 	}
-
-	if !httpMode {
-		err = os.Chdir("../../backend")
-		if err != nil {
-			panic(fmt.Errorf("failed to change directory: %v", err))
-		}
-	}
-
 	config := new(Config)
-	if f, err := os.Open("config-local.json"); err != nil {
+	if f, err := os.Open(configPath); err != nil {
 		panic(err)
 	} else {
 		err = json.NewDecoder(f).Decode(config)
@@ -159,18 +147,44 @@ func main() {
 		}
 		f.Close()
 	}
+	if config.WorkingDirectory != "" {
+		err := os.Chdir(config.WorkingDirectory)
+		if err != nil {
+			panic(fmt.Errorf("failed to chdir to %s: %v", config.WorkingDirectory, err))
+		}
+	}
+	if config.Database == nil {
+		panic(fmt.Errorf("database must be configured"))
+	}
 
-	db, err := sql.Open("sqlite", "file:eot.db")
-	if err != nil {
-		panic(fmt.Errorf("failed to open sqlite db: %v", err))
+	var db *sql.DB
+	if config.Database.SqlitePath != "" {
+		var err error
+		db, err = sql.Open("sqlite", config.Database.SqlitePath)
+		if err != nil {
+			panic(fmt.Errorf("failed to open sqlite db: %v", err))
+		}
+	} else if config.Database.MysqlHostname != "" {
+		var err error
+		db, err = sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s",
+			config.Database.MysqlUsername, config.Database.MysqlPassword,
+			config.Database.MysqlHostname, config.Database.MysqlDatabase))
+		if err != nil {
+			panic(fmt.Errorf("failed to open db: %v", err))
+		}
+	} else {
+		panic(fmt.Errorf("no database configured"))
 	}
-	bootstrapSql, err := os.ReadFile("bootstrap.sql")
-	if err != nil {
-		panic(fmt.Errorf("failed to load bootstrap.sql: %v", err))
-	}
-	_, err = db.Exec(string(bootstrapSql))
-	if err != nil {
-		panic(fmt.Errorf("failed to run bootstrap.sql: %v", err))
+
+	if config.Database.Bootstrap {
+		bootstrapSql, err := os.ReadFile("bootstrap.sql")
+		if err != nil {
+			panic(fmt.Errorf("failed to load bootstrap.sql: %v", err))
+		}
+		_, err = db.Exec(string(bootstrapSql))
+		if err != nil {
+			panic(fmt.Errorf("failed to run bootstrap.sql: %v", err))
+		}
 	}
 
 	maps, err := loadMaps()
@@ -198,7 +212,12 @@ func main() {
 	mux.HandleFunc("/api/viewGame", jsonHandler(server, server.viewGame))
 	mux.HandleFunc("/api/getGameLogs", jsonHandler(server, server.getGameLogs))
 
-	if httpMode {
+	if config.CgiMode {
+		err = cgi.Serve(mux)
+		if err != nil {
+			panic(err)
+		}
+	} else {
 		wg := &sync.WaitGroup{}
 		wg.Add(1)
 		go func() {
@@ -211,10 +230,5 @@ func main() {
 
 		slog.Info("Listening on port 8080...")
 		wg.Wait()
-	} else {
-		err = cgi.Serve(mux)
-		if err != nil {
-			panic(err)
-		}
 	}
 }

@@ -3,12 +3,14 @@ module github.com/JackOfMostTrades/eot/backend
 go 1.21.5
 
 require (
+	github.com/go-sql-driver/mysql v1.8.1
 	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.10.0
 	modernc.org/sqlite v1.34.1
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect

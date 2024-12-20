@@ -18,9 +18,15 @@ export function oauthSignIn() {
     form.setAttribute('method', 'GET'); // Send as a GET request.
     form.setAttribute('action', oauth2Endpoint);
 
+    // eot-prod
+    let clientId = '199571266655-hpirsmjge72vbahq532d8a205qilsmrl.apps.googleusercontent.com';
+    if (window.location.hostname === 'localhost') {
+        clientId = '199571266655-i6p30a84n6bodq3bj3nn1j5bmdlc714i.apps.googleusercontent.com';
+    }
+
     // Parameters to pass to OAuth 2.0 endpoint.
     let params: {[key: string]: string} = {
-        'client_id': '902198735009-tqffhnfnc5smc1sp342fot322559ns4v.apps.googleusercontent.com',
+        'client_id': clientId,
         'redirect_uri': window.location.origin + '/',
         'response_type': 'token',
         'scope': 'https://www.googleapis.com/auth/userinfo.email',
