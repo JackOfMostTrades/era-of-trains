@@ -33,8 +33,6 @@ const TRACK_TILES: TrackTile[] = [
     [[Direction.NORTH_WEST, Direction.SOUTH], [Direction.NORTH_EAST, Direction.SOUTH_EAST]],
     // Straight and tight
     [[Direction.NORTH, Direction.SOUTH], [Direction.NORTH_EAST, Direction.SOUTH_EAST]],
-    // Double tight
-    [[Direction.NORTH, Direction.NORTH_EAST], [Direction.SOUTH_EAST, Direction.SOUTH]],
 ];
 
 type TownTile = Array<Direction>;

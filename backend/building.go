@@ -114,6 +114,52 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 	return nil
 }
 
+/*
+[[Direction.NORTH, Direction.SOUTH], [Direction.SOUTH_WEST, Direction.NORTH_EAST]],
+    // Gentle X
+    [[Direction.NORTH, Direction.SOUTH_EAST], [Direction.NORTH_EAST, Direction.SOUTH]],
+    // Bow and arrow
+    [[Direction.NORTH, Direction.SOUTH], [Direction.SOUTH_WEST, Direction.SOUTH_EAST]],
+*/
+
+type trackTileType int
+
+const (
+	SIMPLE_TRACK_TILE_TYPE = iota
+	COMPLEX_CROSSING_TILE_TYPE
+	COMPLEX_COEXISTING_TILE_TYPE
+)
+
+func getTileType(routes [][2]Direction) trackTileType {
+	if len(routes) < 2 {
+		return SIMPLE_TRACK_TILE_TYPE
+	}
+
+	complexCrossingTiles := [][][2]Direction{
+		// X
+		{{NORTH, SOUTH}, {SOUTH_WEST, NORTH_EAST}},
+		// Gentle X
+		{{NORTH, SOUTH_EAST}, {NORTH_EAST, SOUTH}},
+		// Bow and arrow
+		{{NORTH, SOUTH}, {SOUTH_WEST, SOUTH_EAST}},
+	}
+	for _, tile := range complexCrossingTiles {
+		for rotation := 0; rotation < 6; rotation++ {
+			rotatedRoutes := make([][2]Direction, 0, len(tile))
+			for _, route := range tile {
+				rotatedRoutes = append(rotatedRoutes, [2]Direction{
+					Direction((int(route[0]) + rotation) % 6), Direction((int(route[1]) + rotation) % 6),
+				})
+			}
+			if slices.Equal(rotatedRoutes, routes) {
+				return COMPLEX_CROSSING_TILE_TYPE
+			}
+		}
+	}
+
+	return COMPLEX_COEXISTING_TILE_TYPE
+}
+
 func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *TrackPlacement) error {
 	ts := performer.mapState[trackPlacement.Hex.Y][trackPlacement.Hex.X]
 
@@ -129,22 +175,62 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 		}
 	}
 
+	// Max number of routes on a tile is 2
+	if len(ts.Routes)+len(trackPlacement.Tracks) > 2 {
+		return ErrInvalidPlacement
+	}
+
 	var cost int
 	if len(ts.Routes) == 0 {
 		hexType := performer.theMap.Hexes[trackPlacement.Hex.Y][trackPlacement.Hex.X]
-		// FIXME: These costs need to be adjusted for direct builds of complex track
+		tileType := getTileType(trackPlacement.Tracks)
 		if hexType == PLAINS_HEX_TYPE {
-			cost = 2
+			switch tileType {
+			case SIMPLE_TRACK_TILE_TYPE:
+				cost = 2
+			case COMPLEX_COEXISTING_TILE_TYPE:
+				cost = 3
+			case COMPLEX_CROSSING_TILE_TYPE:
+				cost = 4
+			}
 		} else if hexType == RIVER_HEX_TYPE {
-			cost = 3
+			switch tileType {
+			case SIMPLE_TRACK_TILE_TYPE:
+				cost = 3
+			case COMPLEX_COEXISTING_TILE_TYPE:
+				cost = 4
+			case COMPLEX_CROSSING_TILE_TYPE:
+				cost = 5
+			}
 		} else if hexType == MOUNTAIN_HEX_TYPE {
-			cost = 4
+			switch tileType {
+			case SIMPLE_TRACK_TILE_TYPE:
+				cost = 4
+			case COMPLEX_COEXISTING_TILE_TYPE:
+				cost = 5
+			case COMPLEX_CROSSING_TILE_TYPE:
+				cost = 6
+			}
 		} else {
 			return ErrInvalidPlacement
 		}
 	} else {
-		// FIXME: Figure out crossing vs coexisting cost
-		cost = 3
+		allRoutes := make([][2]Direction, 0, len(ts.Routes)+len(trackPlacement.Tracks))
+		for _, route := range ts.Routes {
+			allRoutes = append(allRoutes, [2]Direction{route.Left, route.Right})
+		}
+		for _, track := range trackPlacement.Tracks {
+			allRoutes = append(allRoutes, track)
+		}
+		tileType := getTileType(allRoutes)
+		if tileType == COMPLEX_CROSSING_TILE_TYPE {
+			cost = 3
+		} else {
+			cost = 2
+		}
+	}
+	if cost == 0 {
+		return fmt.Errorf("failed to determine cost for placing track tile")
 	}
 
 	if cost > performer.gameState.PlayerCash[performer.gameState.ActivePlayer] {

@@ -7,8 +7,6 @@ function Home() {
         <Header as='h2'>Known Issues</Header>
         <List>
             <ListItem>Component limits are not enforced (town markers, number of tiles, etc.)</ListItem>
-            <ListItem>Cost of placing tiles is not calculated correctly for direct builds of complex track</ListItem>
-            <ListItem>Cost of placing tiles is not calculated correctly for upgrades to complex co-existing track</ListItem>
             <ListItem>Bankrupt players do not get eliminated (they just go into negative income)</ListItem>
         </List>
     </>
