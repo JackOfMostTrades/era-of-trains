@@ -264,3 +264,21 @@ export interface ConfirmMoveResponse {
 export function ConfirmMove(req: ConfirmMoveRequest): Promise<ConfirmMoveResponse> {
     return doApiCall('/api/confirmMove', req);
 }
+
+
+export interface GameLogEntry {
+    timestamp: number;
+    userId: string;
+    action: string;
+    description: string;
+}
+
+export interface GetGameLogsRequest {
+    gameId: string;
+}
+export interface GetGameLogsResponse {
+    logs: GameLogEntry[];
+}
+export function GetGameLogs(req: GetGameLogsRequest): Promise<GetGameLogsResponse> {
+    return doApiCall('/api/getGameLogs', req);
+}

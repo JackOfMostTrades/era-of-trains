@@ -236,9 +236,25 @@ export class HexRenderer {
         }
         let ypos = hex.y*5;
 
+        let htmlColor = playerColorToHtml(playerColor);
+
         let leftOffset = hexEdgeOffset(left);
         let rightOffset = hexEdgeOffset(right);
-        this.paths.push(<path stroke={playerColorToHtml(playerColor)} strokeWidth={1} fill="none" d={`M ${xpos+leftOffset.dx} ${ypos+leftOffset.dy} Q ${xpos+5.7735} ${ypos+5} ${xpos+rightOffset.dx} ${ypos+rightOffset.dy}`} />);
+
+        let edgeDelta = Math.abs(right - left);
+        if (edgeDelta === 1 || edgeDelta === 5) {
+            // Tight curve
+            let controlX = 5.7735 + (leftOffset.dx - 5.7735)/4 + (rightOffset.dx - 5.7735)/4
+            let controlY = 5 + (leftOffset.dy - 5)/4 + (rightOffset.dy - 5)/4
+
+            this.paths.push(<path stroke={htmlColor} strokeWidth={1} fill="none" d={`M ${xpos+leftOffset.dx} ${ypos+leftOffset.dy} Q ${xpos+controlX} ${ypos+controlY} ${xpos+rightOffset.dx} ${ypos+rightOffset.dy}`} />);
+        } else if (edgeDelta === 2 || edgeDelta === 4) {
+            // Gentle curve
+            this.paths.push(<path stroke={htmlColor} strokeWidth={1} fill="none" d={`M ${xpos+leftOffset.dx} ${ypos+leftOffset.dy} Q ${xpos+5.7735} ${ypos+5} ${xpos+rightOffset.dx} ${ypos+rightOffset.dy}`} />);
+        } else {
+            // Straight
+            this.paths.push(<line stroke={htmlColor} strokeWidth={1} x1={xpos+leftOffset.dx} y1={ypos+leftOffset.dy} x2={xpos+rightOffset.dx} y2={ypos+rightOffset.dy} />);
+        }
 
         this.width = Math.max(this.width, hex.x);
         this.height = Math.max(this.height, hex.y);

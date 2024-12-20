@@ -599,3 +599,52 @@ func (server *GameServer) listGames(ctx *RequestContext, req *ListGamesRequest) 
 		Games: games,
 	}, nil
 }
+
+type GameLogEntry struct {
+	Timestamp   int    `json:"timestamp"`
+	UserId      string `json:"userId"`
+	Action      string `json:"action"`
+	Description string `json:"description"`
+}
+
+type GetGameLogsRequest struct {
+	GameId string `json:"gameId"`
+}
+type GetGameLogsResponse struct {
+	Logs []*GameLogEntry `json:"logs"`
+}
+
+func (server *GameServer) getGameLogs(ctx *RequestContext, req *GetGameLogsRequest) (resp *GetGameLogsResponse, err error) {
+	stmt, err := server.db.Prepare("SELECT timestamp,user_id,action,description FROM game_log WHERE game_id=? ORDER BY timestamp ASC")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query(req.GameId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+	defer rows.Close()
+
+	var entries []*GameLogEntry
+	for rows.Next() {
+		var timestamp int
+		var userId string
+		var action string
+		var description string
+		err = rows.Scan(&timestamp, &userId, &action, &description)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan row: %v", err)
+		}
+		entries = append(entries, &GameLogEntry{
+			Timestamp:   timestamp,
+			UserId:      userId,
+			Action:      action,
+			Description: description,
+		})
+	}
+
+	return &GetGameLogsResponse{
+		Logs: entries,
+	}, nil
+}

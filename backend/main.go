@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	_ "modernc.org/sqlite"
 	"net/http"
 	"os"
+	"sync"
 )
 
 type RequestContext struct {
@@ -176,9 +178,18 @@ func main() {
 	mux.HandleFunc("/api/listGames", jsonHandler(server, server.listGames))
 	mux.HandleFunc("/api/confirmMove", jsonHandler(server, server.confirmMove))
 	mux.HandleFunc("/api/viewGame", jsonHandler(server, server.viewGame))
+	mux.HandleFunc("/api/getGameLogs", jsonHandler(server, server.getGameLogs))
 
-	err = http.ListenAndServe("localhost:8080", mux)
-	if err != http.ErrServerClosed {
-		panic(err)
-	}
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err = http.ListenAndServe("localhost:8080", mux)
+		if err != http.ErrServerClosed {
+			panic(err)
+		}
+	}()
+
+	slog.Info("Listening on port 8080...")
+	wg.Wait()
 }

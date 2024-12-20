@@ -12,6 +12,7 @@ import MoveGoodsActionSelector from "../actions/MoveGoodsActionSelector.tsx";
 import GoodsGrowthTable from "./GoodsGrowthTable.tsx";
 import ProductionAction from "../actions/ProductionAction.tsx";
 import {playerColorToHtml} from "../actions/renderer/HexRenderer.tsx";
+import GameLogsComponent from "./GameLogsComponent.tsx";
 
 function WaitingForPlayersPage({game, onJoin}: {game: ViewGameResponse, onJoin: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
@@ -101,7 +102,7 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
     let playerColumns: ReactNode[] = [];
     for (let player of game.joinedUsers) {
         let playerColorHtml = playerColorToHtml(game.gameState.playerColor[player.id]);
-        playerColumns.push(<GridColumn>
+        playerColumns.push(<GridColumn key={player.id}>
             <Segment>
                 Player: <div style={{height: '1em', width: '1em', borderRadius: '50%', display: 'inline-block', backgroundColor: playerColorHtml}} /> {player.nickname}<br/>
                 Cash: ${game.gameState.playerCash[player.id]}<br/>
@@ -160,11 +161,13 @@ function ViewGamePage() {
     let gameId = params.gameId;
 
     let [game, setGame] = useState<ViewGameResponse|undefined>(undefined);
+    let [reloadTime, setReloadTime] = useState<number>(0);
 
     const reload: () => Promise<void> = () => {
         if (gameId) {
             return ViewGame({gameId: gameId}).then(res => {
                 setGame(res);
+                setReloadTime(Date.now());
             });
         } else {
             setGame(undefined);
@@ -192,6 +195,7 @@ function ViewGamePage() {
             <PlayerStatus game={game} onConfirmMove={() => reload()}/>
             <GoodsGrowthTable game={game} />
             <ViewMapComponent game={game} onUpdate={() => reload()}/>
+            <GameLogsComponent gameId={game.id} reloadTime={reloadTime} />
         </>
     }
 

@@ -44,19 +44,17 @@ function GoodsGrowthTable({ game }: {game: ViewGameResponse}) {
         tableRows.push(<TableRow key={i+1}>{cells}</TableRow>);
     }
 
-    let bottomHeaderCells: ReactNode[] = [<TableCell/>,<TableCell/>];
+    let bottomHeaderCells: ReactNode[] = [];
     for (let i = 0; i < 4; i++) {
         bottomHeaderCells.push(<TableCell key={i}><div className="goodsGrowthHeader lightCity">{String.fromCharCode(i+'A'.charCodeAt(0))}</div></TableCell>);
     }
     for (let i = 0; i < 4; i++) {
-        bottomHeaderCells.push(<TableCell key={i}><div className="goodsGrowthHeader darkCity">{String.fromCharCode(i+'E'.charCodeAt(0))}</div></TableCell>);
+        bottomHeaderCells.push(<TableCell key={i+4}><div className="goodsGrowthHeader darkCity">{String.fromCharCode(i+'E'.charCodeAt(0))}</div></TableCell>);
     }
-    bottomHeaderCells.push(<TableCell/>);
-    bottomHeaderCells.push(<TableCell/>);
-    tableRows.push(<TableRow key={4}>{bottomHeaderCells}</TableRow>);
+    tableRows.push(<TableRow key={4}><TableCell/><TableCell/>{bottomHeaderCells}<TableCell/><TableCell/></TableRow>);
 
     for (let i = 0; i < 2; i++) {
-        let cells: ReactNode[] = [<TableCell/>,<TableCell/>];
+        let cells: ReactNode[] = [];
         for (let j = 0; j < 8; j++) {
             let cube: ReactNode;
             if (goodsGrowth[j+12][i] !== Color.NONE) {
@@ -65,7 +63,7 @@ function GoodsGrowthTable({ game }: {game: ViewGameResponse}) {
             }
             cells.push(<TableCell key={j}><div className="cubeSpot" onClick={() => emitEvent(j+12,i)}>{cube}</div></TableCell>);
         }
-        tableRows.push(<TableRow key={i+1}>{cells}<TableCell/><TableCell/></TableRow>);
+        tableRows.push(<TableRow key={i+5}><TableCell/><TableCell/>{cells}<TableCell/><TableCell/></TableRow>);
     }
     
     return <Segment>
