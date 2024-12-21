@@ -106,6 +106,7 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 		}
 
 		ts.Routes = append(ts.Routes, Route{
+			Left:  direction,
 			Right: direction,
 			Link:  link,
 		})
@@ -387,6 +388,7 @@ func newBuildActionPerformer(theMap *BasicMap, gameState *GameState) *buildActio
 		tileState := performer.mapState[hex.Y][hex.X]
 		if tileState.HasTown {
 			tileState.Routes = append(tileState.Routes, Route{
+				Left:  link.Steps[0],
 				Right: link.Steps[0],
 				Link:  link,
 			})
@@ -398,6 +400,7 @@ func newBuildActionPerformer(theMap *BasicMap, gameState *GameState) *buildActio
 				// Do nothing
 			} else if tileState.HasTown {
 				tileState.Routes = append(tileState.Routes, Route{
+					Left:  link.Steps[idx-1].opposite(),
 					Right: link.Steps[idx-1].opposite(),
 					Link:  link,
 				})

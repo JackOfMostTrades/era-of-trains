@@ -511,3 +511,66 @@ func TestUpgradeToComplex(t *testing.T) {
 	assert.Equal(t, []Direction{SOUTH_WEST, NORTH, NORTH}, link.Steps)
 	assert.Equal(t, 3, gameState.PlayerCash[playerId])
 }
+
+func TestIssue1Regression(t *testing.T) {
+	playerId := "player1"
+	theMap := &BasicMap{
+		Width:  2,
+		Height: 7,
+		Hexes: [][]HexType{
+			{PLAINS_HEX_TYPE, CITY_HEX_TYPE},
+			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+			{TOWN_HEX_TYPE, PLAINS_HEX_TYPE},
+			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+			{CITY_HEX_TYPE, PLAINS_HEX_TYPE},
+		},
+		Cities: []BasicCity{
+			BasicCity{
+				Color:      PURPLE,
+				Coordinate: Coordinate{X: 1, Y: 0},
+			},
+			BasicCity{
+				Color:      PURPLE,
+				Coordinate: Coordinate{X: 0, Y: 6},
+			},
+		},
+	}
+
+	gameState := &GameState{
+		ActivePlayer: playerId,
+		PlayerCash: map[string]int{
+			playerId: 10,
+		},
+		GamePhase: BUILDING_GAME_PHASE,
+	}
+
+	handler := &confirmMoveHandler{
+		theMap:    theMap,
+		gameState: gameState,
+	}
+	err := handler.performBuildAction(&BuildAction{
+		TownPlacements: []*TownPlacement{
+			{Tracks: []Direction{SOUTH_WEST, NORTH}, Hex: Coordinate{X: 0, Y: 3}},
+		},
+		TrackPlacements: []*TrackPlacement{
+			{Tracks: [][2]Direction{{NORTH_EAST, SOUTH}}, Hex: Coordinate{X: 0, Y: 1}},
+			{Tracks: [][2]Direction{{NORTH_EAST, SOUTH}}, Hex: Coordinate{X: 0, Y: 4}},
+		},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, 3, gameState.PlayerCash[playerId])
+	assert.Equal(t, 2, len(gameState.Links))
+	link := gameState.Links[0]
+	assert.Equal(t, true, link.Complete)
+	assert.Equal(t, playerId, link.Owner)
+	assert.Equal(t, Coordinate{X: 0, Y: 3}, link.SourceHex)
+	assert.Equal(t, []Direction{SOUTH_WEST, SOUTH}, link.Steps)
+	link = gameState.Links[1]
+	assert.Equal(t, true, link.Complete)
+	assert.Equal(t, playerId, link.Owner)
+	assert.Equal(t, Coordinate{X: 1, Y: 0}, link.SourceHex)
+	assert.Equal(t, []Direction{SOUTH_WEST, SOUTH}, link.Steps)
+}
