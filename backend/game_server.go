@@ -204,6 +204,7 @@ func (server *GameServer) register(ctx *RequestContext, req *RegisterRequest) (r
 		Secure:   !server.config.Authentication.DisableSecureCookie,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
+		MaxAge:   int((30 * 24 * time.Hour).Seconds()),
 	})
 	return &RegisterResponse{}, nil
 }
