@@ -3,7 +3,7 @@ import {Container, Header, List, ListItem} from "semantic-ui-react";
 function Home() {
     return <Container text>
         <Header as='h1'>Era of Trains</Header>
-        <p>Currently only available by invitation.</p>
+        <p>Currently in private beta, so there's not a lot of exposition or tutorial here at present. If you're in the private beta and need help or hit a bug, ping me on Discord.</p>
         <Header as='h2'>Known Issues</Header>
         <List>
             <ListItem>Track replacement of incomplete track is currently not possible</ListItem>
