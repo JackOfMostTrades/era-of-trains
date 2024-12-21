@@ -134,6 +134,7 @@ func (server *GameServer) login(ctx *RequestContext, req *LoginRequest) (resp *L
 		Secure:   !server.config.Authentication.DisableSecureCookie,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
+		MaxAge:   int((30 * 24 * time.Hour).Seconds()),
 	})
 	return &LoginResponse{}, nil
 }
@@ -221,7 +222,7 @@ func (server *GameServer) logout(ctx *RequestContext, req *LogoutRequest) (resp 
 		Secure:   !server.config.Authentication.DisableSecureCookie,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
 	})
 	return &LogoutResponse{}, nil
 }
