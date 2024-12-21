@@ -328,12 +328,12 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 		if passCount == 0 {
 			// Last player does not pay
 			cashToPay = 0
-		} else if (len(gameState.PlayerOrder) - passCount) >= 2 {
-			// Only two players left to pass, pay full price of the last bid
-			cashToPay = lastBid
-		} else {
+		} else if (len(gameState.PlayerOrder) - passCount) > 2 {
 			// In the middle, pay half price (rounded up)
 			cashToPay = lastBid/2 + (lastBid % 2)
+		} else {
+			// Only two players left to pass, pay full price of the last bid
+			cashToPay = lastBid
 		}
 
 		gameState.PlayerCash[currentPlayer] -= cashToPay

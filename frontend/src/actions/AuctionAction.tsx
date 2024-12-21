@@ -73,7 +73,7 @@ function AuctionAction({game, onDone}: {game: ViewGameResponse, onDone: () => Pr
 
         let turnOrderPassButton: ReactNode;
         if (game.gameState.playerActions[game.gameState.activePlayer] === 'turn_order_pass') {
-            turnOrderPassButton = <><Button secondary loading={loading} onClick={() => doBid(0)} /><br/></>
+            turnOrderPassButton = <><Button secondary loading={loading} onClick={() => doBid(0)}>Turn-Order Pass</Button></>
         }
 
         content = <>
@@ -82,7 +82,7 @@ function AuctionAction({game, onDone}: {game: ViewGameResponse, onDone: () => Pr
                       value={amount}
                       onChange={(_, {value}) => setAmount(value as number)}
                       options={options}/><br/>
-            <Button primary loading={loading} onClick={() => doBid(amount)}>Bid</Button><br/>
+            <Button primary loading={loading} onClick={() => doBid(amount)}>Bid</Button>
             {turnOrderPassButton}
             <Button negative loading={loading} onClick={() => doBid(-1)}>Pass</Button>
         </>;

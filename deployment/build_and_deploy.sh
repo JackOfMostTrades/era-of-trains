@@ -8,6 +8,7 @@ if [[ ! -d backend ]]; then
 fi
 
 pushd backend
+go test -v ./...
 GOOS=linux GOARCH=amd64 go build
 popd
 pushd frontend

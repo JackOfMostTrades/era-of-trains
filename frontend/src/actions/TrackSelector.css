@@ -2,6 +2,7 @@ div.track-select {
     display: inline-block;
     padding: 2px;
     margin: 2px;
+    width: 80px;
     line-height: 0;
 }
 div.track-select.selected {

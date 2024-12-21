@@ -441,3 +441,73 @@ func TestLolipopFromTown(t *testing.T) {
 	assert.Equal(t, Coordinate{X: 1, Y: 1}, link.SourceHex)
 	assert.Equal(t, []Direction{NORTH_WEST, SOUTH_WEST, NORTH_WEST}, link.Steps)
 }
+
+func TestUpgradeToComplex(t *testing.T) {
+	playerId := "player1"
+	theMap := &BasicMap{
+		Width:  2,
+		Height: 5,
+		Hexes: [][]HexType{
+			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+			{PLAINS_HEX_TYPE, CITY_HEX_TYPE},
+			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+		},
+		Cities: []BasicCity{
+			BasicCity{
+				Color:      PURPLE,
+				Coordinate: Coordinate{X: 1, Y: 3},
+			},
+		},
+	}
+	gameState := &GameState{
+		GamePhase:    BUILDING_GAME_PHASE,
+		ActivePlayer: playerId,
+		PlayerCash:   map[string]int{playerId: 10},
+	}
+
+	handler := &confirmMoveHandler{
+		theMap:    theMap,
+		gameState: gameState,
+	}
+	err := handler.performBuildAction(&BuildAction{
+		TrackPlacements: []*TrackPlacement{
+			{
+				Tracks: [][2]Direction{{SOUTH_WEST, SOUTH_EAST}},
+				Hex:    Coordinate{X: 1, Y: 2},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, len(gameState.Links))
+	link := gameState.Links[0]
+	assert.Equal(t, false, link.Complete)
+	assert.Equal(t, playerId, link.Owner)
+	assert.Equal(t, Coordinate{X: 1, Y: 3}, link.SourceHex)
+	assert.Equal(t, []Direction{NORTH_WEST, SOUTH_WEST}, link.Steps)
+	assert.Equal(t, 8, gameState.PlayerCash[playerId])
+
+	err = handler.performBuildAction(&BuildAction{
+		TrackPlacements: []*TrackPlacement{
+			{
+				Tracks: [][2]Direction{{NORTH, NORTH_EAST}},
+				Hex:    Coordinate{X: 1, Y: 4},
+			},
+			{
+				Tracks: [][2]Direction{{SOUTH, NORTH}},
+				Hex:    Coordinate{X: 1, Y: 2},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, 2, len(gameState.Links))
+	link = gameState.Links[1]
+	assert.Equal(t, false, link.Complete)
+	assert.Equal(t, playerId, link.Owner)
+	assert.Equal(t, Coordinate{X: 1, Y: 3}, link.SourceHex)
+	assert.Equal(t, []Direction{SOUTH_WEST, NORTH, NORTH}, link.Steps)
+	assert.Equal(t, 3, gameState.PlayerCash[playerId])
+}

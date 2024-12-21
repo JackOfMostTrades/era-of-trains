@@ -130,6 +130,26 @@ const (
 	COMPLEX_COEXISTING_TILE_TYPE
 )
 
+func routesEqual(a [][2]Direction, b [][2]Direction) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for _, trackA := range a {
+		found := false
+		for _, trackB := range b {
+			if (trackA[0] == trackB[0] && trackA[1] == trackB[1]) ||
+				(trackA[0] == trackB[1] && trackA[1] == trackB[0]) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
 func getTileType(routes [][2]Direction) trackTileType {
 	if len(routes) < 2 {
 		return SIMPLE_TRACK_TILE_TYPE
@@ -151,7 +171,7 @@ func getTileType(routes [][2]Direction) trackTileType {
 					Direction((int(route[0]) + rotation) % 6), Direction((int(route[1]) + rotation) % 6),
 				})
 			}
-			if slices.Equal(rotatedRoutes, routes) {
+			if routesEqual(rotatedRoutes, routes) {
 				return COMPLEX_CROSSING_TILE_TYPE
 			}
 		}
