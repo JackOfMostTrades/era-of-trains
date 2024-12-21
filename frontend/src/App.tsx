@@ -1,6 +1,6 @@
 import {Container, Icon, Label, Loader, Menu, MenuItem, MenuMenu,} from 'semantic-ui-react'
 import {BrowserRouter as Router, Route, Routes} from 'react-router-dom';
-import UserSessionContext, {logout, oauthSignIn, UserSessionProvider} from "./UserSessionContext.tsx";
+import UserSessionContext, {logout, UserSessionProvider} from "./UserSessionContext.tsx";
 import Home from "./pages/Home.tsx";
 import Games from "./pages/Games.tsx";
 import {NavLink} from "react-router";
@@ -11,6 +11,8 @@ import {ErrorContextProvider} from "./ErrorContext.tsx";
 import ErrorDisplay from "./components/ErrorDisplay.tsx";
 import About from "./pages/About.tsx";
 import DevLogin from "./pages/DevLogin.tsx";
+import SignInPage from "./pages/SignInPage.tsx";
+import RegisterPage from "./pages/RegisterPage.tsx";
 
 function UserMenu() {
     let userSessionContext = useContext(UserSessionContext)
@@ -34,10 +36,7 @@ function UserMenu() {
             />
         </>
     } else {
-        return <MenuItem
-            name='Sign In'
-            onClick={() => oauthSignIn()}
-        />
+        return <Menu.Item><NavLink to='/signin'>Sign In</NavLink></Menu.Item>
     }
 }
 
@@ -80,6 +79,8 @@ function App() {
                             <Route path="/games" element={<Games />}/>
                             <Route path="/about" element={<About />}/>
                             <Route path="/dev/login/:nickname" element={<DevLogin />}/>
+                            <Route path="/signin" element={<SignInPage />}/>
+                            <Route path="/register" element={<RegisterPage />}/>
                             <Route path="/" element={<Home />}/>
                         </Routes>
                     </Container>

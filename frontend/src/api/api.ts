@@ -50,10 +50,22 @@ export interface LoginRequest {
     devNickname?: string
 }
 export interface LoginResponse {
+    registrationRequired: boolean
 }
 
 export function Login(req: LoginRequest): Promise<LoginResponse> {
     return doApiCall('/api/login', req);
+}
+
+export interface RegisterRequest {
+    accessToken: string
+    nickname: string
+}
+export interface RegisterResponse {
+}
+
+export function Register(req: RegisterRequest): Promise<RegisterResponse> {
+    return doApiCall('/api/register', req);
 }
 
 export interface LogoutRequest {}

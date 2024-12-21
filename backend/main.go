@@ -201,6 +201,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/login", jsonHandlerUnAuthenticated(server.login))
+	mux.HandleFunc("/api/register", jsonHandlerUnAuthenticated(server.register))
 	mux.HandleFunc("/api/logout", jsonHandlerUnAuthenticated(server.logout))
 	mux.HandleFunc("/api/whoami", jsonHandler(server, whoami))
 	mux.HandleFunc("/api/createGame", jsonHandler(server, server.createGame))

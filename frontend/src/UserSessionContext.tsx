@@ -62,8 +62,12 @@ export function UserSessionProvider({ children }: {children: ReactNode}) {
                 let accessToken = params.get("access_token");
                 if (accessToken) {
                     try {
-                        await Login({accessToken: accessToken});
-                        window.location.hash = '';
+                        let res = await Login({accessToken: accessToken});
+                        if (res.registrationRequired) {
+                            window.location.href = '/register#access_token=' + accessToken;
+                        } else {
+                            window.location.hash = '';
+                        }
                     } catch (e) {
                         setError(e);
                         return;
