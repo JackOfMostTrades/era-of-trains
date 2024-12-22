@@ -100,16 +100,25 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
         playerOrder.push(player.nickname);
     }
 
-    let playerColumns: ReactNode[] = [];
+    let playerInfoOrder: string[] = [];
     for (let player of game.joinedUsers) {
-        let playerColorHtml = playerColorToHtml(game.gameState.playerColor[player.id]);
-        playerColumns.push(<Segment key={player.id}>
-                Player: <div style={{height: '1em', width: '1em', borderRadius: '50%', display: 'inline-block', backgroundColor: playerColorHtml}} /> {player.nickname}<br/>
-                Cash: ${game.gameState.playerCash[player.id]}<br/>
-                Shares: {game.gameState.playerShares[player.id]}<br/>
-                Income: {game.gameState.playerIncome[player.id]}<br/>
-                Loco: {game.gameState.playerLoco[player.id]}<br/>
-                Special Action: {game.gameState.playerActions[player.id]}<br/>
+        playerInfoOrder.push(player.id);
+    }
+    playerInfoOrder.sort((a,b) => {
+        return (game.gameState?.playerColor[a] || 0) - (game.gameState?.playerColor[b] || 0);
+    });
+
+    let playerColumns: ReactNode[] = [];
+    for (let playerId of playerInfoOrder) {
+        let nickname = playerById[playerId].nickname;
+        let playerColorHtml = playerColorToHtml(game.gameState.playerColor[playerId]);
+        playerColumns.push(<Segment key={playerId}>
+                Player: <div style={{height: '1em', width: '1em', borderRadius: '50%', display: 'inline-block', backgroundColor: playerColorHtml}} /> {nickname}<br/>
+                Cash: ${game.gameState.playerCash[playerId]}<br/>
+                Shares: {game.gameState.playerShares[playerId]}<br/>
+                Income: {game.gameState.playerIncome[playerId]}<br/>
+                Loco: {game.gameState.playerLoco[playerId]}<br/>
+                Special Action: {game.gameState.playerActions[playerId]}<br/>
             </Segment>);
     }
 
