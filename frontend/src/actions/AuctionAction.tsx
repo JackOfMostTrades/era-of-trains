@@ -1,14 +1,45 @@
 import {ConfirmMove, User, ViewGameResponse} from "../api/api.ts";
-import {Button, Dropdown, DropdownItemProps, Header, List, ListItem} from "semantic-ui-react";
+import {
+    Button,
+    Dropdown,
+    DropdownItemProps,
+    Header,
+    List,
+    ListItem,
+    Modal,
+    ModalActions,
+    ModalContent,
+    ModalDescription,
+    ModalHeader
+} from "semantic-ui-react";
 import {ReactNode, useContext, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
 import ErrorContext from "../ErrorContext.tsx";
+
+function ConfirmForegoTopModal({open, onConfirm, onCancel}: {open: boolean, onConfirm: () => void, onCancel: () => void}) {
+    return (
+        <Modal open={open}>
+            <ModalHeader>Skip using turn-order pass?</ModalHeader>
+            <ModalContent>
+                <ModalDescription>
+                    <Header>You have turn-order pass</Header>
+                    <p>You have turn-order pass. Do you really want to skip using it?</p>
+                </ModalDescription>
+            </ModalContent>
+            <ModalActions>
+                <Button primary onClick={onConfirm}>Yes, continue with bid</Button>
+                <Button negative onClick={onCancel}>Cancel</Button>
+            </ModalActions>
+        </Modal>
+    )
+}
 
 function AuctionAction({game, onDone}: {game: ViewGameResponse, onDone: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
     let {setError} = useContext(ErrorContext);
     let [amount, setAmount] = useState<number>(0);
     let [loading, setLoading] = useState<boolean>(false);
+    let [showTopModal, setShowTopModal] = useState<boolean>(false);
 
     if (!game.gameState) {
         return null;
@@ -71,8 +102,9 @@ function AuctionAction({game, onDone}: {game: ViewGameResponse, onDone: () => Pr
             });
         }
 
+        let hasTurnOrderPass = game.gameState.playerActions[game.activePlayer] === 'turn_order_pass';
         let turnOrderPassButton: ReactNode;
-        if (game.gameState.playerActions[game.activePlayer] === 'turn_order_pass') {
+        if (hasTurnOrderPass) {
             turnOrderPassButton = <><Button secondary loading={loading} onClick={() => doBid(0)}>Turn-Order Pass</Button></>
         }
 
@@ -82,9 +114,21 @@ function AuctionAction({game, onDone}: {game: ViewGameResponse, onDone: () => Pr
                       value={amount}
                       onChange={(_, {value}) => setAmount(value as number)}
                       options={options}/><br/>
-            <Button primary loading={loading} onClick={() => doBid(amount)}>Bid</Button>
+            <Button primary loading={loading} onClick={() => {
+                if (hasTurnOrderPass) {
+                    setShowTopModal(true);
+                } else {
+                    doBid(amount)
+                }
+            }}>Bid</Button>
             {turnOrderPassButton}
             <Button negative loading={loading} onClick={() => doBid(-1)}>Pass</Button>
+            <ConfirmForegoTopModal open={showTopModal} onConfirm={() => {
+                setShowTopModal(false);
+                doBid(amount);
+            }} onCancel={() => {
+                setShowTopModal(false);
+            }} />
         </>;
     }
 
