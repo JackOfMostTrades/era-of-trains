@@ -161,12 +161,14 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
 
 function ViewGamePage() {
     let params = useParams();
+    let userSession = useContext(UserSessionContext);
     let gameId = params.gameId;
 
     let [game, setGame] = useState<ViewGameResponse|undefined>(undefined);
     let [reloadTime, setReloadTime] = useState<number>(0);
 
     const reload: () => Promise<void> = () => {
+        userSession.reload();
         if (gameId) {
             return ViewGame({gameId: gameId}).then(res => {
                 setGame(res);

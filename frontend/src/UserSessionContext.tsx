@@ -5,9 +5,10 @@ import ErrorContext from "./ErrorContext.tsx";
 interface UserSession {
     userInfo?: WhoAmIResponse
     loading?: boolean
+    reload: () => Promise<void>
 }
 
-const UserSessionContext = createContext<UserSession>({});
+const UserSessionContext = createContext<UserSession>({reload: () => Promise.resolve()});
 
 export function oauthSignIn() {
     // Google's OAuth 2.0 endpoint for requesting an access token
@@ -52,7 +53,16 @@ export async function logout() {
 }
 
 export function UserSessionProvider({ children }: {children: ReactNode}) {
-    let [userSession, setUserSession] = useState<UserSession>({loading: true});
+    const reload: () => Promise<void> = async () => {
+        try {
+            let res = await WhoAmI({});
+            setUserSession({loading: false, userInfo: res, reload: reload});
+        } catch (e) {
+            setUserSession({loading: false, reload: reload});
+        }
+    }
+
+    let [userSession, setUserSession] = useState<UserSession>({loading: true, reload: reload});
     let {setError} = useContext(ErrorContext);
 
     useEffect(() => {
@@ -75,13 +85,7 @@ export function UserSessionProvider({ children }: {children: ReactNode}) {
                 }
             }
 
-            try {
-                let res = await WhoAmI({});
-                setUserSession({loading: false, userInfo: res});
-            } catch (e) {
-                setUserSession({loading: false});
-                return;
-            }
+            await reload();
         })();
     }, []);
 
