@@ -851,6 +851,33 @@ func (handler *confirmMoveHandler) executeIncomeAndExpenses() error {
 			gameState.PlayerCash[player] = cash
 		}
 	}
+
+	for _, player := range gameState.PlayerOrder {
+		income := gameState.PlayerIncome[player]
+		var reduction int
+		if income <= 10 {
+			reduction = 0
+		} else if income <= 20 {
+			reduction = 2
+		} else if income <= 30 {
+			reduction = 4
+		} else if income <= 40 {
+			reduction = 6
+		} else if income <= 50 {
+			reduction = 8
+		} else {
+			reduction = 10
+		}
+
+		if reduction == 0 {
+			handler.Log("%s has %d income and takes no income reduction.", handler.PlayerNick(player), income)
+		} else {
+			gameState.PlayerIncome[player] -= reduction
+			handler.Log("%s has %d income and takes %d income reduction, dropping their income to %d.",
+				handler.PlayerNick(player), income, reduction, income-reduction)
+		}
+	}
+
 	return nil
 }
 
