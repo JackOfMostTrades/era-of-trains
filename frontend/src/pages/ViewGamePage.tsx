@@ -1,7 +1,7 @@
 import {Button, Grid, Header, List, ListItem, Loader, Segment} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import {useParams} from "react-router";
-import {GamePhase, JoinGame, LeaveGame, StartGame, User, ViewGame, ViewGameResponse} from "../api/api.ts";
+import {GamePhase, JoinGame, LeaveGame, PlayerColor, StartGame, User, ViewGame, ViewGameResponse} from "../api/api.ts";
 import UserSessionContext from "../UserSessionContext.tsx";
 import ChooseShares from "../actions/ChooseShares.tsx";
 import AuctionAction from "../actions/AuctionAction.tsx";
@@ -85,7 +85,17 @@ function WaitingForStartPage({game, onStart}: {game: ViewGameResponse, onStart: 
     </>
 }
 
-function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfirmMove: () => Promise<void>}) {
+function PlayerColorAndName({nickname, color}: {nickname: string, color: PlayerColor|undefined}) {
+    return <><div style={{
+        height: '1em',
+        width: '1em',
+        borderRadius: '50%',
+        display: 'inline-block',
+        backgroundColor: playerColorToHtml(color)
+    }}/> {nickname}</>
+}
+
+function PlayerStatus({game, onConfirmMove}: { game: ViewGameResponse, onConfirmMove: () => Promise<void> }) {
     if (!game.gameState) {
         return null;
     }
@@ -93,11 +103,6 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
     let playerById: { [id: string]: User } = {};
     for (let player of game.joinedUsers) {
         playerById[player.id] = player;
-    }
-    let playerOrder: string[] = [];
-    for (let playerId of game.gameState.playerOrder) {
-        let player = playerById[playerId];
-        playerOrder.push(player.nickname);
     }
 
     let playerInfoOrder: string[] = [];
@@ -111,9 +116,8 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
     let playerColumns: ReactNode[] = [];
     for (let playerId of playerInfoOrder) {
         let nickname = playerById[playerId].nickname;
-        let playerColorHtml = playerColorToHtml(game.gameState.playerColor[playerId]);
         playerColumns.push(<Grid.Column key={playerId}><Segment>
-                Player: <div style={{height: '1em', width: '1em', borderRadius: '50%', display: 'inline-block', backgroundColor: playerColorHtml}} /> {nickname}<br/>
+                Player: <PlayerColorAndName nickname={nickname} color={game.gameState.playerColor[playerId]} /><br/>
                 Cash: ${game.gameState.playerCash[playerId]}<br/>
                 Shares: {game.gameState.playerShares[playerId]}<br/>
                 Income: {game.gameState.playerIncome[playerId]}<br/>
@@ -157,8 +161,9 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
         </Segment>
         <Segment>
             <Header as='h2'>Game Status</Header>
-            Player order: {playerOrder.join(", ")}<br/>
-            Active player: {playerById[game.activePlayer].nickname}<br/>
+            Player order: {game.gameState.playerOrder.map((playerId, idx) =>
+                <>{idx===0?null:', '}<PlayerColorAndName nickname={playerById[playerId].nickname} color={game.gameState?.playerColor[playerId]} /></>)}<br/>
+            Active player: <PlayerColorAndName nickname={playerById[game.activePlayer].nickname} color={game.gameState?.playerColor[game.activePlayer]} /><br/>
             Game Phase: {game.gameState.gamePhase}<br/>
             Turn: {game.gameState.turnNumber}<br/>
         </Segment>
