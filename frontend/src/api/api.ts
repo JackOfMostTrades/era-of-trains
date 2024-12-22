@@ -23,6 +23,7 @@ export interface GameSummary {
     finished: boolean;
     numPlayers: number;
     mapName: string;
+    activePlayer: string;
     ownerUser: User;
     joinedUsers: User[];
 }
@@ -34,11 +35,21 @@ export function ListGames(req: ListGamesRequest): Promise<ListGamesResponse> {
     return doApiCall('/api/listGames', req);
 }
 
+export interface GetMyGamesRequest {}
+export interface GetMyGamesResponse {
+    games?: GameSummary[];
+}
+
+export function GetMyGames(req: GetMyGamesRequest): Promise<GetMyGamesResponse> {
+    return doApiCall('/api/getMyGames', req)
+}
+
 export interface WhoAmIRequest {
 
 }
 export interface WhoAmIResponse {
     user: User
+    waitingForMeCount: number
 }
 
 export function WhoAmI(req: WhoAmIRequest): Promise<WhoAmIResponse> {
@@ -148,7 +159,6 @@ export enum PlayerColor {
 }
 
 export interface GameState {
-    activePlayer: string;
     playerOrder: string[];
     playerColor: { [playerId: string]: PlayerColor }
     playerShares: { [playerId: string]: number }
@@ -190,6 +200,7 @@ export interface ViewGameResponse {
     numPlayers: number;
     mapName: string;
     ownerUser: User;
+    activePlayer: string;
     joinedUsers: User[];
     gameState?: GameState;
 }

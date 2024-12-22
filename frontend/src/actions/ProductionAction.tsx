@@ -46,8 +46,8 @@ function ProductionAction({game, onDone}: {game: ViewGameResponse, onDone: () =>
 
     let content: ReactNode;
 
-    if (userSession.userInfo?.user.id !== game.gameState.activePlayer) {
-        let activePlayer: User|undefined = playerById[game.gameState.activePlayer];
+    if (userSession.userInfo?.user.id !== game.activePlayer) {
+        let activePlayer: User|undefined = playerById[game.activePlayer];
         content = <p>Waiting for {activePlayer?.nickname} to perform the production action...</p>
     } else {
 

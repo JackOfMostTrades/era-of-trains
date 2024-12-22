@@ -13,6 +13,7 @@ import About from "./pages/About.tsx";
 import DevLogin from "./pages/DevLogin.tsx";
 import SignInPage from "./pages/SignInPage.tsx";
 import RegisterPage from "./pages/RegisterPage.tsx";
+import MyGames from "./pages/MyGames.tsx";
 
 function UserMenu() {
     let userSessionContext = useContext(UserSessionContext)
@@ -53,11 +54,20 @@ function MainMenu() {
             </Menu.Item>
             {userSessionContext.userInfo ? <>
                 <Menu.Item>
-                    <NavLink to='/games'>Games</NavLink>
+                    <NavLink to='/games'>All Games</NavLink>
                 </Menu.Item>
             </> : null}
 
             <MenuMenu position='right'>
+                {userSessionContext.userInfo ? <>
+                    <Menu.Item>
+                        {userSessionContext.userInfo.waitingForMeCount ?
+                            <Label color='red'>
+                                {userSessionContext.userInfo.waitingForMeCount}
+                            </Label> : null}
+                        <NavLink to='/mygames'>My Games</NavLink>
+                    </Menu.Item>
+                </> : null}
                 <UserMenu />
             </MenuMenu>
         </Container>
@@ -77,6 +87,7 @@ function App() {
                             <Route path="/games/new" element={<NewGamePage />}/>
                             <Route path="/games/:gameId" element={<ViewGamePage />}/>
                             <Route path="/games" element={<Games />}/>
+                            <Route path="/mygames" element={<MyGames />}/>
                             <Route path="/about" element={<About />}/>
                             <Route path="/dev/login/:nickname" element={<DevLogin />}/>
                             <Route path="/signin" element={<SignInPage />}/>

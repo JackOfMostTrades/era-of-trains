@@ -31,11 +31,11 @@ function AuctionAction({game, onDone}: {game: ViewGameResponse, onDone: () => Pr
 
     let content: ReactNode;
 
-    if (userSession.userInfo?.user.id !== game.gameState.activePlayer) {
-        let activePlayer: User|undefined = playerById[game.gameState.activePlayer];
+    if (userSession.userInfo?.user.id !== game.activePlayer) {
+        let activePlayer: User|undefined = playerById[game.activePlayer];
         content = <p>Waiting for {activePlayer?.nickname} to bid...</p>
     } else {
-        let currentCash = game.gameState.playerCash[game.gameState.activePlayer];
+        let currentCash = game.gameState.playerCash[game.activePlayer];
         let currentMaxBid = 0;
         for (let playerId of game.gameState.playerOrder) {
             let bid = 0;
@@ -72,7 +72,7 @@ function AuctionAction({game, onDone}: {game: ViewGameResponse, onDone: () => Pr
         }
 
         let turnOrderPassButton: ReactNode;
-        if (game.gameState.playerActions[game.gameState.activePlayer] === 'turn_order_pass') {
+        if (game.gameState.playerActions[game.activePlayer] === 'turn_order_pass') {
             turnOrderPassButton = <><Button secondary loading={loading} onClick={() => doBid(0)}>Turn-Order Pass</Button></>
         }
 

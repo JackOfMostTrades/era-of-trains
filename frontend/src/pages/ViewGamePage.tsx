@@ -149,7 +149,7 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
         <Segment>
             <Header as='h2'>Game Status</Header>
             Player order: {playerOrder.join(", ")}<br/>
-            Active player: {playerById[game.gameState.activePlayer].nickname}<br/>
+            Active player: {playerById[game.activePlayer].nickname}<br/>
             Game Phase: {game.gameState.gamePhase}<br/>
             Turn: {game.gameState.turnNumber}<br/>
         </Segment>

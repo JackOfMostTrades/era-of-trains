@@ -14,10 +14,10 @@ function ChooseShares({game, onDone}: {game: ViewGameResponse, onDone: () => Pro
         return null;
     }
 
-    if (userSession.userInfo?.user.id !== game.gameState.activePlayer) {
+    if (userSession.userInfo?.user.id !== game.activePlayer) {
         let activePlayer: User|undefined;
         for (let player of game.joinedUsers) {
-            if (player.id === game.gameState.activePlayer) {
+            if (player.id === game.activePlayer) {
                 activePlayer = player;
                 break;
             }
@@ -26,7 +26,7 @@ function ChooseShares({game, onDone}: {game: ViewGameResponse, onDone: () => Pro
         return <p>Waiting for {activePlayer?.nickname} to choose number of shares...</p>
     }
 
-    let currentShares = game.gameState.playerShares[game.gameState.activePlayer];
+    let currentShares = game.gameState.playerShares[game.activePlayer];
     let options: DropdownItemProps[] = [];
     for (let i = 0; i <= 15-currentShares; i++) {
         options.push({

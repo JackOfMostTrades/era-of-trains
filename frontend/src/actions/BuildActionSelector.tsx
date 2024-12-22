@@ -96,8 +96,8 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
 
     let content: ReactNode;
 
-    if (userSession.userInfo?.user.id !== game.gameState.activePlayer) {
-        let activePlayer: User|undefined = playerById[game.gameState.activePlayer];
+    if (userSession.userInfo?.user.id !== game.activePlayer) {
+        let activePlayer: User|undefined = playerById[game.activePlayer];
         content = <p>Waiting for {activePlayer?.nickname} to build...</p>
     } else {
         if (step.kind === 'build_track') {
@@ -144,7 +144,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
             </p>
         } else {
             let urbanizeButton: ReactNode = undefined;
-            if (game.gameState.playerActions[game.gameState.activePlayer] === 'urbanization') {
+            if (game.gameState.playerActions[game.activePlayer] === 'urbanization') {
                 urbanizeButton = <>
                     <Button secondary disabled={!!action.urbanization} icon onClick={() => {
                         setStep({kind: 'urbanize', buildTrackSelection: 0, buildTownSelection: 0, urbanizationSelection: 0});

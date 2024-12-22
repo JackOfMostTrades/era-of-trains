@@ -101,12 +101,12 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
 
     let content: ReactNode;
 
-    if (userSession.userInfo?.user.id !== game.gameState.activePlayer) {
-        let activePlayer: User|undefined = playerById[game.gameState.activePlayer];
+    if (userSession.userInfo?.user.id !== game.activePlayer) {
+        let activePlayer: User|undefined = playerById[game.activePlayer];
         content = <p>Waiting for {activePlayer?.nickname} to move goods...</p>
     } else {
         let hasDoneLoco = false;
-        if (game.gameState.playerHasDoneLoco[game.gameState.activePlayer]) {
+        if (game.gameState.playerHasDoneLoco[game.activePlayer]) {
             hasDoneLoco = true;
         }
 

@@ -315,6 +315,19 @@ func (server *GameServer) joinGame(ctx *RequestContext, req *JoinGameRequest) (r
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
 
+	// If all players have joined, mark the owner as the "active player" to indicate the game is waiting on their action
+	if len(joinedUsers) >= numPlayers-1 {
+		stmt, err = server.db.Prepare("UPDATE games SET active_player_id=owner_user_id WHERE id=?")
+		if err != nil {
+			return nil, fmt.Errorf("failed to prepare query: %v", err)
+		}
+		defer stmt.Close()
+		_, err = stmt.Exec(req.GameId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to execute query: %v", err)
+		}
+	}
+
 	return &JoinGameResponse{}, nil
 }
 
@@ -364,6 +377,17 @@ func (server *GameServer) leaveGame(ctx *RequestContext, req *LeaveGameRequest) 
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(req.GameId, ctx.User.Id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+
+	// Make sure the "active player" for the game is set back to NULL to remove indication that game is waiting on owner action
+	stmt, err = server.db.Prepare("UPDATE games SET active_player_id=NULL WHERE id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(req.GameId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
@@ -446,7 +470,6 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 
 	// Setup initial game state
 	gameState := &GameState{
-		ActivePlayer:      playerOrder[0],
 		PlayerOrder:       playerOrder,
 		PlayerColor:       playerColor,
 		PlayerShares:      make(map[string]int),
@@ -522,12 +545,12 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal game state: %v", err)
 	}
-	stmt, err = server.db.Prepare("UPDATE games SET game_state=? WHERE id=?")
+	stmt, err = server.db.Prepare("UPDATE games SET active_player_id=?,game_state=? WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(string(gameStateStr), req.GameId)
+	_, err = stmt.Exec(playerOrder[0], string(gameStateStr), req.GameId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
@@ -545,19 +568,20 @@ type ViewGameRequest struct {
 	GameId string `json:"gameId"`
 }
 type ViewGameResponse struct {
-	Id          string     `json:"id"`
-	Name        string     `json:"name"`
-	Started     bool       `json:"started"`
-	Finished    bool       `json:"finished"`
-	NumPlayers  int        `json:"numPlayers"`
-	MapName     string     `json:"mapName"`
-	OwnerUser   *User      `json:"ownerUser"`
-	JoinedUsers []*User    `json:"joinedUsers"`
-	GameState   *GameState `json:"gameState"`
+	Id           string     `json:"id"`
+	Name         string     `json:"name"`
+	Started      bool       `json:"started"`
+	Finished     bool       `json:"finished"`
+	NumPlayers   int        `json:"numPlayers"`
+	MapName      string     `json:"mapName"`
+	OwnerUser    *User      `json:"ownerUser"`
+	ActivePlayer string     `json:"activePlayer"`
+	JoinedUsers  []*User    `json:"joinedUsers"`
+	GameState    *GameState `json:"gameState"`
 }
 
 func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (resp *ViewGameResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT name,owner_user_id,num_players,map_name,started,finished,game_state FROM games WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT name,owner_user_id,num_players,map_name,started,finished,game_state,active_player_id FROM games WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -570,7 +594,8 @@ func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (r
 	var startedFlag int
 	var finishedFlag int
 	var gameStateStr sql.NullString
-	err = row.Scan(&name, &ownerUserId, &numPlayers, &mapName, &startedFlag, &finishedFlag, &gameStateStr)
+	var activePlayerStr sql.NullString
+	err = row.Scan(&name, &ownerUserId, &numPlayers, &mapName, &startedFlag, &finishedFlag, &gameStateStr, &activePlayerStr)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
@@ -606,29 +631,31 @@ func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (r
 	}
 
 	res := &ViewGameResponse{
-		Id:          req.GameId,
-		Name:        name,
-		Started:     startedFlag != 0,
-		Finished:    finishedFlag != 0,
-		NumPlayers:  numPlayers,
-		MapName:     mapName,
-		OwnerUser:   owner,
-		JoinedUsers: joinedUsers,
-		GameState:   gameState,
+		Id:           req.GameId,
+		Name:         name,
+		Started:      startedFlag != 0,
+		Finished:     finishedFlag != 0,
+		NumPlayers:   numPlayers,
+		MapName:      mapName,
+		OwnerUser:    owner,
+		ActivePlayer: activePlayerStr.String,
+		JoinedUsers:  joinedUsers,
+		GameState:    gameState,
 	}
 
 	return res, nil
 }
 
 type GameSummary struct {
-	Id          string  `json:"id"`
-	Name        string  `json:"name"`
-	Started     bool    `json:"started"`
-	Finished    bool    `json:"finished"`
-	NumPlayers  int     `json:"numPlayers"`
-	MapName     string  `json:"mapName"`
-	OwnerUser   *User   `json:"ownerUser"`
-	JoinedUsers []*User `json:"joinedUsers"`
+	Id           string  `json:"id"`
+	Name         string  `json:"name"`
+	Started      bool    `json:"started"`
+	Finished     bool    `json:"finished"`
+	NumPlayers   int     `json:"numPlayers"`
+	MapName      string  `json:"mapName"`
+	ActivePlayer string  `json:"activePlayer"`
+	OwnerUser    *User   `json:"ownerUser"`
+	JoinedUsers  []*User `json:"joinedUsers"`
 }
 
 type ListGamesRequest struct {
@@ -638,61 +665,20 @@ type ListGamesResponse struct {
 }
 
 func (server *GameServer) listGames(ctx *RequestContext, req *ListGamesRequest) (resp *ListGamesResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT id,name,owner_user_id,num_players,map_name,started,finished FROM games ORDER by created_at DESC")
+	stmt, err := server.db.Prepare("SELECT id,name,owner_user_id,num_players,map_name,started,finished,active_player_id FROM games ORDER by created_at DESC")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
 	defer stmt.Close()
-
-	var games []*GameSummary
 
 	rows, err := stmt.Query()
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
 	defer rows.Close()
-
-	for rows.Next() {
-		var id string
-		var name string
-		var ownerUserId string
-		var numPlayers int
-		var mapName string
-		var startedFlag int
-		var finishedFlag int
-		err = rows.Scan(&id, &name, &ownerUserId, &numPlayers, &mapName, &startedFlag, &finishedFlag)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch game row: %v", err)
-		}
-
-		owner, err := server.getUserById(ownerUserId)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch owner: %v", err)
-		}
-
-		joinedUserIds, err := server.getJoinedUsers(id)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch joined users: %v", err)
-		}
-		joinedUsers := make([]*User, 0, len(joinedUserIds))
-		for userId := range joinedUserIds {
-			user, err := server.getUserById(userId)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get user %s: %v", userId, err)
-			}
-			joinedUsers = append(joinedUsers, user)
-		}
-
-		games = append(games, &GameSummary{
-			Id:          id,
-			Name:        name,
-			Started:     startedFlag != 0,
-			Finished:    finishedFlag != 0,
-			NumPlayers:  numPlayers,
-			MapName:     mapName,
-			OwnerUser:   owner,
-			JoinedUsers: joinedUsers,
-		})
+	games, err := server.getGamesSummaries(rows)
+	if err != nil {
+		return nil, err
 	}
 
 	return &ListGamesResponse{
@@ -746,5 +732,86 @@ func (server *GameServer) getGameLogs(ctx *RequestContext, req *GetGameLogsReque
 
 	return &GetGameLogsResponse{
 		Logs: entries,
+	}, nil
+}
+
+func (server *GameServer) getGamesSummaries(rows *sql.Rows) ([]*GameSummary, error) {
+	var games []*GameSummary
+
+	for rows.Next() {
+		var id string
+		var name string
+		var ownerUserId string
+		var numPlayers int
+		var mapName string
+		var startedFlag int
+		var finishedFlag int
+		var activePlayer sql.NullString
+		err := rows.Scan(&id, &name, &ownerUserId, &numPlayers, &mapName, &startedFlag, &finishedFlag, &activePlayer)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch game row: %v", err)
+		}
+
+		owner, err := server.getUserById(ownerUserId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch owner: %v", err)
+		}
+
+		joinedUserIds, err := server.getJoinedUsers(id)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch joined users: %v", err)
+		}
+		joinedUsers := make([]*User, 0, len(joinedUserIds))
+		for userId := range joinedUserIds {
+			user, err := server.getUserById(userId)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get user %s: %v", userId, err)
+			}
+			joinedUsers = append(joinedUsers, user)
+		}
+
+		games = append(games, &GameSummary{
+			Id:           id,
+			Name:         name,
+			Started:      startedFlag != 0,
+			Finished:     finishedFlag != 0,
+			NumPlayers:   numPlayers,
+			MapName:      mapName,
+			ActivePlayer: activePlayer.String,
+			OwnerUser:    owner,
+			JoinedUsers:  joinedUsers,
+		})
+	}
+
+	return games, nil
+}
+
+type GetMyGamesRequest struct {
+}
+type GetMyGamesResponse struct {
+	Games []*GameSummary `json:"games"`
+}
+
+func (server *GameServer) getMyGames(ctx *RequestContext, req *GetMyGamesRequest) (resp *GetMyGamesResponse, err error) {
+	stmt, err := server.db.Prepare("SELECT G.id,G.name,G.owner_user_id,G.num_players,G.map_name,G.started,G.finished,G.active_player_id FROM games G" +
+		" INNER JOIN game_player_map ON game_player_map.game_id=G.id WHERE game_player_map.player_user_id=?" +
+		" ORDER by G.created_at DESC")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(ctx.User.Id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+	defer rows.Close()
+	games, err := server.getGamesSummaries(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return &GetMyGamesResponse{
+		Games: games,
 	}, nil
 }

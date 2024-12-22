@@ -27,10 +27,9 @@ func TestAttemptTrackPlacement(t *testing.T) {
 		},
 	}
 	gameState := &GameState{
-		ActivePlayer: playerId,
-		PlayerCash:   map[string]int{playerId: 10},
+		PlayerCash: map[string]int{playerId: 10},
 	}
-	performer := newBuildActionPerformer(theMap, gameState)
+	performer := newBuildActionPerformer(theMap, gameState, playerId)
 	err := performer.attemptTrackPlacement(&TrackPlacement{
 		Tracks: [][2]Direction{{NORTH_WEST, NORTH_EAST}},
 		Hex:    Coordinate{X: 0, Y: 1},
@@ -77,11 +76,10 @@ func TestAttemptTrackPlacementEngineer(t *testing.T) {
 		},
 	}
 	gameState := &GameState{
-		ActivePlayer:  playerId,
 		PlayerCash:    map[string]int{playerId: 10},
 		PlayerActions: map[string]SpecialAction{playerId: ENGINEER_SPECIAL_ACTION},
 	}
-	performer := newBuildActionPerformer(theMap, gameState)
+	performer := newBuildActionPerformer(theMap, gameState, playerId)
 	err := performer.attemptTrackPlacement(&TrackPlacement{
 		Tracks: [][2]Direction{{NORTH_EAST, SOUTH_WEST}},
 		Hex:    Coordinate{X: 0, Y: 1},
@@ -128,10 +126,9 @@ func TestTrackFromCityToTown(t *testing.T) {
 		},
 	}
 	gameState := &GameState{
-		ActivePlayer: playerId,
-		PlayerCash:   map[string]int{playerId: 10},
+		PlayerCash: map[string]int{playerId: 10},
 	}
-	performer := newBuildActionPerformer(theMap, gameState)
+	performer := newBuildActionPerformer(theMap, gameState, playerId)
 	err := performer.attemptTownPlacement(&TownPlacement{
 		Tracks: []Direction{SOUTH_EAST},
 		Hex:    Coordinate{X: 0, Y: 0},
@@ -168,10 +165,9 @@ func TestTrackFromTownToCity(t *testing.T) {
 		},
 	}
 	gameState := &GameState{
-		ActivePlayer: playerId,
-		PlayerCash:   map[string]int{playerId: 10},
+		PlayerCash: map[string]int{playerId: 10},
 	}
-	performer := newBuildActionPerformer(theMap, gameState)
+	performer := newBuildActionPerformer(theMap, gameState, playerId)
 	err := performer.attemptTownPlacement(&TownPlacement{
 		Tracks: []Direction{SOUTH_EAST},
 		Hex:    Coordinate{X: 0, Y: 0},
@@ -208,10 +204,9 @@ func TestAdjacentTownAndCity(t *testing.T) {
 		},
 	}
 	gameState := &GameState{
-		ActivePlayer: playerId,
-		PlayerCash:   map[string]int{playerId: 10},
+		PlayerCash: map[string]int{playerId: 10},
 	}
-	performer := newBuildActionPerformer(theMap, gameState)
+	performer := newBuildActionPerformer(theMap, gameState, playerId)
 	err := performer.attemptTownPlacement(&TownPlacement{
 		Tracks: []Direction{SOUTH_EAST},
 		Hex:    Coordinate{X: 0, Y: 0},
@@ -244,14 +239,14 @@ func TestUrbanizeAndConnect(t *testing.T) {
 	}
 	gameState := &GameState{
 		GamePhase:     BUILDING_GAME_PHASE,
-		ActivePlayer:  playerId,
 		PlayerCash:    map[string]int{playerId: 10},
 		PlayerActions: map[string]SpecialAction{playerId: URBANIZATION_SPECIAL_ACTION},
 	}
 
 	handler := &confirmMoveHandler{
-		theMap:    theMap,
-		gameState: gameState,
+		theMap:       theMap,
+		gameState:    gameState,
+		activePlayer: playerId,
 	}
 	err := handler.performBuildAction(&BuildAction{
 		Urbanization: &Urbanization{
@@ -296,14 +291,14 @@ func TestBuildThroughTown(t *testing.T) {
 		},
 	}
 	gameState := &GameState{
-		GamePhase:    BUILDING_GAME_PHASE,
-		ActivePlayer: playerId,
-		PlayerCash:   map[string]int{playerId: 10},
+		GamePhase:  BUILDING_GAME_PHASE,
+		PlayerCash: map[string]int{playerId: 10},
 	}
 
 	handler := &confirmMoveHandler{
-		theMap:    theMap,
-		gameState: gameState,
+		theMap:       theMap,
+		gameState:    gameState,
+		activePlayer: playerId,
 	}
 	err := handler.performBuildAction(&BuildAction{
 		TownPlacements: []*TownPlacement{
@@ -355,14 +350,14 @@ func TestLolipopToTown(t *testing.T) {
 		},
 	}
 	gameState := &GameState{
-		GamePhase:    BUILDING_GAME_PHASE,
-		ActivePlayer: playerId,
-		PlayerCash:   map[string]int{playerId: 10},
+		GamePhase:  BUILDING_GAME_PHASE,
+		PlayerCash: map[string]int{playerId: 10},
 	}
 
 	handler := &confirmMoveHandler{
-		theMap:    theMap,
-		gameState: gameState,
+		theMap:       theMap,
+		gameState:    gameState,
+		activePlayer: playerId,
 	}
 	err := handler.performBuildAction(&BuildAction{
 		TownPlacements: []*TownPlacement{
@@ -405,14 +400,14 @@ func TestLolipopFromTown(t *testing.T) {
 		},
 	}
 	gameState := &GameState{
-		GamePhase:    BUILDING_GAME_PHASE,
-		ActivePlayer: playerId,
-		PlayerCash:   map[string]int{playerId: 10},
+		GamePhase:  BUILDING_GAME_PHASE,
+		PlayerCash: map[string]int{playerId: 10},
 	}
 
 	handler := &confirmMoveHandler{
-		theMap:    theMap,
-		gameState: gameState,
+		theMap:       theMap,
+		gameState:    gameState,
+		activePlayer: playerId,
 	}
 	err := handler.performBuildAction(&BuildAction{
 		TownPlacements: []*TownPlacement{
@@ -462,14 +457,14 @@ func TestUpgradeToComplex(t *testing.T) {
 		},
 	}
 	gameState := &GameState{
-		GamePhase:    BUILDING_GAME_PHASE,
-		ActivePlayer: playerId,
-		PlayerCash:   map[string]int{playerId: 10},
+		GamePhase:  BUILDING_GAME_PHASE,
+		PlayerCash: map[string]int{playerId: 10},
 	}
 
 	handler := &confirmMoveHandler{
-		theMap:    theMap,
-		gameState: gameState,
+		theMap:       theMap,
+		gameState:    gameState,
+		activePlayer: playerId,
 	}
 	err := handler.performBuildAction(&BuildAction{
 		TrackPlacements: []*TrackPlacement{
@@ -539,7 +534,6 @@ func TestIssue1Regression(t *testing.T) {
 	}
 
 	gameState := &GameState{
-		ActivePlayer: playerId,
 		PlayerCash: map[string]int{
 			playerId: 10,
 		},
@@ -547,8 +541,9 @@ func TestIssue1Regression(t *testing.T) {
 	}
 
 	handler := &confirmMoveHandler{
-		theMap:    theMap,
-		gameState: gameState,
+		theMap:       theMap,
+		gameState:    gameState,
+		activePlayer: playerId,
 	}
 	err := handler.performBuildAction(&BuildAction{
 		TownPlacements: []*TownPlacement{

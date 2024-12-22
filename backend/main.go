@@ -123,12 +123,26 @@ type WhoAmIRequest struct {
 }
 
 type WhoAmIResponse struct {
-	User *User `json:"user"`
+	User              *User `json:"user"`
+	WaitingForMeCount int   `json:"waitingForMeCount"`
 }
 
-func whoami(ctx *RequestContext, req *WhoAmIRequest) (resp *WhoAmIResponse, err error) {
+func (server *GameServer) whoami(ctx *RequestContext, req *WhoAmIRequest) (resp *WhoAmIResponse, err error) {
+	stmt, err := server.db.Prepare("SELECT COUNT(*) FROM games WHERE finished=0 AND active_player_id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare statement: %v", err)
+	}
+	defer stmt.Close()
+	row := stmt.QueryRow(ctx.User.Id)
+	var count int
+	err = row.Scan(&count)
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan row: %v", err)
+	}
+
 	return &WhoAmIResponse{
-		User: ctx.User,
+		User:              ctx.User,
+		WaitingForMeCount: count,
 	}, nil
 }
 
@@ -203,7 +217,7 @@ func main() {
 	mux.HandleFunc("/api/login", jsonHandlerUnAuthenticated(server.login))
 	mux.HandleFunc("/api/register", jsonHandlerUnAuthenticated(server.register))
 	mux.HandleFunc("/api/logout", jsonHandlerUnAuthenticated(server.logout))
-	mux.HandleFunc("/api/whoami", jsonHandler(server, whoami))
+	mux.HandleFunc("/api/whoami", jsonHandler(server, server.whoami))
 	mux.HandleFunc("/api/createGame", jsonHandler(server, server.createGame))
 	mux.HandleFunc("/api/joinGame", jsonHandler(server, server.joinGame))
 	mux.HandleFunc("/api/leaveGame", jsonHandler(server, server.leaveGame))
@@ -212,6 +226,7 @@ func main() {
 	mux.HandleFunc("/api/confirmMove", jsonHandler(server, server.confirmMove))
 	mux.HandleFunc("/api/viewGame", jsonHandler(server, server.viewGame))
 	mux.HandleFunc("/api/getGameLogs", jsonHandler(server, server.getGameLogs))
+	mux.HandleFunc("/api/getMyGames", jsonHandler(server, server.getMyGames))
 
 	if config.CgiMode {
 		err = cgi.Serve(mux)

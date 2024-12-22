@@ -53,10 +53,10 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 	} else {
 		cost = 3
 	}
-	if cost > performer.gameState.PlayerCash[performer.gameState.ActivePlayer] {
+	if cost > performer.gameState.PlayerCash[performer.activePlayer] {
 		return ErrInvalidPlacement
 	}
-	performer.gameState.PlayerCash[performer.gameState.ActivePlayer] -= cost
+	performer.gameState.PlayerCash[performer.activePlayer] -= cost
 
 	// FIXME: Check component limits (8 town marker tokens)
 
@@ -71,7 +71,7 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 		if next.IsCity {
 			link = &Link{
 				SourceHex: townPlacement.Hex,
-				Owner:     performer.gameState.ActivePlayer,
+				Owner:     performer.activePlayer,
 				Steps:     []Direction{direction},
 				Complete:  true,
 			}
@@ -81,14 +81,14 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 			for _, route := range next.Routes {
 				if route.Left == direction.opposite() || route.Right == direction.opposite() {
 					// Check that we are not joining into a different player's track
-					if route.Link.Owner != "" && route.Link.Owner != performer.gameState.ActivePlayer {
+					if route.Link.Owner != "" && route.Link.Owner != performer.activePlayer {
 						return ErrInvalidPlacement
 					}
 
 					link = route.Link
 					route.Link.Steps = append(route.Link.Steps, direction.opposite())
 					route.Link.Complete = true
-					route.Link.Owner = performer.gameState.ActivePlayer
+					route.Link.Owner = performer.activePlayer
 					isJoiningRoute = true
 					break
 				}
@@ -96,7 +96,7 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 			if !isJoiningRoute {
 				link = &Link{
 					SourceHex: townPlacement.Hex,
-					Owner:     performer.gameState.ActivePlayer,
+					Owner:     performer.activePlayer,
 					Steps:     []Direction{direction},
 					Complete:  false,
 				}
@@ -254,10 +254,10 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 		return fmt.Errorf("failed to determine cost for placing track tile")
 	}
 
-	if cost > performer.gameState.PlayerCash[performer.gameState.ActivePlayer] {
+	if cost > performer.gameState.PlayerCash[performer.activePlayer] {
 		return ErrInvalidPlacement
 	}
-	performer.gameState.PlayerCash[performer.gameState.ActivePlayer] -= cost
+	performer.gameState.PlayerCash[performer.activePlayer] -= cost
 
 	// FIXME: Check component limits
 
@@ -279,7 +279,7 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 		if leftTileState.IsCity {
 			link = &Link{
 				SourceHex: leftHex,
-				Owner:     performer.gameState.ActivePlayer,
+				Owner:     performer.activePlayer,
 				Steps:     []Direction{newRoute[0].opposite(), newRoute[1]},
 			}
 			performer.gameState.Links = append(performer.gameState.Links, link)
@@ -287,11 +287,11 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 		} else {
 			for _, existingRoute := range leftTileState.Routes {
 				if existingRoute.Left.opposite() == newRoute[0] || existingRoute.Right.opposite() == newRoute[0] {
-					if existingRoute.Link.Owner != "" && existingRoute.Link.Owner != performer.gameState.ActivePlayer {
+					if existingRoute.Link.Owner != "" && existingRoute.Link.Owner != performer.activePlayer {
 						return ErrInvalidPlacement
 					}
 					link = existingRoute.Link
-					link.Owner = performer.gameState.ActivePlayer
+					link.Owner = performer.activePlayer
 					link.Steps = append(link.Steps, newRoute[1])
 					performer.extendedLinks[link] = true
 					break
@@ -303,7 +303,7 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 			if link == nil {
 				link = &Link{
 					SourceHex: rightHex,
-					Owner:     performer.gameState.ActivePlayer,
+					Owner:     performer.activePlayer,
 					Steps:     []Direction{newRoute[1].opposite(), newRoute[0]},
 				}
 				performer.gameState.Links = append(performer.gameState.Links, link)
@@ -314,12 +314,12 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 		} else {
 			for _, existingRoute := range rightTileState.Routes {
 				if existingRoute.Left.opposite() == newRoute[1] || existingRoute.Right.opposite() == newRoute[1] {
-					if existingRoute.Link.Owner != "" && existingRoute.Link.Owner != performer.gameState.ActivePlayer {
+					if existingRoute.Link.Owner != "" && existingRoute.Link.Owner != performer.activePlayer {
 						return ErrInvalidPlacement
 					}
 					if link == nil {
 						link = existingRoute.Link
-						link.Owner = performer.gameState.ActivePlayer
+						link.Owner = performer.activePlayer
 						link.Steps = append(link.Steps, newRoute[0])
 						performer.extendedLinks[link] = true
 						break
@@ -354,15 +354,17 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 type buildActionPerformer struct {
 	extendedLinks map[*Link]bool
 	gameState     *GameState
+	activePlayer  string
 	theMap        *BasicMap
 	mapState      [][]*TileState
 }
 
-func newBuildActionPerformer(theMap *BasicMap, gameState *GameState) *buildActionPerformer {
+func newBuildActionPerformer(theMap *BasicMap, gameState *GameState, activePlayer string) *buildActionPerformer {
 
 	performer := &buildActionPerformer{
 		extendedLinks: make(map[*Link]bool),
 		gameState:     gameState,
+		activePlayer:  activePlayer,
 		theMap:        theMap,
 		mapState:      make([][]*TileState, theMap.Height),
 	}
@@ -424,7 +426,7 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 
 	// First handle urbanization
 	if buildAction.Urbanization != nil {
-		if gameState.PlayerActions[gameState.ActivePlayer] != URBANIZATION_SPECIAL_ACTION {
+		if gameState.PlayerActions[handler.activePlayer] != URBANIZATION_SPECIAL_ACTION {
 			return &HttpError{"cannot urbanize without special action", http.StatusBadRequest}
 		}
 		if buildAction.Urbanization.City < 0 || buildAction.Urbanization.City >= 8 {
@@ -450,14 +452,14 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 
 	// Check the number of placements is valid
 	placementLimit := 3
-	if gameState.PlayerActions[gameState.ActivePlayer] == ENGINEER_SPECIAL_ACTION {
+	if gameState.PlayerActions[handler.activePlayer] == ENGINEER_SPECIAL_ACTION {
 		placementLimit = 4
 	}
 	if len(buildAction.TownPlacements)+len(buildAction.TrackPlacements) > placementLimit {
 		return &HttpError{fmt.Sprintf("cannot exceed track placement limit (%d)", placementLimit), http.StatusBadRequest}
 	}
 
-	performer := newBuildActionPerformer(handler.theMap, handler.gameState)
+	performer := newBuildActionPerformer(handler.theMap, handler.gameState, handler.activePlayer)
 
 	// For each placement...
 	//   If it is a town...
@@ -475,7 +477,7 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	//          If stop on both sides, add new complete track
 	//          If track and stop, extend existing incomplete track as a completed link
 
-	startingCash := gameState.PlayerCash[gameState.ActivePlayer]
+	startingCash := gameState.PlayerCash[handler.activePlayer]
 	for _, townPlacement := range buildAction.TownPlacements {
 		err := performer.attemptTownPlacement(townPlacement)
 		if err != nil {
@@ -500,11 +502,11 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	}
 
 	handler.Log("%s paid a total of $%d for track placements.", handler.ActivePlayerNick(),
-		startingCash-gameState.PlayerCash[gameState.ActivePlayer])
+		startingCash-gameState.PlayerCash[handler.activePlayer])
 
 	// Remove ownership of any incomplete links not extended
 	for _, link := range gameState.Links {
-		if !link.Complete && link.Owner == gameState.ActivePlayer && !performer.extendedLinks[link] {
+		if !link.Complete && link.Owner == handler.activePlayer && !performer.extendedLinks[link] {
 			handler.Log("%s lost ownership of an incomplete track that started at hex (%d,%d)",
 				handler.ActivePlayerNick(), link.SourceHex.X, link.SourceHex.Y)
 			link.Owner = ""

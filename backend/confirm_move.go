@@ -81,14 +81,16 @@ type ConfirmMoveResponse struct {
 type confirmMoveHandler struct {
 	theMap         *BasicMap
 	gameState      *GameState
+	activePlayer   string
 	logs           []string
 	playerIdToNick map[string]string
 }
 
-func newConfirmMoveHandler(server *GameServer, gameId string, theMap *BasicMap, gameState *GameState) (*confirmMoveHandler, error) {
+func newConfirmMoveHandler(server *GameServer, gameId string, theMap *BasicMap, gameState *GameState, activePlayer string) (*confirmMoveHandler, error) {
 	handler := &confirmMoveHandler{
 		theMap:         theMap,
 		gameState:      gameState,
+		activePlayer:   activePlayer,
 		playerIdToNick: make(map[string]string),
 	}
 
@@ -127,11 +129,11 @@ func (handler *confirmMoveHandler) PlayerNick(playerId string) string {
 }
 
 func (handler *confirmMoveHandler) ActivePlayerNick() string {
-	return handler.PlayerNick(handler.gameState.ActivePlayer)
+	return handler.PlayerNick(handler.activePlayer)
 }
 
 func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveRequest) (resp *ConfirmMoveResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT owner_user_id,num_players,map_name,started,finished,game_state FROM games WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT owner_user_id,num_players,map_name,started,finished,game_state,active_player_id FROM games WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -144,7 +146,8 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 	var startedFlag int
 	var finishedFlag int
 	var gameStateStr string
-	err = row.Scan(&ownerUserId, &numPlayers, &mapName, &startedFlag, &finishedFlag, &gameStateStr)
+	var activePlayer string
+	err = row.Scan(&ownerUserId, &numPlayers, &mapName, &startedFlag, &finishedFlag, &gameStateStr, &activePlayer)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
@@ -164,13 +167,13 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse game state: %v", err)
 	}
-	if gameState.ActivePlayer != ctx.User.Id {
-		return nil, &HttpError{fmt.Sprintf("user [%s] is not the active player [%s]", ctx.User.Id, gameState.ActivePlayer), http.StatusPreconditionFailed}
+	if activePlayer != ctx.User.Id {
+		return nil, &HttpError{fmt.Sprintf("user [%s] is not the active player [%s]", ctx.User.Id, activePlayer), http.StatusPreconditionFailed}
 	}
 
 	theMap := server.maps[mapName]
 
-	handler, err := newConfirmMoveHandler(server, req.GameId, theMap, gameState)
+	handler, err := newConfirmMoveHandler(server, req.GameId, theMap, gameState, activePlayer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize handler: %v", err)
 	}
@@ -229,12 +232,12 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 	}
 
 	// Update the game state
-	stmt, err = server.db.Prepare("UPDATE games SET game_state=?,finished=? WHERE id=?")
+	stmt, err = server.db.Prepare("UPDATE games SET active_player_id=?,game_state=?,finished=? WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(string(newGameStateStr), finishedFlag, req.GameId)
+	_, err = stmt.Exec(handler.activePlayer, string(newGameStateStr), finishedFlag, req.GameId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
@@ -253,8 +256,8 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 		}
 	} else {
 		// Notify the next player that it is their turn if the active player changed
-		if gameState.ActivePlayer != ctx.User.Id {
-			err = server.notifyPlayer(req.GameId, gameState.ActivePlayer)
+		if handler.activePlayer != ctx.User.Id {
+			err = server.notifyPlayer(req.GameId, handler.activePlayer)
 			if err != nil {
 				return nil, fmt.Errorf("failed to notify user it's their turn: %v", err)
 			}
@@ -273,7 +276,7 @@ func (handler *confirmMoveHandler) handleSharesAction(sharesAction *SharesAction
 		return &HttpError{fmt.Sprintf("invalid action for current phase %d", gameState.GamePhase), http.StatusPreconditionFailed}
 	}
 
-	currentPlayer := gameState.ActivePlayer
+	currentPlayer := handler.activePlayer
 	newSharesCount := gameState.PlayerShares[currentPlayer] + sharesAction.Amount
 	if newSharesCount > 15 {
 		return &HttpError{"cannot take more than 15 shares", http.StatusBadRequest}
@@ -293,9 +296,9 @@ func (handler *confirmMoveHandler) handleSharesAction(sharesAction *SharesAction
 	if nextPlayerId == "" {
 		// Advance game phase
 		gameState.GamePhase = AUCTION_GAME_PHASE
-		gameState.ActivePlayer = gameState.PlayerOrder[0]
+		handler.activePlayer = gameState.PlayerOrder[0]
 	} else {
-		gameState.ActivePlayer = nextPlayerId
+		handler.activePlayer = nextPlayerId
 	}
 
 	return nil
@@ -310,7 +313,7 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 		return &HttpError{fmt.Sprintf("invalid action for current phase %d", gameState.GamePhase), http.StatusPreconditionFailed}
 	}
 
-	currentPlayer := gameState.ActivePlayer
+	currentPlayer := handler.activePlayer
 
 	gotoNextPhase := false
 	// If the user is passing
@@ -409,7 +412,7 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 			delete(gameState.AuctionState, userId)
 		}
 		// Set the active player to the new first player
-		gameState.ActivePlayer = gameState.PlayerOrder[0]
+		handler.activePlayer = gameState.PlayerOrder[0]
 		// Advance the game phase
 		gameState.GamePhase = CHOOSE_SPECIAL_ACTIONS_GAME_PHASE
 		// Force-remove any chosen special actions as we advance into that phase
@@ -450,7 +453,7 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 		if nextPlayer == "" {
 			return &HttpError{"unable to find next player", http.StatusInternalServerError}
 		}
-		gameState.ActivePlayer = nextPlayer
+		handler.activePlayer = nextPlayer
 	}
 
 	return nil
@@ -488,21 +491,21 @@ func (handler *confirmMoveHandler) handleChooseAction(chooseAction *ChooseAction
 	}
 
 	// Set the chosen action
-	gameState.PlayerActions[gameState.ActivePlayer] = chooseAction.Action
+	gameState.PlayerActions[handler.activePlayer] = chooseAction.Action
 	handler.Log("%s chooses special action \"%s\".", handler.ActivePlayerNick(), chooseAction.Action)
 
 	// Apply any immediate effects
 	if chooseAction.Action == LOCO_SPECIAL_ACTION {
-		if gameState.PlayerLoco[gameState.ActivePlayer] < 6 {
-			gameState.PlayerLoco[gameState.ActivePlayer] += 1
-			handler.Log("%s's loco increases to %d.", handler.ActivePlayerNick(), gameState.PlayerLoco[gameState.ActivePlayer])
+		if gameState.PlayerLoco[handler.activePlayer] < 6 {
+			gameState.PlayerLoco[handler.activePlayer] += 1
+			handler.Log("%s's loco increases to %d.", handler.ActivePlayerNick(), gameState.PlayerLoco[handler.activePlayer])
 		}
 	}
 
 	// Advance current player
 	currentPlayerPosition := -1
 	for idx, userId := range gameState.PlayerOrder {
-		if userId == gameState.ActivePlayer {
+		if userId == handler.activePlayer {
 			currentPlayerPosition = idx
 			break
 		}
@@ -523,13 +526,13 @@ func (handler *confirmMoveHandler) handleChooseAction(chooseAction *ChooseAction
 		}
 
 		if firstBuildUser == "" {
-			gameState.ActivePlayer = gameState.PlayerOrder[0]
+			handler.activePlayer = gameState.PlayerOrder[0]
 		} else {
-			gameState.ActivePlayer = firstBuildUser
+			handler.activePlayer = firstBuildUser
 		}
 	} else {
 		// Otherwise just advance the active player
-		gameState.ActivePlayer = gameState.PlayerOrder[currentPlayerPosition+1]
+		handler.activePlayer = gameState.PlayerOrder[currentPlayerPosition+1]
 	}
 
 	return nil
@@ -550,18 +553,18 @@ func (handler *confirmMoveHandler) handleBuildAction(buildAction *BuildAction) e
 	}
 
 	// If this was the first build player, just advance to the first player in normal order
-	if gameState.PlayerActions[gameState.ActivePlayer] == FIRST_BUILD_SPECIAL_ACTION {
+	if gameState.PlayerActions[handler.activePlayer] == FIRST_BUILD_SPECIAL_ACTION {
 		// If this was the first player anyway, go to next player
-		if gameState.PlayerOrder[0] == gameState.ActivePlayer {
-			gameState.ActivePlayer = gameState.PlayerOrder[1]
+		if gameState.PlayerOrder[0] == handler.activePlayer {
+			handler.activePlayer = gameState.PlayerOrder[1]
 		} else {
-			gameState.ActivePlayer = gameState.PlayerOrder[0]
+			handler.activePlayer = gameState.PlayerOrder[0]
 		}
 	} else {
 		// Otherwise just advance the player, skipping over a player if they have first build
 		currentPlayerPosition := -1
 		for idx, userId := range gameState.PlayerOrder {
-			if userId == gameState.ActivePlayer {
+			if userId == handler.activePlayer {
 				currentPlayerPosition = idx
 				break
 			}
@@ -593,12 +596,12 @@ func (handler *confirmMoveHandler) handleBuildAction(buildAction *BuildAction) e
 			}
 
 			if firstMovePlayer != "" {
-				gameState.ActivePlayer = firstMovePlayer
+				handler.activePlayer = firstMovePlayer
 			} else {
-				gameState.ActivePlayer = gameState.PlayerOrder[0]
+				handler.activePlayer = gameState.PlayerOrder[0]
 			}
 		} else {
-			gameState.ActivePlayer = nextPlayer
+			handler.activePlayer = nextPlayer
 		}
 	}
 
@@ -616,15 +619,15 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 	}
 
 	if moveGoodsAction.Loco {
-		if gameState.PlayerHasDoneLoco[gameState.ActivePlayer] {
+		if gameState.PlayerHasDoneLoco[handler.activePlayer] {
 			return &HttpError{"player has already done loco this phase", http.StatusBadRequest}
 		}
-		gameState.PlayerHasDoneLoco[gameState.ActivePlayer] = true
-		if gameState.PlayerLoco[gameState.ActivePlayer] < 6 {
-			gameState.PlayerLoco[gameState.ActivePlayer] += 1
+		gameState.PlayerHasDoneLoco[handler.activePlayer] = true
+		if gameState.PlayerLoco[handler.activePlayer] < 6 {
+			gameState.PlayerLoco[handler.activePlayer] += 1
 		}
 		handler.Log("%s skipped delivering a good and increased their loco to %d",
-			handler.ActivePlayerNick(), gameState.PlayerLoco[gameState.ActivePlayer])
+			handler.ActivePlayerNick(), gameState.PlayerLoco[handler.activePlayer])
 	} else if moveGoodsAction.Color != NONE_COLOR {
 
 		deliveryGraph := gameState.computeDeliveryGraph()
@@ -645,7 +648,7 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 		handler.Log("%s delivered a %s good cube from (%d,%d)",
 			handler.ActivePlayerNick(), moveGoodsAction.Color.String(), moveGoodsAction.StartingLocation.X, moveGoodsAction.StartingLocation.Y)
 
-		if len(moveGoodsAction.Path) > gameState.PlayerLoco[gameState.ActivePlayer] {
+		if len(moveGoodsAction.Path) > gameState.PlayerLoco[handler.activePlayer] {
 			return &HttpError{"cannot move good further than current loca", http.StatusBadRequest}
 		}
 
@@ -727,18 +730,18 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 	}
 
 	// If this was the first move player, just advance to the first player in normal order
-	if gameState.PlayerActions[gameState.ActivePlayer] == FIRST_MOVE_SPECIAL_ACTION {
+	if gameState.PlayerActions[handler.activePlayer] == FIRST_MOVE_SPECIAL_ACTION {
 		// If this was the first player anyway, go to next player
-		if gameState.PlayerOrder[0] == gameState.ActivePlayer {
-			gameState.ActivePlayer = gameState.PlayerOrder[1]
+		if gameState.PlayerOrder[0] == handler.activePlayer {
+			handler.activePlayer = gameState.PlayerOrder[1]
 		} else {
-			gameState.ActivePlayer = gameState.PlayerOrder[0]
+			handler.activePlayer = gameState.PlayerOrder[0]
 		}
 	} else {
 		// Otherwise just advance the player, skipping over a player if they have first move
 		currentPlayerPosition := -1
 		for idx, userId := range gameState.PlayerOrder {
-			if userId == gameState.ActivePlayer {
+			if userId == handler.activePlayer {
 				currentPlayerPosition = idx
 				break
 			}
@@ -771,9 +774,9 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 				}
 
 				if firstMovePlayer == "" {
-					gameState.ActivePlayer = gameState.PlayerOrder[0]
+					handler.activePlayer = gameState.PlayerOrder[0]
 				} else {
-					gameState.ActivePlayer = firstMovePlayer
+					handler.activePlayer = firstMovePlayer
 				}
 			} else {
 				// End of phase
@@ -797,7 +800,7 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 						return err
 					}
 				} else {
-					gameState.ActivePlayer = produceGoodsPlayer
+					handler.activePlayer = produceGoodsPlayer
 					gameState.ProductionCubes = make([]Color, 2)
 
 					var err error
@@ -812,7 +815,7 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 				}
 			}
 		} else {
-			gameState.ActivePlayer = nextPlayer
+			handler.activePlayer = nextPlayer
 		}
 	}
 
@@ -969,7 +972,7 @@ func (handler *confirmMoveHandler) executeGoodsGrowthPhase(theMap *BasicMap) err
 	// Advance to next phase
 	gameState.TurnNumber += 1
 	gameState.GamePhase = SHARES_GAME_PHASE
-	gameState.ActivePlayer = gameState.PlayerOrder[0]
+	handler.activePlayer = gameState.PlayerOrder[0]
 
 	return nil
 }

@@ -157,12 +157,12 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
             }
             for (let townPlacement of pendingBuildAction.townPlacements) {
                 for (let track of townPlacement.tracks) {
-                    renderer.renderTownTrack(townPlacement.hex, track, game.gameState.activePlayer);
+                    renderer.renderTownTrack(townPlacement.hex, track, game.activePlayer);
                 }
             }
             for (let trackPlacement of pendingBuildAction.trackPlacements) {
                 for (let track of trackPlacement.tracks) {
-                    renderer.renderTrack(trackPlacement.hex, track[0], track[1], game.gameState.activePlayer);
+                    renderer.renderTrack(trackPlacement.hex, track[0], track[1], game.activePlayer);
                 }
             }
         }
