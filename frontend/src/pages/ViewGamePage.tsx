@@ -1,4 +1,4 @@
-import {Button, Header, List, ListItem, Loader, Segment, SegmentGroup} from "semantic-ui-react";
+import {Button, Grid, Header, List, ListItem, Loader, Segment} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import {useParams} from "react-router";
 import {GamePhase, JoinGame, LeaveGame, StartGame, User, ViewGame, ViewGameResponse} from "../api/api.ts";
@@ -112,14 +112,14 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
     for (let playerId of playerInfoOrder) {
         let nickname = playerById[playerId].nickname;
         let playerColorHtml = playerColorToHtml(game.gameState.playerColor[playerId]);
-        playerColumns.push(<Segment key={playerId}>
+        playerColumns.push(<Grid.Column key={playerId}><Segment>
                 Player: <div style={{height: '1em', width: '1em', borderRadius: '50%', display: 'inline-block', backgroundColor: playerColorHtml}} /> {nickname}<br/>
                 Cash: ${game.gameState.playerCash[playerId]}<br/>
                 Shares: {game.gameState.playerShares[playerId]}<br/>
                 Income: {game.gameState.playerIncome[playerId]}<br/>
                 Loco: {game.gameState.playerLoco[playerId]}<br/>
                 Special Action: {game.gameState.playerActions[playerId]}<br/>
-            </Segment>);
+            </Segment></Grid.Column>);
     }
 
     let actionHolder: ReactNode;
@@ -151,9 +151,9 @@ function PlayerStatus({ game, onConfirmMove }: {game: ViewGameResponse, onConfir
     return <>
         <Segment>
             <Header as='h2'>Player Info</Header>
-            <SegmentGroup horizontal>
+            <Grid columns={4} doubling stackable>
                 {playerColumns}
-            </SegmentGroup>
+            </Grid>
         </Segment>
         <Segment>
             <Header as='h2'>Game Status</Header>
