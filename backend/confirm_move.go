@@ -34,16 +34,13 @@ type ChooseAction struct {
 }
 
 type TownPlacement struct {
-	// New tracks being added to the town; existing tracks do not get specified here
-	Tracks []Direction `json:"tracks"`
-	Hex    Coordinate  `json:"hex"`
+	Track Direction  `json:"track"`
+	Hex   Coordinate `json:"hex"`
 }
 
 type TrackPlacement struct {
-	// Simple builds have a single track; direct builds of complex track will have two
-	// Upgrades only have the new tracks
-	Tracks [][2]Direction `json:"tracks"`
-	Hex    Coordinate     `json:"hex"`
+	Track [2]Direction `json:"track""`
+	Hex   Coordinate   `json:"hex"`
 }
 
 type BuildAction struct {

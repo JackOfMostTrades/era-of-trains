@@ -1,4 +1,13 @@
-import {Color, ConfirmMove, Coordinate, Direction, PlayerColor, User, ViewGameResponse} from "../api/api.ts";
+import {
+    ALL_DIRECTIONS,
+    Color,
+    ConfirmMove,
+    Coordinate,
+    Direction,
+    PlayerColor,
+    User,
+    ViewGameResponse
+} from "../api/api.ts";
 import {Button, Header, Icon} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
@@ -37,7 +46,7 @@ function computeNextStop(game: ViewGameResponse, current: Coordinate, direction:
 
 function getValidStepDirections(game: ViewGameResponse, origin: Coordinate): Array<{direction: Direction, owner: string}> {
     let results = [];
-    for (let direction of [Direction.NORTH, Direction.NORTH_EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.NORTH_WEST]) {
+    for (let direction of ALL_DIRECTIONS) {
         let nextStop = computeNextStop(game, origin, direction);
         if (nextStop !== undefined) {
             results.push({direction: direction, owner: nextStop.linkOwner});

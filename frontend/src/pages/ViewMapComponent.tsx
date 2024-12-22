@@ -1,4 +1,4 @@
-import {BuildAction, Color, Coordinate, Direction, PlayerColor, ViewGameResponse} from "../api/api.ts";
+import {ALL_DIRECTIONS, BuildAction, Color, Coordinate, Direction, PlayerColor, ViewGameResponse} from "../api/api.ts";
 import {ReactNode, useEffect, useState} from "react";
 import maps, {BasicMap, HexType} from "../map.ts";
 import {CityState, HexRenderer, urbCityState} from "../actions/renderer/HexRenderer.tsx";
@@ -89,6 +89,7 @@ class RenderMapBuilder {
 function ViewMapComponent({game}: {game: ViewGameResponse}) {
     let [pendingBuildAction, setPendingBuildAction] = useState<BuildAction|undefined>(undefined);
     let [pendingMoveGoods, setPendingMoveGoods] = useState<MoveGoodsStep|undefined>(undefined)
+    let [buildingTrackHex, setBuildingTrackHex] = useState<Coordinate|undefined>(undefined);
 
     useEffect(() => {
         const handler = (e:CustomEventInit<BuildAction>) => {
@@ -96,6 +97,14 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
         };
         document.addEventListener('pendingBuildAction', handler);
         return () => document.removeEventListener('pendingBuildAction', handler);
+    }, []);
+
+    useEffect(() => {
+        const handler = (e:CustomEventInit<Coordinate|undefined>) => {
+            setBuildingTrackHex(e.detail);
+        };
+        document.addEventListener('buildingTrackHex', handler);
+        return () => document.removeEventListener('buildingTrackHex', handler);
     }, []);
 
     useEffect(() => {
@@ -160,14 +169,10 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
                 renderer.renderCityHex(pendingBuildAction.urbanization.hex, urbCityState(pendingBuildAction.urbanization.city));
             }
             for (let townPlacement of pendingBuildAction.townPlacements) {
-                for (let track of townPlacement.tracks) {
-                    renderer.renderTownTrack(townPlacement.hex, track, game.activePlayer);
-                }
+                renderer.renderTownTrack(townPlacement.hex, townPlacement.track, game.activePlayer);
             }
             for (let trackPlacement of pendingBuildAction.trackPlacements) {
-                for (let track of trackPlacement.tracks) {
-                    renderer.renderTrack(trackPlacement.hex, track[0], track[1], game.activePlayer);
-                }
+                renderer.renderTrack(trackPlacement.hex, trackPlacement.track[0], trackPlacement.track[1], game.activePlayer);
             }
         }
 
@@ -213,6 +218,18 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
                 for (let option of pendingMoveGoods.nextStepOptions) {
                     let hex = applyDirection(pendingMoveGoods.currentCubePosition, option.direction);
                     renderer.renderArrow(hex, option.direction, option.owner);
+                }
+            }
+        }
+
+        if (buildingTrackHex) {
+            for (let direction of ALL_DIRECTIONS) {
+                let stepHex = applyDirection(buildingTrackHex, direction);
+                if (stepHex.x >= 0 && stepHex.y >= 0
+                        && stepHex.x < map.width && stepHex.y < map.height
+                        && map.hexes[stepHex.y][stepHex.x] !== HexType.OFFBOARD
+                        && map.hexes[stepHex.y][stepHex.x] !== HexType.WATER) {
+                    renderer.renderArrow(stepHex, direction, undefined);
                 }
             }
         }

@@ -31,18 +31,18 @@ func TestAttemptTrackPlacement(t *testing.T) {
 	}
 	performer := newBuildActionPerformer(theMap, gameState, playerId)
 	err := performer.attemptTrackPlacement(&TrackPlacement{
-		Tracks: [][2]Direction{{NORTH_WEST, NORTH_EAST}},
-		Hex:    Coordinate{X: 0, Y: 1},
+		Hex:   Coordinate{X: 0, Y: 1},
+		Track: [2]Direction{NORTH_WEST, NORTH_EAST},
 	})
 	require.NoError(t, err)
 	err = performer.attemptTrackPlacement(&TrackPlacement{
-		Tracks: [][2]Direction{{SOUTH_WEST, SOUTH_EAST}},
-		Hex:    Coordinate{X: 1, Y: 0},
+		Hex:   Coordinate{X: 1, Y: 0},
+		Track: [2]Direction{SOUTH_WEST, SOUTH_EAST},
 	})
 	require.NoError(t, err)
 	err = performer.attemptTrackPlacement(&TrackPlacement{
-		Tracks: [][2]Direction{{NORTH_WEST, NORTH_EAST}},
-		Hex:    Coordinate{X: 1, Y: 1},
+		Hex:   Coordinate{X: 1, Y: 1},
+		Track: [2]Direction{NORTH_WEST, NORTH_EAST},
 	})
 	require.NoError(t, err)
 
@@ -81,23 +81,23 @@ func TestAttemptTrackPlacementEngineer(t *testing.T) {
 	}
 	performer := newBuildActionPerformer(theMap, gameState, playerId)
 	err := performer.attemptTrackPlacement(&TrackPlacement{
-		Tracks: [][2]Direction{{NORTH_EAST, SOUTH_WEST}},
-		Hex:    Coordinate{X: 0, Y: 1},
+		Hex:   Coordinate{X: 0, Y: 1},
+		Track: [2]Direction{NORTH_EAST, SOUTH_WEST},
 	})
 	require.NoError(t, err)
 	err = performer.attemptTrackPlacement(&TrackPlacement{
-		Tracks: [][2]Direction{{SOUTH_EAST, SOUTH_WEST}},
-		Hex:    Coordinate{X: 1, Y: 0},
+		Hex:   Coordinate{X: 1, Y: 0},
+		Track: [2]Direction{SOUTH_EAST, SOUTH_WEST},
 	})
 	require.NoError(t, err)
 	err = performer.attemptTrackPlacement(&TrackPlacement{
-		Tracks: [][2]Direction{{SOUTH_EAST, NORTH_WEST}},
-		Hex:    Coordinate{X: 1, Y: 1},
+		Hex:   Coordinate{X: 1, Y: 1},
+		Track: [2]Direction{SOUTH_EAST, NORTH_WEST},
 	})
 	require.NoError(t, err)
 	err = performer.attemptTrackPlacement(&TrackPlacement{
-		Tracks: [][2]Direction{{NORTH_EAST, NORTH_WEST}},
-		Hex:    Coordinate{X: 2, Y: 2},
+		Hex:   Coordinate{X: 2, Y: 2},
+		Track: [2]Direction{NORTH_EAST, NORTH_WEST},
 	})
 	require.NoError(t, err)
 
@@ -130,13 +130,13 @@ func TestTrackFromCityToTown(t *testing.T) {
 	}
 	performer := newBuildActionPerformer(theMap, gameState, playerId)
 	err := performer.attemptTownPlacement(&TownPlacement{
-		Tracks: []Direction{SOUTH_EAST},
-		Hex:    Coordinate{X: 0, Y: 0},
+		Hex:   Coordinate{X: 0, Y: 0},
+		Track: SOUTH_EAST,
 	})
 	require.NoError(t, err)
 	err = performer.attemptTrackPlacement(&TrackPlacement{
-		Tracks: [][2]Direction{{NORTH_EAST, NORTH_WEST}},
-		Hex:    Coordinate{X: 0, Y: 1},
+		Hex:   Coordinate{X: 0, Y: 1},
+		Track: [2]Direction{NORTH_EAST, NORTH_WEST},
 	})
 	require.NoError(t, err)
 
@@ -169,13 +169,13 @@ func TestTrackFromTownToCity(t *testing.T) {
 	}
 	performer := newBuildActionPerformer(theMap, gameState, playerId)
 	err := performer.attemptTownPlacement(&TownPlacement{
-		Tracks: []Direction{SOUTH_EAST},
-		Hex:    Coordinate{X: 0, Y: 0},
+		Hex:   Coordinate{X: 0, Y: 0},
+		Track: SOUTH_EAST,
 	})
 	require.NoError(t, err)
 	err = performer.attemptTrackPlacement(&TrackPlacement{
-		Tracks: [][2]Direction{{NORTH_WEST, NORTH_EAST}},
-		Hex:    Coordinate{X: 0, Y: 1},
+		Hex:   Coordinate{X: 0, Y: 1},
+		Track: [2]Direction{NORTH_WEST, NORTH_EAST},
 	})
 	require.NoError(t, err)
 
@@ -208,8 +208,8 @@ func TestAdjacentTownAndCity(t *testing.T) {
 	}
 	performer := newBuildActionPerformer(theMap, gameState, playerId)
 	err := performer.attemptTownPlacement(&TownPlacement{
-		Tracks: []Direction{SOUTH_EAST},
-		Hex:    Coordinate{X: 0, Y: 0},
+		Hex:   Coordinate{X: 0, Y: 0},
+		Track: SOUTH_EAST,
 	})
 	require.NoError(t, err)
 
@@ -255,8 +255,8 @@ func TestUrbanizeAndConnect(t *testing.T) {
 		},
 		TrackPlacements: []*TrackPlacement{
 			{
-				Tracks: [][2]Direction{{NORTH_WEST, NORTH_EAST}},
-				Hex:    Coordinate{X: 0, Y: 1},
+				Track: [2]Direction{NORTH_WEST, NORTH_EAST},
+				Hex:   Coordinate{X: 0, Y: 1},
 			},
 		},
 	})
@@ -303,18 +303,22 @@ func TestBuildThroughTown(t *testing.T) {
 	err := handler.performBuildAction(&BuildAction{
 		TownPlacements: []*TownPlacement{
 			{
-				Tracks: []Direction{SOUTH_WEST, SOUTH_EAST},
-				Hex:    Coordinate{X: 1, Y: 0},
+				Track: SOUTH_WEST,
+				Hex:   Coordinate{X: 1, Y: 0},
+			},
+			{
+				Track: SOUTH_EAST,
+				Hex:   Coordinate{X: 1, Y: 0},
 			},
 		},
 		TrackPlacements: []*TrackPlacement{
 			{
-				Tracks: [][2]Direction{{NORTH_WEST, NORTH_EAST}},
-				Hex:    Coordinate{X: 0, Y: 1},
+				Track: [2]Direction{NORTH_WEST, NORTH_EAST},
+				Hex:   Coordinate{X: 0, Y: 1},
 			},
 			{
-				Tracks: [][2]Direction{{NORTH_WEST, NORTH_EAST}},
-				Hex:    Coordinate{X: 1, Y: 1},
+				Track: [2]Direction{NORTH_WEST, NORTH_EAST},
+				Hex:   Coordinate{X: 1, Y: 1},
 			},
 		},
 	})
@@ -362,14 +366,14 @@ func TestLolipopToTown(t *testing.T) {
 	err := handler.performBuildAction(&BuildAction{
 		TownPlacements: []*TownPlacement{
 			{
-				Tracks: []Direction{SOUTH_WEST},
-				Hex:    Coordinate{X: 1, Y: 0},
+				Track: SOUTH_WEST,
+				Hex:   Coordinate{X: 1, Y: 0},
 			},
 		},
 		TrackPlacements: []*TrackPlacement{
 			{
-				Tracks: [][2]Direction{{NORTH_WEST, NORTH_EAST}},
-				Hex:    Coordinate{X: 0, Y: 1},
+				Track: [2]Direction{NORTH_WEST, NORTH_EAST},
+				Hex:   Coordinate{X: 0, Y: 1},
 			},
 		},
 	})
@@ -412,18 +416,18 @@ func TestLolipopFromTown(t *testing.T) {
 	err := handler.performBuildAction(&BuildAction{
 		TownPlacements: []*TownPlacement{
 			{
-				Tracks: []Direction{NORTH_WEST},
-				Hex:    Coordinate{X: 1, Y: 1},
+				Track: NORTH_WEST,
+				Hex:   Coordinate{X: 1, Y: 1},
 			},
 		},
 		TrackPlacements: []*TrackPlacement{
 			{
-				Tracks: [][2]Direction{{SOUTH_EAST, SOUTH_WEST}},
-				Hex:    Coordinate{X: 1, Y: 0},
+				Track: [2]Direction{SOUTH_EAST, SOUTH_WEST},
+				Hex:   Coordinate{X: 1, Y: 0},
 			},
 			{
-				Tracks: [][2]Direction{{NORTH_EAST, NORTH_WEST}},
-				Hex:    Coordinate{X: 0, Y: 1},
+				Track: [2]Direction{NORTH_EAST, NORTH_WEST},
+				Hex:   Coordinate{X: 0, Y: 1},
 			},
 		},
 	})
@@ -469,8 +473,8 @@ func TestUpgradeToComplex(t *testing.T) {
 	err := handler.performBuildAction(&BuildAction{
 		TrackPlacements: []*TrackPlacement{
 			{
-				Tracks: [][2]Direction{{SOUTH_WEST, SOUTH_EAST}},
-				Hex:    Coordinate{X: 1, Y: 2},
+				Track: [2]Direction{SOUTH_WEST, SOUTH_EAST},
+				Hex:   Coordinate{X: 1, Y: 2},
 			},
 		},
 	})
@@ -487,12 +491,12 @@ func TestUpgradeToComplex(t *testing.T) {
 	err = handler.performBuildAction(&BuildAction{
 		TrackPlacements: []*TrackPlacement{
 			{
-				Tracks: [][2]Direction{{NORTH, NORTH_EAST}},
-				Hex:    Coordinate{X: 1, Y: 4},
+				Track: [2]Direction{NORTH, NORTH_EAST},
+				Hex:   Coordinate{X: 1, Y: 4},
 			},
 			{
-				Tracks: [][2]Direction{{SOUTH, NORTH}},
-				Hex:    Coordinate{X: 1, Y: 2},
+				Track: [2]Direction{SOUTH, NORTH},
+				Hex:   Coordinate{X: 1, Y: 2},
 			},
 		},
 	})
@@ -547,11 +551,12 @@ func TestIssue1Regression(t *testing.T) {
 	}
 	err := handler.performBuildAction(&BuildAction{
 		TownPlacements: []*TownPlacement{
-			{Tracks: []Direction{SOUTH_WEST, NORTH}, Hex: Coordinate{X: 0, Y: 3}},
+			{Track: SOUTH_WEST, Hex: Coordinate{X: 0, Y: 3}},
+			{Track: NORTH, Hex: Coordinate{X: 0, Y: 3}},
 		},
 		TrackPlacements: []*TrackPlacement{
-			{Tracks: [][2]Direction{{NORTH_EAST, SOUTH}}, Hex: Coordinate{X: 0, Y: 1}},
-			{Tracks: [][2]Direction{{NORTH_EAST, SOUTH}}, Hex: Coordinate{X: 0, Y: 4}},
+			{Track: [2]Direction{NORTH_EAST, SOUTH}, Hex: Coordinate{X: 0, Y: 1}},
+			{Track: [2]Direction{NORTH_EAST, SOUTH}, Hex: Coordinate{X: 0, Y: 4}},
 		},
 	})
 	require.NoError(t, err)
@@ -568,4 +573,65 @@ func TestIssue1Regression(t *testing.T) {
 	assert.Equal(t, playerId, link.Owner)
 	assert.Equal(t, Coordinate{X: 1, Y: 0}, link.SourceHex)
 	assert.Equal(t, []Direction{SOUTH_WEST, SOUTH}, link.Steps)
+}
+
+func TestDirectComplex(t *testing.T) {
+	playerId := "player1"
+	theMap := &BasicMap{
+		Width:  2,
+		Height: 6,
+		Hexes: [][]HexType{
+			{PLAINS_HEX_TYPE, CITY_HEX_TYPE},
+			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+			{CITY_HEX_TYPE, PLAINS_HEX_TYPE},
+		},
+		Cities: []BasicCity{
+			BasicCity{
+				Color:      PURPLE,
+				Coordinate: Coordinate{X: 1, Y: 0},
+			},
+			BasicCity{
+				Color:      PURPLE,
+				Coordinate: Coordinate{X: 0, Y: 5},
+			},
+		},
+	}
+
+	gameState := &GameState{
+		PlayerCash: map[string]int{
+			playerId: 10,
+		},
+		GamePhase: BUILDING_GAME_PHASE,
+	}
+
+	handler := &confirmMoveHandler{
+		theMap:       theMap,
+		gameState:    gameState,
+		activePlayer: playerId,
+	}
+	err := handler.performBuildAction(&BuildAction{
+		TrackPlacements: []*TrackPlacement{
+			{Track: [2]Direction{SOUTH, NORTH_EAST}, Hex: Coordinate{X: 0, Y: 3}},
+			{Track: [2]Direction{SOUTH_WEST, NORTH}, Hex: Coordinate{X: 1, Y: 2}},
+			{Track: [2]Direction{NORTH_EAST, SOUTH_EAST}, Hex: Coordinate{X: 0, Y: 1}},
+			{Track: [2]Direction{NORTH_WEST, SOUTH_EAST}, Hex: Coordinate{X: 1, Y: 2}},
+		},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, 2, gameState.PlayerCash[playerId])
+	assert.Equal(t, 2, len(gameState.Links))
+	link := gameState.Links[0]
+	assert.Equal(t, true, link.Complete)
+	assert.Equal(t, playerId, link.Owner)
+	assert.Equal(t, Coordinate{X: 0, Y: 5}, link.SourceHex)
+	assert.Equal(t, []Direction{NORTH, NORTH_EAST, NORTH}, link.Steps)
+	link = gameState.Links[1]
+	assert.Equal(t, false, link.Complete)
+	assert.Equal(t, playerId, link.Owner)
+	assert.Equal(t, Coordinate{X: 1, Y: 0}, link.SourceHex)
+	assert.Equal(t, []Direction{SOUTH_WEST, SOUTH_EAST, SOUTH_EAST}, link.Steps)
 }

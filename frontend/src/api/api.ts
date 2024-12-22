@@ -126,6 +126,7 @@ export enum Direction {
     SOUTH_WEST,
     NORTH_WEST
 }
+export const ALL_DIRECTIONS = [Direction.NORTH, Direction.NORTH_EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.NORTH_WEST];
 export enum Color {
     NONE = 0,
     BLACK,
@@ -251,12 +252,12 @@ export interface ChooseAction {
 }
 
 export interface TownPlacement {
-    tracks: Direction[];
+    track: Direction;
     hex: Coordinate;
 }
 
 export interface TrackPlacement {
-    tracks: Array<[Direction, Direction]>;
+    track: [Direction, Direction];
     hex: Coordinate;
 }
 

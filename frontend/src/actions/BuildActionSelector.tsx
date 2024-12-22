@@ -1,21 +1,35 @@
-import {BuildAction, ConfirmMove, Coordinate, User, ViewGameResponse} from "../api/api.ts";
+import {BuildAction, ConfirmMove, Coordinate, Direction, Urbanization, User, ViewGameResponse} from "../api/api.ts";
 import {Button, Header, Icon} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
-import {
-    getTownRoutesFromId,
-    getTrackRoutesFromId,
-    NewCitySelector,
-    TownTrackSelector,
-    TrackSelector
-} from "./TrackSelector.tsx";
+import {NewCitySelector,} from "./TrackSelector.tsx";
 import ErrorContext from "../ErrorContext.tsx";
+import maps, {BasicMap, HexType} from "../map.ts";
+import {applyDirection, oppositeDirection} from "../util.ts";
 
-interface Step {
-    kind?: 'build_track' | 'build_town' | 'urbanize';
-    buildTrackSelection: number;
-    buildTownSelection: number;
-    urbanizationSelection: number;
+function isCityHex(game: ViewGameResponse, map: BasicMap, urbanization: Urbanization|undefined, hex: Coordinate): boolean {
+    if (map.hexes[hex.y][hex.x] === HexType.CITY) {
+        return true;
+    }
+    for (let city of map.cities) {
+        if (city.coordinate.x === hex.x && city.coordinate.y === hex.y) {
+            return true;
+        }
+    }
+    if (game.gameState && game.gameState.urbanizations) {
+        for (let urb of game.gameState.urbanizations) {
+            if (urb.hex.x === hex.x && urb.hex.y === hex.y) {
+                return true;
+            }
+        }
+    }
+    if (urbanization) {
+        if (urbanization.hex.x === hex.x && urbanization.hex.y === hex.y) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: () => Promise<void>}) {
@@ -26,64 +40,110 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
         trackPlacements: [],
         urbanization: undefined,
     });
-    let [step, setStep] = useState<Step>({
-        buildTrackSelection: 0,
-        buildTownSelection: 0,
-        urbanizationSelection: 0
-    })
+    let [showUrbanize, setShowUrbanize] = useState<boolean>(false);
+    let [urbanizeSelection, setUrbanizeSelection] = useState<number>(0);
+    let [buildingTrackHex, setBuildingTrackHex] = useState<Coordinate|undefined>(undefined);
+    let [buildingTrackDirection, setBuildingTrackDirection] = useState<Direction|undefined>(undefined);
     let [loading, setLoading] = useState<boolean>(false);
+
+    let map = maps[game.mapName];
 
     useEffect(() => {
         const handler = (e:CustomEventInit<Coordinate>) => {
             if (e.detail) {
-                if (step.kind === 'build_track') {
-                    let newAction = Object.assign({}, action);
-                    newAction.trackPlacements.push({
-                        tracks: getTrackRoutesFromId(step.buildTrackSelection),
-                        hex: e.detail,
-                    });
-                    setStep({
-                        buildTrackSelection: 0,
-                        buildTownSelection: 0,
-                        urbanizationSelection: 0
-                    });
-                    setAction(newAction);
-                    document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
-                }
-                if (step.kind === 'build_town') {
-                    let newAction = Object.assign({}, action);
-                    newAction.townPlacements.push({
-                        tracks: getTownRoutesFromId(step.buildTownSelection),
-                        hex: e.detail,
-                    });
-                    setStep({
-                        buildTrackSelection: 0,
-                        buildTownSelection: 0,
-                        urbanizationSelection: 0
-                    });
-                    setAction(newAction);
-                    document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
-                }
-                if (step.kind === 'urbanize') {
+                if (showUrbanize) {
                     let newAction = Object.assign({}, action);
                     newAction.urbanization = {
-                        city: step.urbanizationSelection,
+                        city: urbanizeSelection,
                         hex: e.detail,
                     };
-                    setStep({
-                        buildTrackSelection: 0,
-                        buildTownSelection: 0,
-                        urbanizationSelection: 0
-                    });
+                    setShowUrbanize(false);
                     setAction(newAction);
                     document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
+                } else {
+                    // Only change the hex if we weren't already building track
+                    if (buildingTrackHex === undefined) {
+                        setBuildingTrackHex(e.detail);
+                        document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: e.detail }));
+                    }
                 }
             }
         };
 
         document.addEventListener('mapClickEvent', handler);
         return () => document.removeEventListener('mapClickEvent', handler);
-    }, [action, step]);
+    }, [action, showUrbanize, urbanizeSelection, buildingTrackHex]);
+
+    useEffect(() => {
+        const handler = (e:CustomEventInit<{direction: Direction}>) => {
+            if (e.detail && buildingTrackHex !== undefined) {
+                let direction = e.detail.direction;
+                let priorDirection = buildingTrackDirection;
+                let newHex = applyDirection(buildingTrackHex, direction);
+                if (priorDirection !== undefined) {
+                    if (map.hexes[buildingTrackHex.y][buildingTrackHex.x] === HexType.TOWN) {
+                        // If we've built into a town, just ignore the direction and complete the link
+                        let newAction = Object.assign({}, action);
+                        newAction.townPlacements = newAction.townPlacements.slice();
+                        newAction.townPlacements.push({
+                            hex: buildingTrackHex,
+                            track: oppositeDirection(priorDirection),
+                        });
+                        setAction(newAction);
+                        document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
+
+                        // And clear the building step
+                        setBuildingTrackHex(undefined);
+                        setBuildingTrackDirection(undefined);
+                        document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: undefined }));
+                    } else {
+                        // Just add some ordinary track...
+                        let newAction = Object.assign({}, action);
+                        newAction.trackPlacements = newAction.trackPlacements.slice();
+                        newAction.trackPlacements.push({
+                            hex: buildingTrackHex,
+                            track: [oppositeDirection(priorDirection), direction],
+                        });
+                        setAction(newAction);
+                        document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
+
+                        // If we've hit a city, clear the building step
+                        if (isCityHex(game, map, newAction.urbanization, newHex)) {
+                            setBuildingTrackHex(undefined);
+                            setBuildingTrackDirection(undefined);
+                            document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: undefined }));
+                        } else {
+                            // Otherwise keep going
+                            setBuildingTrackHex(newHex);
+                            setBuildingTrackDirection(direction);
+                            document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: newHex }));
+                        }
+                    }
+                } else {
+                    // If building from a town (and it's not urbanized), add a town placement
+                    if (map.hexes[buildingTrackHex.y][buildingTrackHex.x] === HexType.TOWN
+                            && !isCityHex(game, map, action.urbanization, buildingTrackHex)) {
+                        let newAction = Object.assign({}, action);
+                        newAction.townPlacements = newAction.townPlacements.slice();
+                        newAction.townPlacements.push({
+                            hex: buildingTrackHex,
+                            track: direction,
+                        });
+                        setAction(newAction);
+                        document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
+                    } else {
+                        // FIXME: Support redirecting here
+                    }
+                    setBuildingTrackDirection(direction);
+                    setBuildingTrackHex(newHex);
+                    document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: newHex }));
+                }
+            }
+        };
+
+        document.addEventListener('arrowClickEvent', handler);
+        return () => document.removeEventListener('arrowClickEvent', handler);
+    }, [action, buildingTrackHex, buildingTrackDirection]);
 
     if (!game.gameState) {
         return null;
@@ -100,67 +160,33 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
         let activePlayer: User|undefined = playerById[game.activePlayer];
         content = <p>Waiting for {activePlayer?.nickname} to build...</p>
     } else {
-        if (step.kind === 'build_track') {
-            content = <>
-                <p>Select track to build, then click on hex:</p>
-                <TrackSelector selected={step.buildTrackSelection} onChange={(value) => {
-                    setStep({kind: 'build_track', buildTrackSelection: value, buildTownSelection: 0, urbanizationSelection: 0});
-                }} />
-                <Button negative onClick={() => setStep({buildTrackSelection: 0, buildTownSelection: 0, urbanizationSelection: 0})}>Cancel</Button>
-            </>
-        } else if (step.kind === 'build_town') {
-            content = <p>
-                <p>Select town to build, then click on hex:</p>
-                <TownTrackSelector selected={step.buildTownSelection} onChange={(value) => {
-                    setStep({
-                        kind: 'build_town',
-                        buildTrackSelection: 0,
-                        buildTownSelection: value,
-                        urbanizationSelection: 0
-                    });
-                }}/>
-                <Button negative onClick={() => setStep({
-                    buildTrackSelection: 0,
-                    buildTownSelection: 0,
-                    urbanizationSelection: 0
-                })}>Cancel</Button>
-            </p>
-        } else if (step.kind === 'urbanize') {
+        if (showUrbanize) {
             content = <p>
                 <p>Select new city to build, then click on hex:</p>
-                <NewCitySelector selected={step.urbanizationSelection} onChange={(value) => {
-                    setStep({
-                        kind: 'urbanize',
-                        buildTrackSelection: 0,
-                        buildTownSelection: 0,
-                        urbanizationSelection: value
-                    });
-                }}/>
-                <Button negative onClick={() => setStep({
-                    buildTrackSelection: 0,
-                    buildTownSelection: 0,
-                    urbanizationSelection: 0
-                })}>Cancel</Button>
+                <NewCitySelector selected={urbanizeSelection} onChange={(value) => {
+                    setUrbanizeSelection(value)
+                }} />
+                <Button negative onClick={() => setShowUrbanize(false)}>Cancel</Button>
             </p>
         } else {
             let urbanizeButton: ReactNode = undefined;
             if (game.gameState.playerActions[game.activePlayer] === 'urbanization') {
                 urbanizeButton = <>
                     <Button secondary disabled={!!action.urbanization} icon onClick={() => {
-                        setStep({kind: 'urbanize', buildTrackSelection: 0, buildTownSelection: 0, urbanizationSelection: 0});
+                        setBuildingTrackHex(undefined);
+                        document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: undefined }));
+                        setBuildingTrackDirection(undefined);
+                        setUrbanizeSelection(0);
+                        setShowUrbanize(true);
                     }}><Icon name="home" /> Urbanize</Button>
                 </>
             }
 
             content = <>
-                <p>Select build step:</p>
+                <p>To build track, select a starting hex (either a city, town, or a hex after the end of a dangling track). Then click on the arrows to create track.</p>
+                <p>If you build multiple track segments on a single tile, the builds will be consolidated (e.g. as a complex track or a town with multiple legs) as a single tile placement when you submit the action.</p>
+                <p>To leave a link unfinished, use the "unselect hex" button.</p>
                 <div>
-                    <Button secondary icon onClick={() => {
-                        setStep({kind: 'build_track', buildTrackSelection: 0, buildTownSelection: 0, urbanizationSelection: 0});
-                    }}><Icon name='train' /> Build Track</Button>
-                    <Button secondary icon onClick={() => {
-                        setStep({kind: 'build_town', buildTownSelection: 0, buildTrackSelection: 0, urbanizationSelection: 0})
-                    }}><Icon name='circle' /> Build Town</Button>
                     {urbanizeButton}
                     <Button primary loading={loading} onClick={() => {
                         setLoading(true);
@@ -176,6 +202,9 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                             };
                             setAction(newAction);
                             document.dispatchEvent(new CustomEvent('pendingBuildAction', {detail: newAction}));
+                            setBuildingTrackHex(undefined);
+                            setBuildingTrackDirection(undefined);
+                            document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: undefined }));
                             return onDone();
                         }).catch(err => {
                             setError(err);
@@ -191,7 +220,15 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                         };
                         setAction(newAction);
                         document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
+                        setBuildingTrackHex(undefined);
+                        setBuildingTrackDirection(undefined);
+                        document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: undefined }));
                     }}>Restart Action</Button>
+                    <Button basic disabled={buildingTrackHex === undefined} onClick={() => {
+                        setBuildingTrackHex(undefined);
+                        setBuildingTrackDirection(undefined);
+                        document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: undefined }));
+                    }}>Unselect Hex</Button>
                 </div>
             </>;
         }
