@@ -809,6 +809,9 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 					if err != nil {
 						return err
 					}
+
+					handler.Log("A %s cube and a %s cube were drawn for the production action.",
+						gameState.ProductionCubes[0].String(), gameState.ProductionCubes[1].String())
 				}
 			}
 		} else {
