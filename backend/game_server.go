@@ -735,7 +735,7 @@ func (server *GameServer) getGameLogs(ctx *RequestContext, req *GetGameLogsReque
 	for rows.Next() {
 		var timestamp int
 		var userId string
-		var action string
+		var action sql.NullString
 		var description string
 		err = rows.Scan(&timestamp, &userId, &action, &description)
 		if err != nil {
@@ -744,7 +744,7 @@ func (server *GameServer) getGameLogs(ctx *RequestContext, req *GetGameLogsReque
 		entries = append(entries, &GameLogEntry{
 			Timestamp:   timestamp,
 			UserId:      userId,
-			Action:      action,
+			Action:      action.String,
 			Description: description,
 		})
 	}
