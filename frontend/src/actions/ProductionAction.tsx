@@ -50,19 +50,19 @@ function ProductionAction({game, onDone}: {game: ViewGameResponse, onDone: () =>
         let activePlayer: User|undefined = playerById[game.activePlayer];
         content = <p>Waiting for {activePlayer?.nickname} to perform the production action...</p>
     } else {
+        let columns: ReactNode[] = [];
+        for (let i = 0; i < game.gameState.productionCubes.length; i++) {
+            columns.push(<GridColumn key={i}>
+                <div className="cubeSpot"><div className="cube" style={{background: colorToHtml(game.gameState.productionCubes[i])}}/></div>
+                {action.destinations.length > i ? <p>Placing on {toCityLabel(action.destinations[i].x)} in spot {action.destinations[i].y+1}.</p> : null}
+            </GridColumn>);
+        }
 
         content = <>
             <p>Click on empty spaces in the goods growth chart where you want to place the cubes, from left to right:</p>
             <Grid>
                 <GridRow columns="equal">
-                    <GridColumn>
-                        <div className="cubeSpot"><div className="cube" style={{background: colorToHtml(game.gameState.productionCubes[0])}}/></div>
-                        {action.destinations.length >= 1 ? <p>Placing on {toCityLabel(action.destinations[0].x)} in spot {action.destinations[0].y+1}.</p> : null}
-                    </GridColumn>
-                    <GridColumn>
-                        <div className="cubeSpot"><div className="cube" style={{background: colorToHtml(game.gameState.productionCubes[1])}}/></div>
-                        {action.destinations.length >= 2 ? <p>Placing on {toCityLabel(action.destinations[1].x)} in spot {action.destinations[1].y+1}.</p> : null}
-                    </GridColumn>
+                    {columns}
                 </GridRow>
             </Grid>
             <br/>

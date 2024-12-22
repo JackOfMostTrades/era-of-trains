@@ -791,27 +791,41 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 					}
 				}
 
-				if produceGoodsPlayer == "" {
+				// Count the number of empty spaces on the goods growth chart
+				emptyCount := 0
+				for _, col := range gameState.GoodsGrowth {
+					for _, val := range col {
+						if val == NONE_COLOR {
+							emptyCount += 1
+						}
+					}
+				}
+
+				// If there are no empty spaces or no one took production, skip it
+				if emptyCount == 0 || produceGoodsPlayer == "" {
 					err := handler.executeGoodsGrowthPhase(theMap)
 					if err != nil {
 						return err
 					}
 				} else {
+					drawCount := 2
+					if emptyCount < 2 {
+						drawCount = emptyCount
+					}
+
 					handler.activePlayer = produceGoodsPlayer
-					gameState.ProductionCubes = make([]Color, 2)
+					gameState.ProductionCubes = make([]Color, drawCount)
 
-					var err error
-					gameState.ProductionCubes[0], err = gameState.drawCube()
-					if err != nil {
-						return err
-					}
-					gameState.ProductionCubes[1], err = gameState.drawCube()
-					if err != nil {
-						return err
-					}
+					for n := 0; n < drawCount; n++ {
+						var err error
+						gameState.ProductionCubes[n], err = gameState.drawCube()
+						if err != nil {
+							return err
+						}
 
-					handler.Log("A %s cube and a %s cube were drawn for the production action.",
-						gameState.ProductionCubes[0].String(), gameState.ProductionCubes[1].String())
+						handler.Log("A %s cube was drawn for the production action.",
+							gameState.ProductionCubes[n].String())
+					}
 				}
 			}
 		} else {
