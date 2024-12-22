@@ -1,4 +1,4 @@
-import {Color, ConfirmMove, Coordinate, Direction, User, ViewGameResponse} from "../api/api.ts";
+import {Color, ConfirmMove, Coordinate, Direction, PlayerColor, User, ViewGameResponse} from "../api/api.ts";
 import {Button, Header, Icon} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
@@ -6,23 +6,14 @@ import {applyDirection, oppositeDirection} from "../util.ts";
 import ErrorContext from "../ErrorContext.tsx";
 
 export interface Step {
-    selectedColor: Color;
-    selectedOrigin: Coordinate;
-    steps: Direction[];
-    currentCubePosition: Coordinate;
+    selectedColor?: Color;
+    selectedOrigin?: Coordinate;
+    steps?: Direction[];
+    currentCubePosition?: Coordinate;
+    nextStepOptions?: Array<{direction: Direction, owner: PlayerColor|undefined}>
 }
 
-function getDirectionFromSource(source: Coordinate, target: Coordinate): Direction|undefined {
-    for (let direction of [Direction.NORTH, Direction.NORTH_EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.NORTH_WEST]) {
-        let step = applyDirection(source, direction);
-        if (step.x === target.x && step.y === target.y) {
-            return direction;
-        }
-    }
-    return undefined;
-}
-
-function computeNextStop(game: ViewGameResponse, current: Coordinate, direction: Direction): Coordinate|undefined {
+function computeNextStop(game: ViewGameResponse, current: Coordinate, direction: Direction): { end: Coordinate, linkOwner: string }|undefined {
     if (!game.gameState || !game.gameState.links) {
         return undefined;
     }
@@ -35,52 +26,71 @@ function computeNextStop(game: ViewGameResponse, current: Coordinate, direction:
             end = applyDirection(end, dir);
         }
         if (link.sourceHex.x === current.x && link.sourceHex.y === current.y && link.steps[0] === direction) {
-            return end;
+            return {end: end, linkOwner: link.owner};
         }
         if (end.x === current.x && end.y === current.y && direction === oppositeDirection(link.steps[link.steps.length-1])) {
-            return link.sourceHex;
+            return {end: link.sourceHex, linkOwner: link.owner};
         }
     }
     return undefined;
 }
 
+function getValidStepDirections(game: ViewGameResponse, origin: Coordinate): Array<{direction: Direction, owner: string}> {
+    let results = [];
+    for (let direction of [Direction.NORTH, Direction.NORTH_EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.NORTH_WEST]) {
+        let nextStop = computeNextStop(game, origin, direction);
+        if (nextStop !== undefined) {
+            results.push({direction: direction, owner: nextStop.linkOwner});
+        }
+    }
+    return results;
+}
+
 function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
     let {setError} = useContext(ErrorContext);
-    let [step, setStep] = useState<Step>({selectedColor: Color.NONE, selectedOrigin: {x: 0, y: 0}, steps: [], currentCubePosition: {x: 0, y: 0}})
+    let [step, setStep] = useState<Step>({})
     let [loading, setLoading] = useState<boolean>(false);
 
     useEffect(() => {
-        const handler = (e:CustomEventInit<Coordinate>) => {
-            if (e.detail && step.selectedColor !== Color.NONE) {
-                let direction = getDirectionFromSource(step.currentCubePosition, e.detail);
-                if (direction !== undefined) {
-                    let nextStop = computeNextStop(game, step.currentCubePosition, direction);
-                    if (nextStop !== undefined) {
-                        let newStep = Object.assign({}, step);
-                        newStep.steps = newStep.steps.slice();
-                        newStep.steps.push(direction);
-                        newStep.currentCubePosition = nextStop;
-                        setStep(newStep);
-                        document.dispatchEvent(new CustomEvent('pendingMoveGoods', { detail: newStep }));
+        const handler = (e:CustomEventInit<{direction: Direction}>) => {
+            if (e.detail && step.selectedColor !== undefined && step.currentCubePosition) {
+                let direction = e.detail.direction;
+                let nextStop = computeNextStop(game, step.currentCubePosition, direction);
+                if (nextStop !== undefined) {
+                    let newStep = Object.assign({}, step);
+                    newStep.steps = (newStep.steps || []).slice();
+                    newStep.steps.push(direction);
+                    newStep.currentCubePosition = nextStop.end;
+                    newStep.nextStepOptions = [];
+                    for (let option of getValidStepDirections(game, nextStop.end)) {
+                        newStep.nextStepOptions?.push({direction: option.direction, owner: game.gameState?.playerColor[option.owner]});
                     }
+                    setStep(newStep);
+                    document.dispatchEvent(new CustomEvent('pendingMoveGoods', { detail: newStep }));
                 }
             }
         };
 
-        document.addEventListener('mapClickEvent', handler);
-        return () => document.removeEventListener('mapClickEvent', handler);
+        document.addEventListener('arrowClickEvent', handler);
+        return () => document.removeEventListener('arrowClickEvent', handler);
     }, [step]);
 
     useEffect(() => {
         const handler = (e:CustomEventInit<{x:number, y:number, color: Color}>) => {
             if (e.detail && e.detail.color !== Color.NONE) {
-                let newStep = {
+                let hex: Coordinate = {x: e.detail.x, y: e.detail.y};
+                let newStep: Step = {
                     selectedColor: e.detail.color,
-                    selectedOrigin: {x: e.detail.x, y: e.detail.y},
+                    selectedOrigin: hex,
                     steps: [],
-                    currentCubePosition: {x: e.detail.x, y: e.detail.y},
+                    currentCubePosition: hex,
+                    nextStepOptions: []
                 }
+                for (let option of getValidStepDirections(game, hex)) {
+                    newStep.nextStepOptions?.push({direction: option.direction, owner: game.gameState?.playerColor[option.owner]});
+                }
+
                 setStep(newStep);
                 document.dispatchEvent(new CustomEvent('pendingMoveGoods', { detail: newStep }));
             }
@@ -111,9 +121,9 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
         }
 
         content = <>
-            <p>Select move goods action:<br/>To move a good, select the cube on the map, then click on the neighboring hex in the direction you want to move it. Press the finish button when the cube is at its destination.</p>
+            <p>Select move goods action:<br/>To move a good, select the cube on the map, then click on one of the arrows that appears to indicate the link you want to move it along. Press the finish button when the cube is at its final destination.</p>
             <div>
-                <Button disabled={step.selectedColor === Color.NONE || step.steps.length === 0} primary icon onClick={() => {
+                <Button disabled={step.selectedColor === Color.NONE || !step.steps || step.steps.length === 0} primary icon onClick={() => {
                     setLoading(true);
                     ConfirmMove({
                         gameId: game.id,
@@ -124,8 +134,7 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                             path: step.steps,
                         },
                     }).then(() => {
-                        let newStep = {selectedColor: Color.NONE, selectedOrigin: {x: 0, y: 0}, steps: [], currentCubePosition: {x: 0, y: 0}};
-                        document.dispatchEvent(new CustomEvent('pendingMoveGoods', { detail: newStep }));
+                        document.dispatchEvent(new CustomEvent('pendingMoveGoods', { detail: {} }));
                         return onDone();
                     }).catch(err => {
                         setError(err);
@@ -140,8 +149,7 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                         actionName: "move_goods",
                         moveGoodsAction: {loco: true},
                     }).then(() => {
-                        let newStep = {selectedColor: Color.NONE, selectedOrigin: {x: 0, y: 0}, steps: [], currentCubePosition: {x: 0, y: 0}};
-                        document.dispatchEvent(new CustomEvent('pendingMoveGoods', { detail: newStep }));
+                        document.dispatchEvent(new CustomEvent('pendingMoveGoods', { detail: {} }));
                         return onDone();
                     }).catch(err => {
                         setError(err);
@@ -156,8 +164,7 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                         actionName: "move_goods",
                         moveGoodsAction: {},
                     }).then(() => {
-                        let newStep = {selectedColor: Color.NONE, selectedOrigin: {x: 0, y: 0}, steps: [], currentCubePosition: {x: 0, y: 0}};
-                        document.dispatchEvent(new CustomEvent('pendingMoveGoods', { detail: newStep }));
+                        document.dispatchEvent(new CustomEvent('pendingMoveGoods', { detail: {} }));
                         return onDone();
                     }).catch(err => {
                         setError(err);

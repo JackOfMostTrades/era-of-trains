@@ -1,4 +1,4 @@
-import {BuildAction, Color, Coordinate, Direction, ViewGameResponse} from "../api/api.ts";
+import {BuildAction, Color, Coordinate, Direction, PlayerColor, ViewGameResponse} from "../api/api.ts";
 import {ReactNode, useEffect, useState} from "react";
 import maps, {BasicMap, HexType} from "../map.ts";
 import {CityState, HexRenderer, urbCityState} from "../actions/renderer/HexRenderer.tsx";
@@ -75,6 +75,10 @@ class RenderMapBuilder {
 
     public renderActiveCube(hex: Coordinate, cube: Color) {
         this.hexRenderer.renderActiveCube(hex, cube);
+    }
+
+    public renderArrow(hex: Coordinate, direction: Direction, color: PlayerColor|undefined) {
+        this.hexRenderer.renderArrow(hex, direction, color);
     }
 
     public render(): ReactNode {
@@ -186,6 +190,7 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
                 // If we are moving a cube, skip rendering it (by setting color to none, so we leave a hole in the rendering)
                 if (pendingMoveGoods &&
                     pendingMoveGoods.selectedColor !== Color.NONE &&
+                    pendingMoveGoods.selectedOrigin &&
                     pendingMoveGoods.selectedOrigin.x === hex.x && pendingMoveGoods.selectedOrigin.y === hex.y) {
 
                     for (let i = 0; i < cubes.length; i++) {
@@ -200,8 +205,16 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
             }
         }
 
-        if (pendingMoveGoods && pendingMoveGoods.selectedColor !== Color.NONE) {
+        if (pendingMoveGoods && pendingMoveGoods.selectedColor !== Color.NONE
+                && pendingMoveGoods.selectedColor !== undefined
+                && pendingMoveGoods.currentCubePosition) {
             renderer.renderActiveCube(pendingMoveGoods.currentCubePosition, pendingMoveGoods.selectedColor);
+            if (pendingMoveGoods.nextStepOptions) {
+                for (let option of pendingMoveGoods.nextStepOptions) {
+                    let hex = applyDirection(pendingMoveGoods.currentCubePosition, option.direction);
+                    renderer.renderArrow(hex, option.direction, option.owner);
+                }
+            }
         }
     }
 

@@ -320,6 +320,88 @@ export class HexRenderer {
         this.height = Math.max(this.height, hex.y);
     }
 
+    public renderArrow(hex: Coordinate, direction: Direction, color: PlayerColor|undefined) {
+        let htmlColor = playerColorToHtml(color);
+
+        // Big hex
+        // W        NW       NE        E           SE          SW
+        // const s = 10, a=5.774;
+        // [[0, s/2], [a/2, 0], [a*1.5,0], [a*2, s/2], [a*1.5, s], [a/2, s]]
+
+        // Smaller hex
+        // const s = 8, a=4.619
+
+        // offset [1, 1.155]
+
+        // W                NW                  NE                 E                  SE                 SW
+        // [ [ 1, 5.155 ],  [ 3.3095, 1.155 ],  [ 7.9285, 1.155 ], [ 10.238, 5.155 ], [ 7.9285, 9.155 ], [ 3.3095, 9.155 ] ]
+
+
+        // /     |
+        // ------|  2.155
+        // 4.619
+        // 0.436532338 rad
+        // a=2.155
+        // b=2.3095
+        // alpha=alpha=Math.atan(a/b)
+        // beta=Math.atan((p[0][0]-p[1][0])/(p[0][1]-p[1][1]))
+        // gamma=pi/2-alpha-beta+pi/2
+        // x=h*Math.cos(gamma) + p[0][0]
+        // y=h*Math.sin(gamma) + p[0][1]
+
+        let points: number[][];
+        switch (direction) {
+            case Direction.NORTH:
+                points = [[3.3095, 9.155], [7.9285, 9.155], [5.774, 7]]
+                break;
+            case Direction.NORTH_EAST:
+                points = [[1, 5.155], [3.3095, 9.155], [4.02, 6.077]]
+                break;
+            case Direction.SOUTH_EAST:
+                points = [[1, 5.155], [3.3095, 1.155], [4.02, 4.232]]
+                break;
+            case Direction.SOUTH:
+                points = [[3.3095, 1.155], [7.9285, 1.155], [5.774, 3.31]]
+                break;
+            case Direction.SOUTH_WEST:
+                points = [[7.9285, 1.155], [10.238, 5.155], [7.006, 4.175]]
+                break;
+            case Direction.NORTH_WEST:
+                points = [[10.238, 5.155], [7.9285, 9.155], [7.006, 5.866]]
+                break;
+            default:
+                throw new Error("Unhandled direction: " + direction);
+        }
+
+        let xpos = hex.x*17.321;
+        if ((hex.y % 2) === 1) {
+            xpos += 8.661;
+        }
+        let ypos = hex.y*5;
+        for (let point of points) {
+            point[0] += xpos;
+            point[1] += ypos;
+        }
+
+        let onClick: undefined | (() => void);
+        if (this.emitOnClick) {
+            onClick = () => {
+                let event = new CustomEvent('arrowClickEvent', {
+                    detail: {
+                        hex: hex,
+                        direction: direction,
+                    }
+                });
+                document.dispatchEvent(event);
+            }
+        }
+
+        this.paths.push(<polygon stroke='#FFFFFF' strokeWidth={0.5} fill={htmlColor} onClick={onClick} points={points.map(p => p.join(",")).join(" ")} filter="url(#cube-shadow)" />);
+
+        this.width = Math.max(this.width, hex.x);
+        this.height = Math.max(this.height, hex.y);
+    }
+
     public render(): ReactNode {
         let width = this.width+1;
         let height = this.height+1;
