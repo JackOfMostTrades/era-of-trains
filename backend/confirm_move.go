@@ -214,7 +214,7 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 	}
 
 	// Log the action
-	stmt, err = server.db.Prepare("INSERT INTO game_log (game_id,timestamp,user_id,action,description) VALUES(?, ?, ?, ?, ?)")
+	stmt, err = server.db.Prepare("INSERT INTO game_log (game_id,timestamp,user_id,action,description,new_active_player,new_game_state) VALUES(?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -223,7 +223,8 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 	if err != nil {
 		return nil, fmt.Errorf("failed to serialze the request for logging: %v", err)
 	}
-	_, err = stmt.Exec(req.GameId, time.Now().Unix(), ctx.User.Id, string(reqString), strings.Join(handler.logs, "\n"))
+	_, err = stmt.Exec(req.GameId, time.Now().Unix(), ctx.User.Id, string(reqString), strings.Join(handler.logs, "\n"),
+		handler.activePlayer, string(newGameStateStr))
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}

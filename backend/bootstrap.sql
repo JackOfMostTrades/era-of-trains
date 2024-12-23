@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS games (
     owner_user_id text,
     started int,
     finished int,
-    game_state text
+    game_state text,
+    active_player_id text
 );
 
 CREATE TABLE IF NOT EXISTS game_player_map (
@@ -27,5 +28,7 @@ CREATE TABLE IF NOT EXISTS game_log (
     timestamp int, --Epoch seconds
     user_id text,
     action text,
-    description text
+    description text,
+    new_active_player text,
+    new_game_state text
 );

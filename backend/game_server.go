@@ -401,19 +401,6 @@ type StartGameRequest struct {
 type StartGameResponse struct {
 }
 
-func (server *GameServer) appendLogForGame(ctx *RequestContext, gameId string, format string, a ...any) error {
-	stmt, err := server.db.Prepare("INSERT INTO game_log (game_id,timestamp,user_id,action,description) VALUES(?, ?, ?, ?, ?)")
-	if err != nil {
-		return fmt.Errorf("failed to prepare query: %v", err)
-	}
-	defer stmt.Close()
-	_, err = stmt.Exec(gameId, time.Now().Unix(), ctx.User.Id, sql.NullString{}, fmt.Sprintf(format, a...))
-	if err != nil {
-		return fmt.Errorf("failed to execute query: %v", err)
-	}
-	return nil
-}
-
 func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) (resp *StartGameResponse, err error) {
 	stmt, err := server.db.Prepare("SELECT owner_user_id,num_players,map_name,started FROM games WHERE id=?")
 	if err != nil {
@@ -568,10 +555,16 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
 
-	// Log initial game state, including random elements of setup
-	err = server.appendLogForGame(ctx, req.GameId, "Initial game state: %s", string(gameStateStr))
+	// Log the start of the game
+	stmt, err = server.db.Prepare("INSERT INTO game_log (game_id,timestamp,user_id,action,description,new_active_player,new_game_state) VALUES(?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
-		return nil, fmt.Errorf("failed to write game log: %v", err)
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(req.GameId, time.Now().Unix(), ctx.User.Id, sql.NullString{},
+		"The game has started!", playerOrder[0], string(gameStateStr))
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
 
 	// Notify first player it is their turn
