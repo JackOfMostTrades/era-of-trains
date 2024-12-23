@@ -110,12 +110,16 @@ export class HexRenderer {
     private height: number;
     private paths: ReactNode[];
     private emitOnClick: boolean;
+    private filterId: number;
+    private static nextFilterId: number = 0;
 
     constructor(emitOnClock: boolean) {
         this.width = -1;
         this.height = -1;
         this.paths = [];
         this.emitOnClick = emitOnClock;
+        this.filterId = HexRenderer.nextFilterId;
+        HexRenderer.nextFilterId += 1;
     }
 
     public renderCityHex(hex: Coordinate, cityState: CityState) {
@@ -291,7 +295,7 @@ export class HexRenderer {
             }
 
             let points = `${xpos+i*2.5},${ypos+0.5} ${xpos+2+i*2.5},${ypos+0.5} ${xpos+2+i*2.5},${ypos+2.5} ${xpos+i*2.5},${ypos+2.5}`
-            this.paths.push(<polygon stroke='#222222' strokeWidth={0.25} fill={colorToHtml(cube)} points={points} filter="url(#cube-shadow)" onClick={onClick}/>);
+            this.paths.push(<polygon stroke='#222222' strokeWidth={0.25} fill={colorToHtml(cube)} points={points} filter={`url(#${this.filterId})`} onClick={onClick}/>);
         }
 
         this.width = Math.max(this.width, hex.x);
@@ -314,7 +318,7 @@ export class HexRenderer {
         ypos += 3.25;
 
         let points = `${xpos},${ypos} ${xpos+2.5},${ypos} ${xpos+2.5},${ypos+2.5} ${xpos},${ypos+2.5}`
-        this.paths.push(<polygon stroke='#FFFF00' strokeWidth={0.5} fill={colorToHtml(cube)} points={points} filter="url(#cube-shadow)"/>);
+        this.paths.push(<polygon stroke='#FFFF00' strokeWidth={0.5} fill={colorToHtml(cube)} points={points} filter={`url(#${this.filterId})`}/>);
 
         this.width = Math.max(this.width, hex.x);
         this.height = Math.max(this.height, hex.y);
@@ -396,7 +400,7 @@ export class HexRenderer {
             }
         }
 
-        this.paths.push(<polygon stroke='#FFFFFF' strokeWidth={0.5} fill={htmlColor} onClick={onClick} points={points.map(p => p.join(",")).join(" ")} filter="url(#cube-shadow)" />);
+        this.paths.push(<polygon stroke='#FFFFFF' strokeWidth={0.5} fill={htmlColor} onClick={onClick} points={points.map(p => p.join(",")).join(" ")} filter={`url(#${this.filterId})`} />);
 
         this.width = Math.max(this.width, hex.x);
         this.height = Math.max(this.height, hex.y);
@@ -426,7 +430,7 @@ export class HexRenderer {
             xmlns="http://www.w3.org/2000/svg"
             viewBox={`0 0 ${pixelWidth} ${pixelHeight}`}>
             <defs>
-                <filter id="cube-shadow" width="2.5" height="2.5">
+                <filter id={'' + this.filterId} width="2.5" height="2.5">
                     <feOffset in="SourceAlpha" dx="0.5" dy="0.5"/>
                     <feGaussianBlur stdDeviation="0.25"/>
                     <feBlend in="SourceGraphic" in2="blurOut"/>
