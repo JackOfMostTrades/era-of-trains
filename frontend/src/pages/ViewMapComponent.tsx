@@ -144,6 +144,15 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
                         let left = oppositeDirection(link.steps[i-1]);
                         let right = link.steps[i];
 
+                        // If this track is being redirected by a pending action, change "right" to match
+                        if (!link.complete && pendingBuildAction && pendingBuildAction.trackRedirects) {
+                            for (let pendingRedirect of pendingBuildAction.trackRedirects) {
+                                if (pendingRedirect.hex.x === hex.x && pendingRedirect.hex.y === hex.y) {
+                                    right = pendingRedirect.track;
+                                }
+                            }
+                        }
+
                         if (map.hexes[hex.y][hex.x] === HexType.TOWN) {
                             renderer.renderTownTrack(hex, left, link.owner);
                         } else {
@@ -152,7 +161,7 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
                     }
                 }
 
-                // Render the last step in a completed link to a city
+                // Render the last step in a completed link to a town
                 hex = applyDirection(hex, link.steps[link.steps.length-1]);
                 if (link.complete && map.hexes[hex.y][hex.x] === HexType.TOWN) {
                     let cityState = getCityState(game, map, hex);

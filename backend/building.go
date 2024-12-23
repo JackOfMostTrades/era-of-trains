@@ -22,14 +22,6 @@ type TileState struct {
 	Routes  []Route
 }
 
-type PlacementResult struct {
-	ValidPlacement bool
-	NewRoutes      []Route
-	Cost           int
-	NewLinks       []*Link
-	LinksToDelete  []*Link
-}
-
 var ErrInvalidPlacement = errors.New("invalid placement")
 
 func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownPlacement) error {
@@ -102,13 +94,52 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 	return nil
 }
 
-/*
-[[Direction.NORTH, Direction.SOUTH], [Direction.SOUTH_WEST, Direction.NORTH_EAST]],
-    // Gentle X
-    [[Direction.NORTH, Direction.SOUTH_EAST], [Direction.NORTH_EAST, Direction.SOUTH]],
-    // Bow and arrow
-    [[Direction.NORTH, Direction.SOUTH], [Direction.SOUTH_WEST, Direction.SOUTH_EAST]],
-*/
+func (performer *buildActionPerformer) attemptTrackRedirect(trackRedirect *TrackRedirect) error {
+	hex := trackRedirect.Hex
+	direction := trackRedirect.Track
+	ts := performer.mapState[hex.Y][hex.X]
+
+	if ts.HasTown || ts.IsCity || len(ts.Routes) == 0 {
+		return ErrInvalidPlacement
+	}
+	// Find the dangling route on this hex
+	var danglingRoute Route
+	var danglingRouteIdx int
+	for idx, route := range ts.Routes {
+		if route.Link.Complete {
+			continue
+		}
+		danglingRoute = route
+		danglingRouteIdx = idx
+		break
+	}
+	// If we didn't find the route
+	if danglingRoute.Link == nil {
+		return ErrInvalidPlacement
+	}
+	if danglingRoute.Link.Owner != "" && danglingRoute.Link.Owner != performer.activePlayer {
+		return ErrInvalidPlacement
+	}
+
+	// Figure out if it's left or right that's being redirected
+	isLeft := danglingRoute.Left == danglingRoute.Link.Steps[len(danglingRoute.Link.Steps)-1]
+	if isLeft {
+		ts.Routes[danglingRouteIdx] = Route{
+			Left:  direction,
+			Right: danglingRoute.Right,
+			Link:  danglingRoute.Link,
+		}
+	} else {
+		ts.Routes[danglingRouteIdx] = Route{
+			Left:  danglingRoute.Left,
+			Right: direction,
+			Link:  danglingRoute.Link,
+		}
+	}
+	// And update the last step of the link to match the new direction
+	danglingRoute.Link.Steps[len(danglingRoute.Link.Steps)-1] = direction
+	return nil
+}
 
 type trackTileType int
 
@@ -481,7 +512,7 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	if gameState.PlayerActions[handler.activePlayer] == ENGINEER_SPECIAL_ACTION {
 		placementLimit = 4
 	}
-	if len(townPlacements)+len(trackPlacements) > placementLimit {
+	if len(buildAction.TrackRedirects)+len(townPlacements)+len(trackPlacements) > placementLimit {
 		return &HttpError{fmt.Sprintf("cannot exceed track placement limit (%d)", placementLimit), http.StatusBadRequest}
 	}
 
@@ -494,6 +525,7 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 		}
 		totalCost += cost
 	}
+	totalCost += 2 * len(buildAction.TrackRedirects)
 	for hex, tracks := range trackPlacements {
 		cost, err := performer.determineTrackBuildCost(hex, tracks)
 		if err != nil {
@@ -532,6 +564,17 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 		}
 		handler.Log("%s added track on town hex (%d,%d)",
 			handler.ActivePlayerNick(), townPlacement.Hex.X, townPlacement.Hex.Y)
+	}
+	for _, trackRedirect := range buildAction.TrackRedirects {
+		err := performer.attemptTrackRedirect(trackRedirect)
+		if err != nil {
+			if errors.Is(err, ErrInvalidPlacement) {
+				return &HttpError{"invalid track redirect", http.StatusBadRequest}
+			}
+			return err
+		}
+		handler.Log("%s redirected track on hex (%d,%d)",
+			handler.ActivePlayerNick(), trackRedirect.Hex.X, trackRedirect.Hex.Y)
 	}
 	for _, trackPlacement := range buildAction.TrackPlacements {
 		err := performer.attemptTrackPlacement(trackPlacement)

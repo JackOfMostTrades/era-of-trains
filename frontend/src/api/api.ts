@@ -261,10 +261,16 @@ export interface TrackPlacement {
     hex: Coordinate;
 }
 
+export interface TrackRedirect {
+    track: Direction;
+    hex: Coordinate;
+}
+
 export interface BuildAction {
-    townPlacements: TownPlacement[];
-    trackPlacements: TrackPlacement[];
     urbanization?: Urbanization;
+    townPlacements: TownPlacement[];
+    trackRedirects: TrackRedirect[];
+    trackPlacements: TrackPlacement[];
 }
 
 export interface MoveGoodsAction {

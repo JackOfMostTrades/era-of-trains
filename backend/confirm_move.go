@@ -38,15 +38,21 @@ type TownPlacement struct {
 	Hex   Coordinate `json:"hex"`
 }
 
+type TrackRedirect struct {
+	Track Direction  `json:"track"`
+	Hex   Coordinate `json:"hex"`
+}
+
 type TrackPlacement struct {
 	Track [2]Direction `json:"track""`
 	Hex   Coordinate   `json:"hex"`
 }
 
 type BuildAction struct {
-	TownPlacements  []*TownPlacement  `json:"townPlacements"`
-	TrackPlacements []*TrackPlacement `json:"trackPlacements"`
 	Urbanization    *Urbanization     `json:"urbanization"`
+	TownPlacements  []*TownPlacement  `json:"townPlacements"`
+	TrackRedirects  []*TrackRedirect  `json:"trackRedirects"`
+	TrackPlacements []*TrackPlacement `json:"trackPlacements"`
 }
 
 type MoveGoodsAction struct {
