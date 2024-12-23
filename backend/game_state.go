@@ -20,6 +20,8 @@ const (
 	NORTH_WEST
 )
 
+var ALL_DIRECTIONS = []Direction{NORTH, NORTH_EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, NORTH_WEST}
+
 func (d Direction) opposite() Direction {
 	switch d {
 	case NORTH:

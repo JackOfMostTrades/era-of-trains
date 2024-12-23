@@ -421,6 +421,7 @@ func newBuildActionPerformer(theMap *BasicMap, gameState *GameState, activePlaye
 func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) error {
 
 	gameState := handler.gameState
+	performer := newBuildActionPerformer(handler.theMap, handler.gameState, handler.activePlayer)
 
 	// First handle urbanization
 	if buildAction.Urbanization != nil {
@@ -444,8 +445,25 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 		}
 
 		gameState.Urbanizations = append(gameState.Urbanizations, buildAction.Urbanization)
+		ts := performer.mapState[buildAction.Urbanization.Hex.Y][buildAction.Urbanization.Hex.X]
+		ts.IsCity = true
+		ts.Routes = nil
 		handler.Log("%s urbanizes new city %c on hex (%d,%d)",
 			handler.ActivePlayerNick(), 'A'+buildAction.Urbanization.City, buildAction.Urbanization.Hex.X, buildAction.Urbanization.Hex.Y)
+
+		// Check if there is adjacent incomplete link that becomes completed by this build
+		for _, direction := range ALL_DIRECTIONS {
+			adjacentHex := applyDirection(buildAction.Urbanization.Hex, direction)
+			if adjacentHex.Y >= 0 && adjacentHex.Y < len(performer.mapState) &&
+				adjacentHex.X >= 0 && adjacentHex.X < len(performer.mapState[adjacentHex.Y]) {
+				ts := performer.mapState[adjacentHex.Y][adjacentHex.X]
+				for _, route := range ts.Routes {
+					if route.Left == direction.opposite() || route.Right == direction.opposite() {
+						route.Link.Complete = true
+					}
+				}
+			}
+		}
 	}
 
 	// Consolidate placements by hex to determine cost and validity
@@ -466,8 +484,6 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	if len(townPlacements)+len(trackPlacements) > placementLimit {
 		return &HttpError{fmt.Sprintf("cannot exceed track placement limit (%d)", placementLimit), http.StatusBadRequest}
 	}
-
-	performer := newBuildActionPerformer(handler.theMap, handler.gameState, handler.activePlayer)
 
 	// Now apply cost
 	totalCost := 0

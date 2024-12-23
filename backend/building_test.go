@@ -635,3 +635,63 @@ func TestDirectComplex(t *testing.T) {
 	assert.Equal(t, Coordinate{X: 1, Y: 0}, link.SourceHex)
 	assert.Equal(t, []Direction{SOUTH_WEST, SOUTH_EAST, SOUTH_EAST}, link.Steps)
 }
+
+func TestUrbCompletesLink(t *testing.T) {
+	playerId := "player1"
+	theMap := &BasicMap{
+		Width:  2,
+		Height: 2,
+		Hexes: [][]HexType{
+			{CITY_HEX_TYPE, TOWN_HEX_TYPE},
+			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+		},
+		Cities: []BasicCity{
+			BasicCity{
+				Color:      PURPLE,
+				Coordinate: Coordinate{X: 0, Y: 0},
+			},
+		},
+	}
+	gameState := &GameState{
+		GamePhase:     BUILDING_GAME_PHASE,
+		PlayerCash:    map[string]int{playerId: 10},
+		PlayerActions: map[string]SpecialAction{playerId: URBANIZATION_SPECIAL_ACTION},
+	}
+
+	handler := &confirmMoveHandler{
+		theMap:       theMap,
+		gameState:    gameState,
+		activePlayer: playerId,
+	}
+	err := handler.performBuildAction(&BuildAction{
+		TrackPlacements: []*TrackPlacement{
+			{
+				Track: [2]Direction{NORTH_WEST, NORTH_EAST},
+				Hex:   Coordinate{X: 0, Y: 1},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, len(gameState.Links))
+	link := gameState.Links[0]
+	assert.Equal(t, false, link.Complete)
+	assert.Equal(t, playerId, link.Owner)
+	assert.Equal(t, Coordinate{X: 0, Y: 0}, link.SourceHex)
+	assert.Equal(t, []Direction{SOUTH_EAST, NORTH_EAST}, link.Steps)
+
+	err = handler.performBuildAction(&BuildAction{
+		Urbanization: &Urbanization{
+			Hex:  Coordinate{X: 1, Y: 0},
+			City: 0,
+		},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, len(gameState.Links))
+	link = gameState.Links[0]
+	assert.Equal(t, true, link.Complete)
+	assert.Equal(t, playerId, link.Owner)
+	assert.Equal(t, Coordinate{X: 0, Y: 0}, link.SourceHex)
+	assert.Equal(t, []Direction{SOUTH_EAST, NORTH_EAST}, link.Steps)
+}
