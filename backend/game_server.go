@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/common"
+	"github.com/JackOfMostTrades/eot/backend/maps"
 	"github.com/google/uuid"
 	"math/rand"
 	"net/http"
@@ -14,8 +16,8 @@ import (
 type GameServer struct {
 	config       *Config
 	db           *sql.DB
-	maps         map[string]*BasicMap
-	randProvider randProvider
+	gameMaps     map[string]maps.GameMap
+	randProvider common.RandProvider
 }
 
 type User struct {
@@ -470,30 +472,30 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 	}
 
 	// Setup initial game state
-	gameState := &GameState{
+	gameState := &common.GameState{
 		PlayerOrder:       playerOrder,
 		PlayerColor:       playerColor,
 		PlayerShares:      make(map[string]int),
 		PlayerLoco:        make(map[string]int),
 		PlayerIncome:      make(map[string]int),
-		PlayerActions:     make(map[string]SpecialAction),
+		PlayerActions:     make(map[string]common.SpecialAction),
 		PlayerCash:        make(map[string]int),
 		AuctionState:      make(map[string]int),
-		GamePhase:         SHARES_GAME_PHASE,
+		GamePhase:         common.SHARES_GAME_PHASE,
 		TurnNumber:        1,
 		MovingGoodsRound:  0,
 		PlayerHasDoneLoco: make(map[string]bool),
 		Links:             nil,
 		Urbanizations:     nil,
-		CubeBag: map[Color]int{
-			BLACK:  16,
-			RED:    20,
-			YELLOW: 20,
-			BLUE:   20,
-			PURPLE: 20,
+		CubeBag: map[common.Color]int{
+			common.BLACK:  16,
+			common.RED:    20,
+			common.YELLOW: 20,
+			common.BLUE:   20,
+			common.PURPLE: 20,
 		},
 		Cubes:           nil,
-		GoodsGrowth:     make([][]Color, 20),
+		GoodsGrowth:     make([][]common.Color, 20),
 		ProductionCubes: nil,
 	}
 	for _, userId := range playerOrder {
@@ -505,9 +507,9 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 
 	// Populate the goods growth table
 	for i := 0; i < 12; i++ {
-		gameState.GoodsGrowth[i] = make([]Color, 3)
+		gameState.GoodsGrowth[i] = make([]common.Color, 3)
 		for j := 0; j < 3; j++ {
-			cube, err := gameState.drawCube(server.randProvider)
+			cube, err := gameState.DrawCube(server.randProvider)
 			if err != nil {
 				return nil, fmt.Errorf("failed to draw cube: %v", err)
 			}
@@ -515,9 +517,9 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 		}
 	}
 	for i := 12; i < 20; i++ {
-		gameState.GoodsGrowth[i] = make([]Color, 2)
+		gameState.GoodsGrowth[i] = make([]common.Color, 2)
 		for j := 0; j < 2; j++ {
-			cube, err := gameState.drawCube(server.randProvider)
+			cube, err := gameState.DrawCube(server.randProvider)
 			if err != nil {
 				return nil, fmt.Errorf("failed to draw cube: %v", err)
 			}
@@ -525,21 +527,13 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 		}
 	}
 
-	theMap := server.maps[mapName]
-	if theMap == nil {
+	gameMap := server.gameMaps[mapName]
+	if gameMap == nil {
 		return nil, fmt.Errorf("failed to lookup map: %s", mapName)
 	}
-	for _, startingCubeSpec := range theMap.StartingCubes {
-		for i := 0; i < startingCubeSpec.Number; i++ {
-			cube, err := gameState.drawCube(server.randProvider)
-			if err != nil {
-				return nil, fmt.Errorf("failed to draw cube: %v", err)
-			}
-			gameState.Cubes = append(gameState.Cubes, &BoardCube{
-				Color: cube,
-				Hex:   startingCubeSpec.Coordinate,
-			})
-		}
+	err = gameMap.PopulateStartingCubes(gameState, server.randProvider)
+	if err != nil {
+		return nil, fmt.Errorf("failed to populate initial board cubes: %v", err)
 	}
 
 	gameStateStr, err := json.Marshal(gameState)
@@ -581,16 +575,16 @@ type ViewGameRequest struct {
 	GameId string `json:"gameId"`
 }
 type ViewGameResponse struct {
-	Id           string     `json:"id"`
-	Name         string     `json:"name"`
-	Started      bool       `json:"started"`
-	Finished     bool       `json:"finished"`
-	NumPlayers   int        `json:"numPlayers"`
-	MapName      string     `json:"mapName"`
-	OwnerUser    *User      `json:"ownerUser"`
-	ActivePlayer string     `json:"activePlayer"`
-	JoinedUsers  []*User    `json:"joinedUsers"`
-	GameState    *GameState `json:"gameState"`
+	Id           string            `json:"id"`
+	Name         string            `json:"name"`
+	Started      bool              `json:"started"`
+	Finished     bool              `json:"finished"`
+	NumPlayers   int               `json:"numPlayers"`
+	MapName      string            `json:"mapName"`
+	OwnerUser    *User             `json:"ownerUser"`
+	ActivePlayer string            `json:"activePlayer"`
+	JoinedUsers  []*User           `json:"joinedUsers"`
+	GameState    *common.GameState `json:"gameState"`
 }
 
 func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (resp *ViewGameResponse, err error) {
@@ -634,9 +628,9 @@ func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (r
 		joinedUsers = append(joinedUsers, user)
 	}
 
-	var gameState *GameState
+	var gameState *common.GameState
 	if gameStateStr.Valid {
-		gameState = new(GameState)
+		gameState = new(common.GameState)
 		err = json.Unmarshal([]byte(gameStateStr.String), gameState)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse game state: %v", err)

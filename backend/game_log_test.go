@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/common"
+	"github.com/JackOfMostTrades/eot/backend/maps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"os"
@@ -12,7 +14,7 @@ import (
 
 type GameStep struct {
 	Action               *ConfirmMoveRequest `json:"action"`
-	ExpectedGameState    *GameState          `json:"expectedGameState"`
+	ExpectedGameState    *common.GameState   `json:"expectedGameState"`
 	ExpectedActivePlayer string              `json:"expectedActivePlayer"`
 }
 
@@ -30,14 +32,14 @@ func gameLogTestCase(definition string) func(t *testing.T) {
 		err = json.Unmarshal(defBytes, caseDefinition)
 		require.NoError(t, err)
 
-		maps, err := loadMaps()
+		gameMaps, err := maps.LoadMaps()
 		require.NoError(t, err)
-		theMap := maps[caseDefinition.MapName]
+		gameMap := gameMaps[caseDefinition.MapName]
 		gameState := caseDefinition.Steps[0].ExpectedGameState
 		activePlayer := caseDefinition.Steps[0].ExpectedActivePlayer
 
 		handler := &confirmMoveHandler{
-			theMap:       theMap,
+			gameMap:      gameMap,
 			gameState:    gameState,
 			activePlayer: activePlayer,
 			randProvider: &fixedRandProvider{values: caseDefinition.RandomValues},
@@ -103,9 +105,9 @@ func TestExportGameLogTestCase(t *testing.T) {
 			err = json.Unmarshal([]byte(actionStr.String), action)
 			require.NoError(t, err)
 		}
-		var gameState *GameState
+		var gameState *common.GameState
 		if newGameStateStr.Valid {
-			gameState = new(GameState)
+			gameState = new(common.GameState)
 			err = json.Unmarshal([]byte(newGameStateStr.String), gameState)
 			require.NoError(t, err)
 		}

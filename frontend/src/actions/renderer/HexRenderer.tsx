@@ -1,5 +1,5 @@
 import {Color, Coordinate, Direction, PlayerColor} from "../../api/api.ts";
-import {HexType} from "../../map.ts";
+import {CityProperties, HexType} from "../../map.ts";
 import {ReactNode} from "react";
 
 export function colorToHtml(color: Color): string {
@@ -10,6 +10,7 @@ export function colorToHtml(color: Color): string {
         case Color.RED: return '#d41e2d';
         case Color.PURPLE: return '#8d5a95';
         case Color.YELLOW: return '#f5ac11';
+        case Color.WHITE: return '#e9dcc9';
     }
 }
 
@@ -27,13 +28,7 @@ export function playerColorToHtml(color: PlayerColor|undefined): string {
     }
 }
 
-export interface CityState {
-    label: string
-    color: Color
-    darkCity: boolean
-}
-
-export function urbCityState(n: number): CityState {
+export function urbCityProperties(n: number): CityProperties {
     let label: string;
     let color: Color;
     let darkCity: boolean;
@@ -122,7 +117,7 @@ export class HexRenderer {
         HexRenderer.nextFilterId += 1;
     }
 
-    public renderCityHex(hex: Coordinate, cityState: CityState) {
+    public renderCityHex(hex: Coordinate, cityProperties: CityProperties) {
         let xpos = hex.x*17.321;
         if ((hex.y % 2) === 1) {
             xpos += 8.661;
@@ -143,22 +138,22 @@ export class HexRenderer {
         }
 
         let color = '#ffffff';
-        if (cityState.darkCity) {
+        if (cityProperties.darkCity) {
             color = '#222222';
         }
 
         let points = `${xpos},${ypos+5} ${xpos+2.887},${ypos} ${xpos+8.661},${ypos} ${xpos+11.547},${ypos+5} ${xpos+8.661},${ypos+10} ${xpos+2.887},${ypos+10}`
         this.paths.push(<polygon stroke='#000000' strokeWidth={0.1} fill={color} points={points} onClick={onClick}/>);
 
-        let cityColor = colorToHtml(cityState.color);
+        let cityColor = colorToHtml(cityProperties.color);
         let strokeColor: string = '#222222';
-        if (cityState.darkCity) {
+        if (cityProperties.darkCity) {
             strokeColor = '#ffffff';
         }
         points = `${xpos + 0.8},${ypos + 5} ${xpos + 3.225},${ypos + 0.8} ${xpos + 8.075},${ypos + 0.8} ${xpos + 10.747},${ypos + 5} ${xpos + 8.075},${ypos + 9.2} ${xpos + 3.225},${ypos + 9.2}`
         this.paths.push(<polygon stroke={strokeColor} strokeWidth={0.2} fill={cityColor} points={points} onClick={onClick}/>);
         this.paths.push(<circle cx={xpos + 5.7735} cy={ypos + 5} r={2.5} fill='#FFFFFF' onClick={onClick}/>);
-        this.paths.push(<text fontSize={2.5} x={xpos + 5.7735} y={ypos+5.3} dominantBaseline="middle" textAnchor="middle">{cityState.label}</text>);
+        this.paths.push(<text fontSize={2.5} x={xpos + 5.7735} y={ypos+5.3} dominantBaseline="middle" textAnchor="middle">{cityProperties.label}</text>);
 
         this.width = Math.max(this.width, hex.x);
         this.height = Math.max(this.height, hex.y);

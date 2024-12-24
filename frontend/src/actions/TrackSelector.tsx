@@ -1,7 +1,7 @@
 import {Direction} from "../api/api.ts";
 import {Grid, GridColumn, GridRow} from "semantic-ui-react";
 import {ReactNode} from "react";
-import {HexRenderer, urbCityState} from "./renderer/HexRenderer.tsx";
+import {HexRenderer, urbCityProperties} from "./renderer/HexRenderer.tsx";
 import {HexType} from "../map.ts";
 import "./TrackSelector.css";
 
@@ -152,7 +152,7 @@ export function NewCitySelector(props: Props) {
     let columns: ReactNode[] = [];
     for (let newCityNum = 0; newCityNum < 8; newCityNum++) {
         let renderer = new HexRenderer(false);
-        renderer.renderCityHex({x: 0, y: 0}, urbCityState(newCityNum));
+        renderer.renderCityHex({x: 0, y: 0}, urbCityProperties(newCityNum));
 
         let classNames = "track-select";
         if (newCityNum === props.selected) {

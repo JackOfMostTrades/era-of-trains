@@ -1,16 +1,14 @@
 import {Coordinate, GameState, User, ViewGameResponse} from "../api/api.ts";
-import maps, {BasicMap} from "../map.ts";
+import maps, {BasicMap, HexType} from "../map.ts";
 import {applyDirection} from "../util.ts";
 import {Header, List, ListItem} from "semantic-ui-react";
 
 function isCity(gameState: GameState, map: BasicMap, hex: Coordinate): boolean {
+    if (map.getHexType(hex) === HexType.CITY) {
+        return true;
+    }
     for (let urb of gameState.urbanizations) {
         if (urb.hex.x === hex.x && urb.hex.y === hex.y) {
-            return true;
-        }
-    }
-    for (let city of map.cities) {
-        if (city.coordinate.x === hex.x && city.coordinate.y === hex.y) {
             return true;
         }
     }

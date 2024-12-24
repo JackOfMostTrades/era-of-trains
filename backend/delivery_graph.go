@@ -1,52 +1,55 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/common"
+)
 
 type DeliveryGraphLink struct {
 	player      string
-	destination Coordinate
+	destination common.Coordinate
 }
 
 type DeliveryGraph struct {
-	hexToDirectionToLink map[Coordinate]map[Direction]DeliveryGraphLink
+	hexToDirectionToLink map[common.Coordinate]map[common.Direction]DeliveryGraphLink
 }
 
-func applyDirection(coord Coordinate, direction Direction) Coordinate {
+func applyDirection(coord common.Coordinate, direction common.Direction) common.Coordinate {
 	switch direction {
-	case NORTH:
-		return Coordinate{X: coord.X, Y: coord.Y - 2}
-	case NORTH_EAST:
+	case common.NORTH:
+		return common.Coordinate{X: coord.X, Y: coord.Y - 2}
+	case common.NORTH_EAST:
 		if (coord.Y % 2) == 0 {
-			return Coordinate{X: coord.X, Y: coord.Y - 1}
+			return common.Coordinate{X: coord.X, Y: coord.Y - 1}
 		} else {
-			return Coordinate{X: coord.X + 1, Y: coord.Y - 1}
+			return common.Coordinate{X: coord.X + 1, Y: coord.Y - 1}
 		}
-	case SOUTH_EAST:
+	case common.SOUTH_EAST:
 		if (coord.Y % 2) == 0 {
-			return Coordinate{X: coord.X, Y: coord.Y + 1}
+			return common.Coordinate{X: coord.X, Y: coord.Y + 1}
 		} else {
-			return Coordinate{X: coord.X + 1, Y: coord.Y + 1}
+			return common.Coordinate{X: coord.X + 1, Y: coord.Y + 1}
 		}
-	case SOUTH:
-		return Coordinate{X: coord.X, Y: coord.Y + 2}
-	case SOUTH_WEST:
+	case common.SOUTH:
+		return common.Coordinate{X: coord.X, Y: coord.Y + 2}
+	case common.SOUTH_WEST:
 		if (coord.Y % 2) == 0 {
-			return Coordinate{X: coord.X - 1, Y: coord.Y + 1}
+			return common.Coordinate{X: coord.X - 1, Y: coord.Y + 1}
 		} else {
-			return Coordinate{X: coord.X, Y: coord.Y + 1}
+			return common.Coordinate{X: coord.X, Y: coord.Y + 1}
 		}
-	case NORTH_WEST:
+	case common.NORTH_WEST:
 		if (coord.Y % 2) == 0 {
-			return Coordinate{X: coord.X - 1, Y: coord.Y - 1}
+			return common.Coordinate{X: coord.X - 1, Y: coord.Y - 1}
 		} else {
-			return Coordinate{X: coord.X, Y: coord.Y - 1}
+			return common.Coordinate{X: coord.X, Y: coord.Y - 1}
 		}
 	}
 	panic(fmt.Errorf("unhandled direction: %v", direction))
 }
 
-func (gameState *GameState) computeDeliveryGraph() *DeliveryGraph {
-	hexToDirectionToLink := make(map[Coordinate]map[Direction]DeliveryGraphLink)
+func computeDeliveryGraph(gameState *common.GameState) *DeliveryGraph {
+	hexToDirectionToLink := make(map[common.Coordinate]map[common.Direction]DeliveryGraphLink)
 	for _, link := range gameState.Links {
 		if !link.Complete {
 			continue
@@ -58,17 +61,17 @@ func (gameState *GameState) computeDeliveryGraph() *DeliveryGraph {
 			dest = applyDirection(dest, step)
 		}
 		if _, ok := hexToDirectionToLink[src]; !ok {
-			hexToDirectionToLink[src] = make(map[Direction]DeliveryGraphLink)
+			hexToDirectionToLink[src] = make(map[common.Direction]DeliveryGraphLink)
 		}
 		if _, ok := hexToDirectionToLink[dest]; !ok {
-			hexToDirectionToLink[dest] = make(map[Direction]DeliveryGraphLink)
+			hexToDirectionToLink[dest] = make(map[common.Direction]DeliveryGraphLink)
 		}
 
 		hexToDirectionToLink[src][link.Steps[0]] = DeliveryGraphLink{
 			player:      link.Owner,
 			destination: dest,
 		}
-		hexToDirectionToLink[dest][link.Steps[len(link.Steps)-1].opposite()] = DeliveryGraphLink{
+		hexToDirectionToLink[dest][link.Steps[len(link.Steps)-1].Opposite()] = DeliveryGraphLink{
 			player:      link.Owner,
 			destination: src,
 		}

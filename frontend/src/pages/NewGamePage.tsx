@@ -78,6 +78,11 @@ function NewGamePage() {
                             text: "Rust Belt",
                             value: "rust_belt",
                         },
+                        {
+                            key: "southern_us",
+                            text: "Southern U.S.",
+                            value: "southern_us",
+                        },
                     ]}
                 />
             </FormField>

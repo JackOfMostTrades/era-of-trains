@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/common"
+	"github.com/JackOfMostTrades/eot/backend/maps"
 	_ "github.com/go-sql-driver/mysql"
 	"log/slog"
 	_ "modernc.org/sqlite"
@@ -201,7 +203,7 @@ func main() {
 		}
 	}
 
-	maps, err := loadMaps()
+	gameMaps, err := maps.LoadMaps()
 	if err != nil {
 		panic(fmt.Errorf("failed to load maps: %v", err))
 	}
@@ -209,8 +211,8 @@ func main() {
 	server := &GameServer{
 		config:       config,
 		db:           db,
-		maps:         maps,
-		randProvider: &cryptoRandProvider{},
+		gameMaps:     gameMaps,
+		randProvider: &common.CryptoRandProvider{},
 	}
 	defer server.Close()
 

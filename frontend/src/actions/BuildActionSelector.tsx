@@ -17,13 +17,8 @@ import maps, {BasicMap, HexType} from "../map.ts";
 import {applyDirection, oppositeDirection} from "../util.ts";
 
 function isCityHex(game: ViewGameResponse, map: BasicMap, urbanization: Urbanization|undefined, hex: Coordinate): boolean {
-    if (map.hexes[hex.y][hex.x] === HexType.CITY) {
+    if (map.getHexType(hex) === HexType.CITY) {
         return true;
-    }
-    for (let city of map.cities) {
-        if (city.coordinate.x === hex.x && city.coordinate.y === hex.y) {
-            return true;
-        }
     }
     if (game.gameState && game.gameState.urbanizations) {
         for (let urb of game.gameState.urbanizations) {
@@ -43,9 +38,9 @@ function isCityHex(game: ViewGameResponse, map: BasicMap, urbanization: Urbaniza
 
 function computeExistingRoutes(gameState: GameState|undefined, map: BasicMap): Array<Array<Array<{Left: Direction, Right: Direction}>>> {
     let routes: Array<Array<Array<{Left: Direction, Right: Direction}>>> = [];
-    for (let y = 0; y < map.height; y++) {
+    for (let y = 0; y < map.getHeight(); y++) {
         routes.push([]);
-        for (let x = 0; x < map.width; x++) {
+        for (let x = 0; x < map.getWidth(); x++) {
             routes[y].push([]);
         }
     }
@@ -114,7 +109,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                 let priorDirection = buildingTrackDirection;
                 let newHex = applyDirection(buildingTrackHex, direction);
                 if (priorDirection !== undefined) {
-                    if (map.hexes[buildingTrackHex.y][buildingTrackHex.x] === HexType.TOWN) {
+                    if (map.getHexType(buildingTrackHex) === HexType.TOWN) {
                         // If we've built into a town, just ignore the direction and complete the link
                         let newAction = Object.assign({}, action);
                         newAction.townPlacements = newAction.townPlacements.slice();
@@ -155,7 +150,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                 } else {
                     let isCity = isCityHex(game, map, action.urbanization, buildingTrackHex);
                     // If building from a town (and it's not urbanized), add a town placement
-                    if (map.hexes[buildingTrackHex.y][buildingTrackHex.x] === HexType.TOWN && !isCity) {
+                    if (map.getHexType(buildingTrackHex) === HexType.TOWN && !isCity) {
                         let newAction = Object.assign({}, action);
                         newAction.townPlacements = newAction.townPlacements.slice();
                         newAction.townPlacements.push({

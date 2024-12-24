@@ -1,62 +1,6 @@
-package main
+package common
 
-import (
-	"fmt"
-)
-
-type Coordinate struct {
-	X int `json:"x"`
-	Y int `json:"y"`
-}
-
-type Direction int
-
-const (
-	NORTH Direction = iota
-	NORTH_EAST
-	SOUTH_EAST
-	SOUTH
-	SOUTH_WEST
-	NORTH_WEST
-)
-
-var ALL_DIRECTIONS = []Direction{NORTH, NORTH_EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, NORTH_WEST}
-
-func (d Direction) opposite() Direction {
-	switch d {
-	case NORTH:
-		return SOUTH
-	case NORTH_EAST:
-		return SOUTH_WEST
-	case SOUTH_EAST:
-		return NORTH_WEST
-	case SOUTH:
-		return NORTH
-	case SOUTH_WEST:
-		return NORTH_EAST
-	case NORTH_WEST:
-		return SOUTH_EAST
-	}
-	panic(fmt.Errorf("unhandeled direction: %v", d))
-}
-
-type Link struct {
-	SourceHex Coordinate  `json:"sourceHex"`
-	Steps     []Direction `json:"steps"`
-	Owner     string      `json:"owner"`
-	Complete  bool        `json:"complete"`
-}
-
-type Urbanization struct {
-	Hex Coordinate `json:"hex"`
-	// A=0, B=1, ...
-	City int `json:"city"`
-}
-
-type BoardCube struct {
-	Color Color      `json:"color"`
-	Hex   Coordinate `json:"hex"`
-}
+import "fmt"
 
 type GamePhase int
 
@@ -80,6 +24,27 @@ const (
 	PRODUCTION_SPECIAL_ACTION      SpecialAction = "production"
 	TURN_ORDER_PASS_SPECIAL_ACTION SpecialAction = "turn_order_pass"
 )
+
+var ALL_SPECIAL_ACTIONS = []SpecialAction{FIRST_MOVE_SPECIAL_ACTION, FIRST_BUILD_SPECIAL_ACTION, ENGINEER_SPECIAL_ACTION, LOCO_SPECIAL_ACTION,
+	URBANIZATION_SPECIAL_ACTION, PRODUCTION_SPECIAL_ACTION, TURN_ORDER_PASS_SPECIAL_ACTION}
+
+type Link struct {
+	SourceHex Coordinate  `json:"sourceHex"`
+	Steps     []Direction `json:"steps"`
+	Owner     string      `json:"owner"`
+	Complete  bool        `json:"complete"`
+}
+
+type Urbanization struct {
+	Hex Coordinate `json:"hex"`
+	// A=0, B=1, ...
+	City int `json:"city"`
+}
+
+type BoardCube struct {
+	Color Color      `json:"color"`
+	Hex   Coordinate `json:"hex"`
+}
 
 type GameState struct {
 	PlayerColor   map[string]int           `json:"playerColor"`
@@ -113,7 +78,7 @@ type GameState struct {
 	ProductionCubes []Color `json:"productionCubes"`
 }
 
-func (gameState *GameState) drawCube(randProvider randProvider) (Color, error) {
+func (gameState *GameState) DrawCube(randProvider RandProvider) (Color, error) {
 	var total int = 0
 	for _, count := range gameState.CubeBag {
 		total += count
@@ -125,7 +90,7 @@ func (gameState *GameState) drawCube(randProvider randProvider) (Color, error) {
 	if err != nil {
 		return NONE_COLOR, fmt.Errorf("failed to get random number: %v", err)
 	}
-	var result Color = NONE_COLOR
+	result := NONE_COLOR
 	total = 0
 	for color, count := range gameState.CubeBag {
 		total += count

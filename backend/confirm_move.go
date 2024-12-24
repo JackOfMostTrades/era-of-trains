@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/common"
+	"github.com/JackOfMostTrades/eot/backend/maps"
 	"net/http"
 	"slices"
 	"strings"
@@ -31,42 +33,42 @@ type BidAction struct {
 }
 
 type ChooseAction struct {
-	Action SpecialAction `json:"action"`
+	Action common.SpecialAction `json:"action"`
 }
 
 type TownPlacement struct {
-	Track Direction  `json:"track"`
-	Hex   Coordinate `json:"hex"`
+	Track common.Direction  `json:"track"`
+	Hex   common.Coordinate `json:"hex"`
 }
 
 type TrackRedirect struct {
-	Track Direction  `json:"track"`
-	Hex   Coordinate `json:"hex"`
+	Track common.Direction  `json:"track"`
+	Hex   common.Coordinate `json:"hex"`
 }
 
 type TrackPlacement struct {
-	Track [2]Direction `json:"track""`
-	Hex   Coordinate   `json:"hex"`
+	Track [2]common.Direction `json:"track""`
+	Hex   common.Coordinate   `json:"hex"`
 }
 
 type BuildAction struct {
-	Urbanization    *Urbanization     `json:"urbanization"`
-	TownPlacements  []*TownPlacement  `json:"townPlacements"`
-	TrackRedirects  []*TrackRedirect  `json:"trackRedirects"`
-	TrackPlacements []*TrackPlacement `json:"trackPlacements"`
+	Urbanization    *common.Urbanization `json:"urbanization"`
+	TownPlacements  []*TownPlacement     `json:"townPlacements"`
+	TrackRedirects  []*TrackRedirect     `json:"trackRedirects"`
+	TrackPlacements []*TrackPlacement    `json:"trackPlacements"`
 }
 
 type MoveGoodsAction struct {
-	StartingLocation Coordinate  `json:"startingLocation"`
-	Color            Color       `json:"color"`
-	Path             []Direction `json:"path"`
-	Loco             bool        `json:"loco"`
+	StartingLocation common.Coordinate  `json:"startingLocation"`
+	Color            common.Color       `json:"color"`
+	Path             []common.Direction `json:"path"`
+	Loco             bool               `json:"loco"`
 }
 
 type ProduceGoodsAction struct {
 	// List (corresponding the cubes in the same order as ProductionCubes in the game state) with X,Y coordinates
 	// corresponding to which city (X) and which spot (Y) within that city
-	Destinations []Coordinate `json:"destinations"`
+	Destinations []common.Coordinate `json:"destinations"`
 }
 
 type ConfirmMoveRequest struct {
@@ -83,17 +85,17 @@ type ConfirmMoveResponse struct {
 }
 
 type confirmMoveHandler struct {
-	theMap         *BasicMap
-	gameState      *GameState
+	gameMap        maps.GameMap
+	gameState      *common.GameState
 	activePlayer   string
 	logs           []string
 	playerIdToNick map[string]string
-	randProvider   randProvider
+	randProvider   common.RandProvider
 }
 
-func newConfirmMoveHandler(server *GameServer, gameId string, theMap *BasicMap, gameState *GameState, activePlayer string) (*confirmMoveHandler, error) {
+func newConfirmMoveHandler(server *GameServer, gameId string, gameMap maps.GameMap, gameState *common.GameState, activePlayer string) (*confirmMoveHandler, error) {
 	handler := &confirmMoveHandler{
-		theMap:         theMap,
+		gameMap:        gameMap,
 		gameState:      gameState,
 		activePlayer:   activePlayer,
 		playerIdToNick: make(map[string]string),
@@ -168,7 +170,7 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 		return nil, &HttpError{fmt.Sprintf("cannot make a move if game has finished: %s", req.GameId), http.StatusBadRequest}
 	}
 
-	gameState := new(GameState)
+	gameState := new(common.GameState)
 	err = json.Unmarshal([]byte(gameStateStr), gameState)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse game state: %v", err)
@@ -177,9 +179,9 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 		return nil, &HttpError{fmt.Sprintf("user [%s] is not the active player [%s]", ctx.User.Id, activePlayer), http.StatusPreconditionFailed}
 	}
 
-	theMap := server.maps[mapName]
+	gameMap := server.gameMaps[mapName]
 
-	handler, err := newConfirmMoveHandler(server, req.GameId, theMap, gameState, activePlayer)
+	handler, err := newConfirmMoveHandler(server, req.GameId, gameMap, gameState, activePlayer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize handler: %v", err)
 	}
@@ -288,7 +290,7 @@ func (handler *confirmMoveHandler) handleSharesAction(sharesAction *SharesAction
 	if sharesAction == nil || sharesAction.Amount < 0 {
 		return &HttpError{"missing shares action", http.StatusBadRequest}
 	}
-	if gameState.GamePhase != SHARES_GAME_PHASE {
+	if gameState.GamePhase != common.SHARES_GAME_PHASE {
 		return &HttpError{fmt.Sprintf("invalid action for current phase %d", gameState.GamePhase), http.StatusPreconditionFailed}
 	}
 
@@ -311,7 +313,7 @@ func (handler *confirmMoveHandler) handleSharesAction(sharesAction *SharesAction
 	}
 	if nextPlayerId == "" {
 		// Advance game phase
-		gameState.GamePhase = AUCTION_GAME_PHASE
+		gameState.GamePhase = common.AUCTION_GAME_PHASE
 		handler.activePlayer = gameState.PlayerOrder[0]
 	} else {
 		handler.activePlayer = nextPlayerId
@@ -325,7 +327,7 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 	if bidAction == nil {
 		return &HttpError{"missing bid action", http.StatusBadRequest}
 	}
-	if gameState.GamePhase != AUCTION_GAME_PHASE {
+	if gameState.GamePhase != common.AUCTION_GAME_PHASE {
 		return &HttpError{fmt.Sprintf("invalid action for current phase %d", gameState.GamePhase), http.StatusPreconditionFailed}
 	}
 
@@ -385,7 +387,7 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 		// Bid amount of 0 indicates use of turn-order-pass
 		handler.Log("%s uses turn-order pass.", handler.ActivePlayerNick())
 
-		if gameState.PlayerActions[currentPlayer] != TURN_ORDER_PASS_SPECIAL_ACTION {
+		if gameState.PlayerActions[currentPlayer] != common.TURN_ORDER_PASS_SPECIAL_ACTION {
 			return &HttpError{"current player cannot use turn-order pass", http.StatusBadRequest}
 		}
 
@@ -430,7 +432,7 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 		// Set the active player to the new first player
 		handler.activePlayer = gameState.PlayerOrder[0]
 		// Advance the game phase
-		gameState.GamePhase = CHOOSE_SPECIAL_ACTIONS_GAME_PHASE
+		gameState.GamePhase = common.CHOOSE_SPECIAL_ACTIONS_GAME_PHASE
 		// Force-remove any chosen special actions as we advance into that phase
 		for userId := range gameState.PlayerActions {
 			gameState.PlayerActions[userId] = ""
@@ -480,12 +482,12 @@ func (handler *confirmMoveHandler) handleChooseAction(chooseAction *ChooseAction
 	if chooseAction == nil {
 		return &HttpError{"missing choose action", http.StatusBadRequest}
 	}
-	if gameState.GamePhase != CHOOSE_SPECIAL_ACTIONS_GAME_PHASE {
+	if gameState.GamePhase != common.CHOOSE_SPECIAL_ACTIONS_GAME_PHASE {
 		return &HttpError{fmt.Sprintf("invalid action for current phase %d", gameState.GamePhase), http.StatusPreconditionFailed}
 	}
 
 	isValid := false
-	for _, action := range []SpecialAction{FIRST_MOVE_SPECIAL_ACTION, FIRST_BUILD_SPECIAL_ACTION, ENGINEER_SPECIAL_ACTION, LOCO_SPECIAL_ACTION, URBANIZATION_SPECIAL_ACTION, PRODUCTION_SPECIAL_ACTION, TURN_ORDER_PASS_SPECIAL_ACTION} {
+	for _, action := range common.ALL_SPECIAL_ACTIONS {
 		if chooseAction.Action == action {
 			isValid = true
 			break
@@ -511,7 +513,7 @@ func (handler *confirmMoveHandler) handleChooseAction(chooseAction *ChooseAction
 	handler.Log("%s chooses special action \"%s\".", handler.ActivePlayerNick(), chooseAction.Action)
 
 	// Apply any immediate effects
-	if chooseAction.Action == LOCO_SPECIAL_ACTION {
+	if chooseAction.Action == common.LOCO_SPECIAL_ACTION {
 		if gameState.PlayerLoco[handler.activePlayer] < 6 {
 			gameState.PlayerLoco[handler.activePlayer] += 1
 			handler.Log("%s's loco increases to %d.", handler.ActivePlayerNick(), gameState.PlayerLoco[handler.activePlayer])
@@ -531,11 +533,11 @@ func (handler *confirmMoveHandler) handleChooseAction(chooseAction *ChooseAction
 	}
 	// Advance the game phase if this was the last player
 	if currentPlayerPosition == len(gameState.PlayerOrder)-1 {
-		gameState.GamePhase = BUILDING_GAME_PHASE
+		gameState.GamePhase = common.BUILDING_GAME_PHASE
 		// If anyone has first build, they become the active player
 		firstBuildUser := ""
 		for userId, action := range gameState.PlayerActions {
-			if action == FIRST_BUILD_SPECIAL_ACTION {
+			if action == common.FIRST_BUILD_SPECIAL_ACTION {
 				firstBuildUser = userId
 				break
 			}
@@ -559,7 +561,7 @@ func (handler *confirmMoveHandler) handleBuildAction(buildAction *BuildAction) e
 	if buildAction == nil {
 		return &HttpError{"missing build action", http.StatusBadRequest}
 	}
-	if gameState.GamePhase != BUILDING_GAME_PHASE {
+	if gameState.GamePhase != common.BUILDING_GAME_PHASE {
 		return &HttpError{fmt.Sprintf("invalid action for current phase %d", gameState.GamePhase), http.StatusPreconditionFailed}
 	}
 
@@ -569,7 +571,7 @@ func (handler *confirmMoveHandler) handleBuildAction(buildAction *BuildAction) e
 	}
 
 	// If this was the first build player, just advance to the first player in normal order
-	if gameState.PlayerActions[handler.activePlayer] == FIRST_BUILD_SPECIAL_ACTION {
+	if gameState.PlayerActions[handler.activePlayer] == common.FIRST_BUILD_SPECIAL_ACTION {
 		// If this was the first player anyway, go to next player
 		if gameState.PlayerOrder[0] == handler.activePlayer {
 			handler.activePlayer = gameState.PlayerOrder[1]
@@ -592,7 +594,7 @@ func (handler *confirmMoveHandler) handleBuildAction(buildAction *BuildAction) e
 		nextPlayer := ""
 		for i := currentPlayerPosition + 1; i < len(gameState.PlayerOrder); i++ {
 			player := gameState.PlayerOrder[i]
-			if gameState.PlayerActions[player] == FIRST_BUILD_SPECIAL_ACTION {
+			if gameState.PlayerActions[player] == common.FIRST_BUILD_SPECIAL_ACTION {
 				continue
 			}
 			nextPlayer = player
@@ -601,11 +603,11 @@ func (handler *confirmMoveHandler) handleBuildAction(buildAction *BuildAction) e
 
 		// End of phase
 		if nextPlayer == "" {
-			gameState.GamePhase = MOVING_GOODS_GAME_PHASE
+			gameState.GamePhase = common.MOVING_GOODS_GAME_PHASE
 			gameState.MovingGoodsRound = 0
 			firstMovePlayer := ""
 			for userId, action := range gameState.PlayerActions {
-				if action == FIRST_MOVE_SPECIAL_ACTION {
+				if action == common.FIRST_MOVE_SPECIAL_ACTION {
 					firstMovePlayer = userId
 					break
 				}
@@ -626,11 +628,11 @@ func (handler *confirmMoveHandler) handleBuildAction(buildAction *BuildAction) e
 
 func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGoodsAction) error {
 	gameState := handler.gameState
-	theMap := handler.theMap
+	gameMap := handler.gameMap
 	if moveGoodsAction == nil {
 		return &HttpError{"missing build action", http.StatusBadRequest}
 	}
-	if gameState.GamePhase != MOVING_GOODS_GAME_PHASE {
+	if gameState.GamePhase != common.MOVING_GOODS_GAME_PHASE {
 		return &HttpError{fmt.Sprintf("invalid action for current phase %d", gameState.GamePhase), http.StatusPreconditionFailed}
 	}
 
@@ -644,9 +646,9 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 		}
 		handler.Log("%s skipped delivering a good and increased their loco to %d",
 			handler.ActivePlayerNick(), gameState.PlayerLoco[handler.activePlayer])
-	} else if moveGoodsAction.Color != NONE_COLOR {
+	} else if moveGoodsAction.Color != common.NONE_COLOR {
 
-		deliveryGraph := gameState.computeDeliveryGraph()
+		deliveryGraph := computeDeliveryGraph(gameState)
 
 		// Verify that there is a cube on the board of a matching color and the start location
 		foundCube := false
@@ -669,7 +671,7 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 		}
 
 		loc := moveGoodsAction.StartingLocation
-		seenCities := []Coordinate{loc}
+		seenCities := []common.Coordinate{loc}
 		for idx, step := range moveGoodsAction.Path {
 			if _, ok := deliveryGraph.hexToDirectionToLink[loc]; !ok {
 				return &HttpError{"invalid path", http.StatusBadRequest}
@@ -686,54 +688,45 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 				seenCities = append(seenCities, loc)
 			}
 
-			hex := theMap.Hexes[loc.Y][loc.X]
-			var cityColor Color = NONE_COLOR
-			if hex == TOWN_HEX_TYPE {
-				var urbColor Color = NONE_COLOR
+			hexType := gameMap.GetHexType(loc)
+			var cityColor common.Color = common.NONE_COLOR
+			if hexType == maps.TOWN_HEX_TYPE {
+				var urbColor common.Color = common.NONE_COLOR
 				for _, urb := range gameState.Urbanizations {
 					if urb.Hex == loc {
 						switch urb.City {
 						case 0:
-							urbColor = RED
+							urbColor = common.RED
 						case 1:
-							urbColor = BLUE
+							urbColor = common.BLUE
 						case 2:
-							urbColor = BLACK
+							urbColor = common.BLACK
 						case 3:
-							urbColor = BLACK
+							urbColor = common.BLACK
 						case 4:
-							urbColor = YELLOW
+							urbColor = common.YELLOW
 						case 5:
-							urbColor = PURPLE
+							urbColor = common.PURPLE
 						case 6:
-							urbColor = BLACK
+							urbColor = common.BLACK
 						case 7:
-							urbColor = BLACK
+							urbColor = common.BLACK
 						}
 						break
 					}
 				}
 				cityColor = urbColor
-			} else if hex == CITY_HEX_TYPE {
-				var theCity *BasicCity = nil
-				for _, city := range theMap.Cities {
-					if city.Coordinate == loc {
-						theCity = &city
-						break
-					}
-				}
-				if theCity == nil {
-					return fmt.Errorf("could not find city at coordinate: %v", loc)
-				}
-				cityColor = theCity.Color
+			} else if hexType == maps.CITY_HEX_TYPE {
+				cityColor = gameMap.GetCityColorForHex(loc)
 			} else {
 				return &HttpError{"invalid path", http.StatusBadRequest}
 			}
 
-			if cityColor == moveGoodsAction.Color && idx != len(moveGoodsAction.Path)-1 {
+			locAcceptsCube := cityColor == moveGoodsAction.Color || gameMap.CanAcceptCube(moveGoodsAction.Color, loc)
+			if idx != len(moveGoodsAction.Path)-1 && locAcceptsCube {
 				return &HttpError{"cannot pass through city matching the cube color", http.StatusBadRequest}
 			}
-			if cityColor != moveGoodsAction.Color && idx == len(moveGoodsAction.Path)-1 {
+			if idx == len(moveGoodsAction.Path)-1 && !locAcceptsCube {
 				return &HttpError{"ending city must match cube color", http.StatusBadRequest}
 			}
 
@@ -746,13 +739,19 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 
 		handler.Log("The cube finished its movement in (%d,%d)", loc.X, loc.Y)
 
+		bonus := gameMap.GetDeliveryBonus(moveGoodsAction.Color)
+		if bonus > 0 {
+			gameState.PlayerIncome[handler.activePlayer] += 1
+			handler.Log("%s receives an extra delivery bonus of %d income.", handler.ActivePlayerNick(), bonus)
+		}
+
 	} else {
 		// Pass action, do nothing here
 		handler.Log("%s skipped their move good action.", handler.ActivePlayerNick())
 	}
 
 	// If this was the first move player, just advance to the first player in normal order
-	if gameState.PlayerActions[handler.activePlayer] == FIRST_MOVE_SPECIAL_ACTION {
+	if gameState.PlayerActions[handler.activePlayer] == common.FIRST_MOVE_SPECIAL_ACTION {
 		// If this was the first player anyway, go to next player
 		if gameState.PlayerOrder[0] == handler.activePlayer {
 			handler.activePlayer = gameState.PlayerOrder[1]
@@ -775,7 +774,7 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 		nextPlayer := ""
 		for i := currentPlayerPosition + 1; i < len(gameState.PlayerOrder); i++ {
 			player := gameState.PlayerOrder[i]
-			if gameState.PlayerActions[player] == FIRST_MOVE_SPECIAL_ACTION {
+			if gameState.PlayerActions[player] == common.FIRST_MOVE_SPECIAL_ACTION {
 				continue
 			}
 			nextPlayer = player
@@ -789,7 +788,7 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 
 				firstMovePlayer := ""
 				for userId, action := range gameState.PlayerActions {
-					if action == FIRST_MOVE_SPECIAL_ACTION {
+					if action == common.FIRST_MOVE_SPECIAL_ACTION {
 						firstMovePlayer = userId
 						break
 					}
@@ -807,10 +806,10 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 				if err != nil {
 					return err
 				}
-				gameState.GamePhase = GOODS_GROWTH_GAME_PHASE
+				gameState.GamePhase = common.GOODS_GROWTH_GAME_PHASE
 				produceGoodsPlayer := ""
 				for userId, action := range gameState.PlayerActions {
-					if action == PRODUCTION_SPECIAL_ACTION {
+					if action == common.PRODUCTION_SPECIAL_ACTION {
 						produceGoodsPlayer = userId
 						break
 					}
@@ -820,7 +819,7 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 				emptyCount := 0
 				for _, col := range gameState.GoodsGrowth {
 					for _, val := range col {
-						if val == NONE_COLOR {
+						if val == common.NONE_COLOR {
 							emptyCount += 1
 						}
 					}
@@ -828,7 +827,7 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 
 				// If there are no empty spaces or no one took production, skip it
 				if emptyCount == 0 || produceGoodsPlayer == "" {
-					err := handler.executeGoodsGrowthPhase(theMap)
+					err := handler.executeGoodsGrowthPhase(gameMap)
 					if err != nil {
 						return err
 					}
@@ -839,11 +838,11 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 					}
 
 					handler.activePlayer = produceGoodsPlayer
-					gameState.ProductionCubes = make([]Color, drawCount)
+					gameState.ProductionCubes = make([]common.Color, drawCount)
 
 					for n := 0; n < drawCount; n++ {
 						var err error
-						gameState.ProductionCubes[n], err = gameState.drawCube(handler.randProvider)
+						gameState.ProductionCubes[n], err = gameState.DrawCube(handler.randProvider)
 						if err != nil {
 							return err
 						}
@@ -879,19 +878,9 @@ func (handler *confirmMoveHandler) executeIncomeAndExpenses() error {
 
 	for _, player := range gameState.PlayerOrder {
 		income := gameState.PlayerIncome[player]
-		var reduction int
-		if income <= 10 {
-			reduction = 0
-		} else if income <= 20 {
-			reduction = 2
-		} else if income <= 30 {
-			reduction = 4
-		} else if income <= 40 {
-			reduction = 6
-		} else if income <= 50 {
-			reduction = 8
-		} else {
-			reduction = 10
+		reduction, err := handler.gameMap.GetIncomeReduction(gameState, player)
+		if err != nil {
+			return fmt.Errorf("failed to determine income reduction: %v", err)
 		}
 
 		if reduction == 0 {
@@ -911,7 +900,7 @@ func (handler *confirmMoveHandler) handleProduceGoodsAction(produceGoodsAction *
 	if produceGoodsAction == nil {
 		return &HttpError{"missing build action", http.StatusBadRequest}
 	}
-	if gameState.GamePhase != GOODS_GROWTH_GAME_PHASE {
+	if gameState.GamePhase != common.GOODS_GROWTH_GAME_PHASE {
 		return &HttpError{fmt.Sprintf("invalid action for current phase %d", gameState.GamePhase), http.StatusPreconditionFailed}
 	}
 
@@ -927,7 +916,7 @@ func (handler *confirmMoveHandler) handleProduceGoodsAction(produceGoodsAction *
 		if destination.Y < 0 || destination.Y >= len(col) {
 			return &HttpError{fmt.Sprintf("invalid destination row: %d", destination.Y), http.StatusBadRequest}
 		}
-		if col[destination.Y] != NONE_COLOR {
+		if col[destination.Y] != common.NONE_COLOR {
 			return &HttpError{fmt.Sprintf("goods growth location not empty: (%d,%d)", destination.X, destination.Y), http.StatusBadRequest}
 		}
 		col[destination.Y] = gameState.ProductionCubes[idx]
@@ -946,7 +935,7 @@ func (handler *confirmMoveHandler) handleProduceGoodsAction(produceGoodsAction *
 	}
 
 	gameState.ProductionCubes = nil
-	err := handler.executeGoodsGrowthPhase(handler.theMap)
+	err := handler.executeGoodsGrowthPhase(handler.gameMap)
 	if err != nil {
 		return err
 	}
@@ -954,53 +943,46 @@ func (handler *confirmMoveHandler) handleProduceGoodsAction(produceGoodsAction *
 	return nil
 }
 
-func (gameState *GameState) getCoordinateForCity(theMap *BasicMap, cityNum int) Coordinate {
-	// Basic cities
-	if cityNum < 12 {
-		for _, city := range theMap.Cities {
-			for _, val := range city.GoodsGrowth {
-				if val == cityNum {
-					return city.Coordinate
-				}
-			}
-		}
-	} else {
-		// Urbanizations
-		urbanNum := cityNum - 12
-		for _, urb := range gameState.Urbanizations {
-			if urb.City == urbanNum {
-				return urb.Hex
-			}
+func getCoordinateForUrb(gameState *common.GameState, urbanNum int) common.Coordinate {
+	for _, urb := range gameState.Urbanizations {
+		if urb.City == urbanNum {
+			return urb.Hex
 		}
 	}
 
-	return Coordinate{X: -1, Y: -1}
+	return common.Coordinate{X: -1, Y: -1}
 }
 
-func (handler *confirmMoveHandler) executeGoodsGrowthPhase(theMap *BasicMap) error {
+func (handler *confirmMoveHandler) executeGoodsGrowthPhase(gameMap maps.GameMap) error {
 	gameState := handler.gameState
 	numPlayers := len(gameState.PlayerOrder)
 
 	// Finds the city on the board for the given column (if present), finds the top cube for the goods growth row (if present), and moves it to the board
 	pickCubeFromCol := func(n int) {
-		cord := gameState.getCoordinateForCity(theMap, n)
+		var cord common.Coordinate
+		if n < 12 {
+			cord = gameMap.GetCityHexForGoodsGrowth(n)
+		} else {
+			cord = getCoordinateForUrb(gameState, n-12)
+		}
+
 		if cord.X < 0 || cord.Y < 0 {
 			return
 		}
 
 		col := gameState.GoodsGrowth[n]
-		pickedColor := NONE_COLOR
+		pickedColor := common.NONE_COLOR
 		for i := 0; i < len(col); i++ {
 			color := col[i]
-			if color != NONE_COLOR {
+			if color != common.NONE_COLOR {
 				pickedColor = color
-				col[i] = NONE_COLOR
+				col[i] = common.NONE_COLOR
 				break
 			}
 		}
 
-		if pickedColor != NONE_COLOR {
-			gameState.Cubes = append(gameState.Cubes, &BoardCube{
+		if pickedColor != common.NONE_COLOR {
+			gameState.Cubes = append(gameState.Cubes, &common.BoardCube{
 				Color: pickedColor,
 				Hex:   cord,
 			})
@@ -1035,9 +1017,14 @@ func (handler *confirmMoveHandler) executeGoodsGrowthPhase(theMap *BasicMap) err
 		}
 	}
 
+	err := gameMap.PostGoodsGrowthHook(gameState, handler.randProvider, handler.Log)
+	if err != nil {
+		return fmt.Errorf("failed to execute post-goods growth hook: %v", err)
+	}
+
 	// Advance to next phase
 	gameState.TurnNumber += 1
-	gameState.GamePhase = SHARES_GAME_PHASE
+	gameState.GamePhase = common.SHARES_GAME_PHASE
 	handler.activePlayer = gameState.PlayerOrder[0]
 
 	return nil

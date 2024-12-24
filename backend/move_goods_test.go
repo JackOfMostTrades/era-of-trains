@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/JackOfMostTrades/eot/backend/common"
+	"github.com/JackOfMostTrades/eot/backend/maps"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
@@ -11,43 +13,35 @@ func TestBasicMoveGoods(t *testing.T) {
 		return func(t *testing.T) {
 			playerId := "player1"
 			playerTwo := "player2"
-			theMap := &BasicMap{
-				Width:  2,
-				Height: 2,
-				Hexes: [][]HexType{
-					{CITY_HEX_TYPE, CITY_HEX_TYPE},
-					{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+			gameMap := &testMap{
+				hexes: [][]maps.HexType{
+					{maps.CITY_HEX_TYPE, maps.CITY_HEX_TYPE},
+					{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
 				},
-				Cities: []BasicCity{
-					{
-						Color:      PURPLE,
-						Coordinate: Coordinate{X: 0, Y: 0},
-					},
-					{
-						Color:      BLUE,
-						Coordinate: Coordinate{X: 1, Y: 0},
-					},
+				cityColor: [][]common.Color{
+					{common.PURPLE, common.BLUE},
+					{common.NONE_COLOR, common.NONE_COLOR},
 				},
 			}
-			gameState := &GameState{
+			gameState := &common.GameState{
 				PlayerOrder: []string{playerId, playerTwo},
-				GamePhase:   MOVING_GOODS_GAME_PHASE,
-				Links: []*Link{
+				GamePhase:   common.MOVING_GOODS_GAME_PHASE,
+				Links: []*common.Link{
 					{
-						SourceHex: Coordinate{X: 0, Y: 0},
-						Steps:     []Direction{SOUTH_EAST, NORTH_EAST},
+						SourceHex: common.Coordinate{X: 0, Y: 0},
+						Steps:     []common.Direction{common.SOUTH_EAST, common.NORTH_EAST},
 						Complete:  true,
 						Owner:     playerId,
 					},
 				},
-				Cubes: []*BoardCube{
+				Cubes: []*common.BoardCube{
 					{
-						Color: BLUE,
-						Hex:   Coordinate{X: 0, Y: 0},
+						Color: common.BLUE,
+						Hex:   common.Coordinate{X: 0, Y: 0},
 					},
 					{
-						Color: YELLOW,
-						Hex:   Coordinate{X: 0, Y: 0},
+						Color: common.YELLOW,
+						Hex:   common.Coordinate{X: 0, Y: 0},
 					},
 				},
 				PlayerLoco:   map[string]int{playerId: 1},
@@ -55,7 +49,7 @@ func TestBasicMoveGoods(t *testing.T) {
 			}
 
 			handler := &confirmMoveHandler{
-				theMap:       theMap,
+				gameMap:      gameMap,
 				gameState:    gameState,
 				activePlayer: playerId,
 			}
@@ -75,63 +69,51 @@ func TestBasicMoveGoods(t *testing.T) {
 	}
 
 	t.Run("simple move", testCase(nil, &MoveGoodsAction{
-		StartingLocation: Coordinate{X: 0, Y: 0},
-		Color:            BLUE,
-		Path:             []Direction{SOUTH_EAST},
+		StartingLocation: common.Coordinate{X: 0, Y: 0},
+		Color:            common.BLUE,
+		Path:             []common.Direction{common.SOUTH_EAST},
 	}))
 	t.Run("bad target color move", testCase(&HttpError{code: http.StatusBadRequest, description: "ending city must match cube color"}, &MoveGoodsAction{
-		StartingLocation: Coordinate{X: 0, Y: 0},
-		Color:            YELLOW,
-		Path:             []Direction{SOUTH_EAST},
+		StartingLocation: common.Coordinate{X: 0, Y: 0},
+		Color:            common.YELLOW,
+		Path:             []common.Direction{common.SOUTH_EAST},
 	}))
 }
 
 func TestCannotMoveThroughMatchingCityColor(t *testing.T) {
 	playerId := "player1"
 	playerTwo := "player2"
-	theMap := &BasicMap{
-		Width:  3,
-		Height: 2,
-		Hexes: [][]HexType{
-			{CITY_HEX_TYPE, CITY_HEX_TYPE, CITY_HEX_TYPE},
-			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+	gameMap := &testMap{
+		hexes: [][]maps.HexType{
+			{maps.CITY_HEX_TYPE, maps.CITY_HEX_TYPE, maps.CITY_HEX_TYPE},
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
 		},
-		Cities: []BasicCity{
-			{
-				Color:      PURPLE,
-				Coordinate: Coordinate{X: 0, Y: 0},
-			},
-			{
-				Color:      BLUE,
-				Coordinate: Coordinate{X: 1, Y: 0},
-			},
-			{
-				Color:      BLUE,
-				Coordinate: Coordinate{X: 2, Y: 0},
-			},
+		cityColor: [][]common.Color{
+			{common.PURPLE, common.BLUE, common.BLUE},
+			{common.NONE_COLOR, common.NONE_COLOR, common.NONE_COLOR},
 		},
 	}
-	gameState := &GameState{
+	gameState := &common.GameState{
 		PlayerOrder: []string{playerId, playerTwo},
-		GamePhase:   MOVING_GOODS_GAME_PHASE,
-		Links: []*Link{
+		GamePhase:   common.MOVING_GOODS_GAME_PHASE,
+		Links: []*common.Link{
 			{
-				SourceHex: Coordinate{X: 0, Y: 0},
-				Steps:     []Direction{SOUTH_EAST, NORTH_EAST},
+				SourceHex: common.Coordinate{X: 0, Y: 0},
+				Steps:     []common.Direction{common.SOUTH_EAST, common.NORTH_EAST},
 				Complete:  true,
 				Owner:     playerId,
 			},
 			{
-				SourceHex: Coordinate{X: 1, Y: 0},
-				Steps:     []Direction{SOUTH_EAST, NORTH_EAST},
+				SourceHex: common.Coordinate{X: 1, Y: 0},
+				Steps:     []common.Direction{common.SOUTH_EAST, common.NORTH_EAST},
 				Complete:  true,
 				Owner:     playerId,
 			},
 		},
-		Cubes: []*BoardCube{
+		Cubes: []*common.BoardCube{
 			{
-				Color: BLUE,
-				Hex:   Coordinate{X: 0, Y: 0},
+				Color: common.BLUE,
+				Hex:   common.Coordinate{X: 0, Y: 0},
 			},
 		},
 		PlayerLoco:   map[string]int{playerId: 2},
@@ -139,14 +121,14 @@ func TestCannotMoveThroughMatchingCityColor(t *testing.T) {
 	}
 
 	handler := &confirmMoveHandler{
-		theMap:       theMap,
+		gameMap:      gameMap,
 		gameState:    gameState,
 		activePlayer: playerId,
 	}
 	err := handler.handleMoveGoodsAction(&MoveGoodsAction{
-		StartingLocation: Coordinate{X: 0, Y: 0},
-		Color:            BLUE,
-		Path:             []Direction{SOUTH_EAST, SOUTH_EAST},
+		StartingLocation: common.Coordinate{X: 0, Y: 0},
+		Color:            common.BLUE,
+		Path:             []common.Direction{common.SOUTH_EAST, common.SOUTH_EAST},
 	})
 	if httpErr, ok := err.(*HttpError); ok {
 		assert.Equal(t, http.StatusBadRequest, httpErr.code)
@@ -159,67 +141,53 @@ func TestCannotMoveThroughMatchingCityColor(t *testing.T) {
 func TestCannotRepeatCity(t *testing.T) {
 	playerId := "player1"
 	playerTwo := "player2"
-	theMap := &BasicMap{
-		Width:  3,
-		Height: 4,
-		Hexes: [][]HexType{
-			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
-			{CITY_HEX_TYPE, CITY_HEX_TYPE, CITY_HEX_TYPE},
-			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
-			{CITY_HEX_TYPE, PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
+	gameMap := &testMap{
+		hexes: [][]maps.HexType{
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+			{maps.CITY_HEX_TYPE, maps.CITY_HEX_TYPE, maps.CITY_HEX_TYPE},
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+			{maps.CITY_HEX_TYPE, maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
 		},
-		Cities: []BasicCity{
-			{
-				Color:      PURPLE,
-				Coordinate: Coordinate{X: 0, Y: 1},
-			},
-			{
-				Color:      BLUE,
-				Coordinate: Coordinate{X: 1, Y: 1},
-			},
-			{
-				Color:      BLUE,
-				Coordinate: Coordinate{X: 2, Y: 1},
-			},
-			{
-				Color:      RED,
-				Coordinate: Coordinate{X: 0, Y: 3},
-			},
+		cityColor: [][]common.Color{
+			{common.NONE_COLOR, common.NONE_COLOR, common.NONE_COLOR},
+			{common.PURPLE, common.BLUE, common.BLUE},
+			{common.NONE_COLOR, common.NONE_COLOR, common.NONE_COLOR},
+			{common.RED, common.NONE_COLOR, common.NONE_COLOR},
 		},
 	}
-	gameState := &GameState{
+	gameState := &common.GameState{
 		PlayerOrder: []string{playerId, playerTwo},
-		GamePhase:   MOVING_GOODS_GAME_PHASE,
-		Links: []*Link{
+		GamePhase:   common.MOVING_GOODS_GAME_PHASE,
+		Links: []*common.Link{
 			{
-				SourceHex: Coordinate{X: 0, Y: 1},
-				Steps:     []Direction{NORTH_EAST, SOUTH_EAST},
+				SourceHex: common.Coordinate{X: 0, Y: 1},
+				Steps:     []common.Direction{common.NORTH_EAST, common.SOUTH_EAST},
 				Complete:  true,
 				Owner:     playerId,
 			},
 			{
-				SourceHex: Coordinate{X: 1, Y: 1},
-				Steps:     []Direction{NORTH_EAST, SOUTH_EAST},
+				SourceHex: common.Coordinate{X: 1, Y: 1},
+				Steps:     []common.Direction{common.NORTH_EAST, common.SOUTH_EAST},
 				Complete:  true,
 				Owner:     playerId,
 			},
 			{
-				SourceHex: Coordinate{X: 2, Y: 1},
-				Steps:     []Direction{SOUTH_WEST, NORTH_WEST},
+				SourceHex: common.Coordinate{X: 2, Y: 1},
+				Steps:     []common.Direction{common.SOUTH_WEST, common.NORTH_WEST},
 				Complete:  true,
 				Owner:     playerId,
 			},
 			{
-				SourceHex: Coordinate{X: 1, Y: 1},
-				Steps:     []Direction{SOUTH_WEST, SOUTH_WEST},
+				SourceHex: common.Coordinate{X: 1, Y: 1},
+				Steps:     []common.Direction{common.SOUTH_WEST, common.SOUTH_WEST},
 				Complete:  true,
 				Owner:     playerId,
 			},
 		},
-		Cubes: []*BoardCube{
+		Cubes: []*common.BoardCube{
 			{
-				Color: RED,
-				Hex:   Coordinate{X: 0, Y: 1},
+				Color: common.RED,
+				Hex:   common.Coordinate{X: 0, Y: 1},
 			},
 		},
 		PlayerLoco:   map[string]int{playerId: 4},
@@ -227,14 +195,14 @@ func TestCannotRepeatCity(t *testing.T) {
 	}
 
 	handler := &confirmMoveHandler{
-		theMap:       theMap,
+		gameMap:      gameMap,
 		gameState:    gameState,
 		activePlayer: playerId,
 	}
 	err := handler.handleMoveGoodsAction(&MoveGoodsAction{
-		StartingLocation: Coordinate{X: 0, Y: 1},
-		Color:            RED,
-		Path:             []Direction{NORTH_EAST, NORTH_EAST, SOUTH_WEST, SOUTH_WEST},
+		StartingLocation: common.Coordinate{X: 0, Y: 1},
+		Color:            common.RED,
+		Path:             []common.Direction{common.NORTH_EAST, common.NORTH_EAST, common.SOUTH_WEST, common.SOUTH_WEST},
 	})
 	if httpErr, ok := err.(*HttpError); ok {
 		assert.Equal(t, http.StatusBadRequest, httpErr.code)
@@ -247,46 +215,38 @@ func TestCannotRepeatCity(t *testing.T) {
 func TestCannotEndInStartingCity(t *testing.T) {
 	playerId := "player1"
 	playerTwo := "player2"
-	theMap := &BasicMap{
-		Width:  2,
-		Height: 3,
-		Hexes: [][]HexType{
-			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
-			{CITY_HEX_TYPE, CITY_HEX_TYPE},
-			{PLAINS_HEX_TYPE, PLAINS_HEX_TYPE},
-		},
-		Cities: []BasicCity{
-			{
-				Color:      PURPLE,
-				Coordinate: Coordinate{X: 0, Y: 1},
-			},
-			{
-				Color:      BLUE,
-				Coordinate: Coordinate{X: 1, Y: 1},
-			},
+	gameMap := &testMap{
+		hexes: [][]maps.HexType{
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+			{maps.CITY_HEX_TYPE, maps.CITY_HEX_TYPE},
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+		}, cityColor: [][]common.Color{
+			{common.NONE_COLOR, common.NONE_COLOR},
+			{common.PURPLE, common.BLUE},
+			{common.NONE_COLOR, common.NONE_COLOR},
 		},
 	}
-	gameState := &GameState{
+	gameState := &common.GameState{
 		PlayerOrder: []string{playerId, playerTwo},
-		GamePhase:   MOVING_GOODS_GAME_PHASE,
-		Links: []*Link{
+		GamePhase:   common.MOVING_GOODS_GAME_PHASE,
+		Links: []*common.Link{
 			{
-				SourceHex: Coordinate{X: 0, Y: 1},
-				Steps:     []Direction{NORTH_EAST, SOUTH_EAST},
+				SourceHex: common.Coordinate{X: 0, Y: 1},
+				Steps:     []common.Direction{common.NORTH_EAST, common.SOUTH_EAST},
 				Complete:  true,
 				Owner:     playerId,
 			},
 			{
-				SourceHex: Coordinate{X: 1, Y: 1},
-				Steps:     []Direction{SOUTH_WEST, NORTH_WEST},
+				SourceHex: common.Coordinate{X: 1, Y: 1},
+				Steps:     []common.Direction{common.SOUTH_WEST, common.NORTH_WEST},
 				Complete:  true,
 				Owner:     playerId,
 			},
 		},
-		Cubes: []*BoardCube{
+		Cubes: []*common.BoardCube{
 			{
-				Color: PURPLE,
-				Hex:   Coordinate{X: 0, Y: 1},
+				Color: common.PURPLE,
+				Hex:   common.Coordinate{X: 0, Y: 1},
 			},
 		},
 		PlayerLoco:   map[string]int{playerId: 2},
@@ -294,14 +254,14 @@ func TestCannotEndInStartingCity(t *testing.T) {
 	}
 
 	handler := &confirmMoveHandler{
-		theMap:       theMap,
+		gameMap:      gameMap,
 		gameState:    gameState,
 		activePlayer: playerId,
 	}
 	err := handler.handleMoveGoodsAction(&MoveGoodsAction{
-		StartingLocation: Coordinate{X: 0, Y: 1},
-		Color:            PURPLE,
-		Path:             []Direction{NORTH_EAST, SOUTH_WEST},
+		StartingLocation: common.Coordinate{X: 0, Y: 1},
+		Color:            common.PURPLE,
+		Path:             []common.Direction{common.NORTH_EAST, common.SOUTH_WEST},
 	})
 	if httpErr, ok := err.(*HttpError); ok {
 		assert.Equal(t, http.StatusBadRequest, httpErr.code)

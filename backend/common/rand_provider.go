@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	crand "crypto/rand"
@@ -6,13 +6,13 @@ import (
 	"math/big"
 )
 
-type randProvider interface {
+type RandProvider interface {
 	RandN(n int) (int, error)
 }
 
-type cryptoRandProvider struct{}
+type CryptoRandProvider struct{}
 
-func (*cryptoRandProvider) RandN(n int) (int, error) {
+func (*CryptoRandProvider) RandN(n int) (int, error) {
 	n64 := big.NewInt(int64(n))
 	val, err := crand.Int(crand.Reader, n64)
 	if err != nil {

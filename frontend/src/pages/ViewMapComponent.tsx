@@ -1,39 +1,20 @@
 import {ALL_DIRECTIONS, BuildAction, Color, Coordinate, Direction, PlayerColor, ViewGameResponse} from "../api/api.ts";
 import {ReactNode, useEffect, useState} from "react";
-import maps, {BasicMap, HexType} from "../map.ts";
-import {CityState, HexRenderer, urbCityState} from "../actions/renderer/HexRenderer.tsx";
+import maps, {BasicMap, CityProperties, HexType} from "../map.ts";
+import {HexRenderer, urbCityProperties} from "../actions/renderer/HexRenderer.tsx";
 import {applyDirection, oppositeDirection} from "../util.ts";
 import {Step as MoveGoodsStep} from "../actions/MoveGoodsActionSelector.tsx";
 
-function getCityState(game: ViewGameResponse, map: BasicMap, coordinate: Coordinate): CityState|undefined {
+function getCityProperties(game: ViewGameResponse, map: BasicMap, coordinate: Coordinate): CityProperties|undefined {
     if (game.gameState && game.gameState.urbanizations) {
         for (let urb of game.gameState.urbanizations) {
             if (urb.hex.x === coordinate.x && urb.hex.y === coordinate.y) {
-                return urbCityState(urb.city);
+                return urbCityProperties(urb.city);
             }
         }
     }
 
-    for (let city of map.cities) {
-        if (city.coordinate.x === coordinate.x && city.coordinate.y === coordinate.y) {
-            let label = city.goodsGrowth.map(n => (n%6)+1).join(',');
-            let color = city.color;
-            let darkCity = false;
-            for (let goodsGrowth of city.goodsGrowth) {
-                if (goodsGrowth >= 6) {
-                    darkCity = true;
-                    break;
-                }
-            }
-            return {
-                label: label,
-                color: color,
-                darkCity: darkCity
-            };
-        }
-    }
-
-    return undefined;
+    return map.getCityProperties(coordinate);
 }
 
 class RenderMapBuilder {
@@ -47,17 +28,16 @@ class RenderMapBuilder {
         this.hexRenderer = new HexRenderer(true);
     }
 
-    public renderCityHex(hex: Coordinate, cityState: CityState) {
-        this.hexRenderer.renderCityHex(hex, cityState);
+    public renderCityHex(hex: Coordinate, cityProperties: CityProperties) {
+        this.hexRenderer.renderCityHex(hex, cityProperties);
     }
 
     public renderHex(hex: Coordinate) {
-        let cityState: CityState|undefined = getCityState(this.game, this.map, hex);
-        if (cityState) {
-            this.hexRenderer.renderCityHex(hex, cityState);
+        let cityProperties: CityProperties|undefined = getCityProperties(this.game, this.map, hex);
+        if (cityProperties) {
+            this.hexRenderer.renderCityHex(hex, cityProperties);
         } else {
-            let hexType = this.map.hexes[hex.y][hex.x];
-            this.hexRenderer.renderHex(hex, hexType);
+            this.hexRenderer.renderHex(hex, this.map.getHexType(hex));
         }
     }
 
@@ -118,8 +98,8 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
     let map = maps[game.mapName];
     let renderer = new RenderMapBuilder(game, map);
 
-    for (let y = 0; y < map.height; y++) {
-        for (let x = 0; x < map.width; x++) {
+    for (let y = 0; y < map.getHeight(); y++) {
+        for (let x = 0; x < map.getWidth(); x++) {
             renderer.renderHex({x: x, y: y});
         }
     }
@@ -129,9 +109,9 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
         if (game.gameState.links) {
             for (let link of game.gameState.links) {
                 let hex = link.sourceHex;
-                let cityState = getCityState(game, map, hex);
-                if (!cityState) {
-                    if (map.hexes[hex.y][hex.x] !== HexType.TOWN) {
+                let cityProperties = getCityProperties(game, map, hex);
+                if (!cityProperties) {
+                    if (map.getHexType(hex) !== HexType.TOWN) {
                         throw new Error("link started at non-city and non-town");
                     }
                     renderer.renderTownTrack(hex, link.steps[0], link.owner);
@@ -139,8 +119,8 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
 
                 for (let i = 1; i < link.steps.length; i++) {
                     hex = applyDirection(hex, link.steps[i-1]);
-                    let cityState = getCityState(game, map, hex);
-                    if (!cityState) {
+                    let cityProperties = getCityProperties(game, map, hex);
+                    if (!cityProperties) {
                         let left = oppositeDirection(link.steps[i-1]);
                         let right = link.steps[i];
 
@@ -153,7 +133,7 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
                             }
                         }
 
-                        if (map.hexes[hex.y][hex.x] === HexType.TOWN) {
+                        if (map.getHexType(hex) === HexType.TOWN) {
                             renderer.renderTownTrack(hex, left, link.owner);
                         } else {
                             renderer.renderTrack(hex, left, right, link.owner);
@@ -163,9 +143,9 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
 
                 // Render the last step in a completed link to a town
                 hex = applyDirection(hex, link.steps[link.steps.length-1]);
-                if (link.complete && map.hexes[hex.y][hex.x] === HexType.TOWN) {
-                    let cityState = getCityState(game, map, hex);
-                    if (!cityState) {
+                if (link.complete && map.getHexType(hex) === HexType.TOWN) {
+                    let cityProperties = getCityProperties(game, map, hex);
+                    if (!cityProperties) {
                         renderer.renderTownTrack(hex, oppositeDirection(link.steps[link.steps.length - 1]), link.owner);
                     }
                 }
@@ -175,7 +155,7 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
         // Render pending build action
         if (pendingBuildAction) {
             if (pendingBuildAction.urbanization) {
-                renderer.renderCityHex(pendingBuildAction.urbanization.hex, urbCityState(pendingBuildAction.urbanization.city));
+                renderer.renderCityHex(pendingBuildAction.urbanization.hex, urbCityProperties(pendingBuildAction.urbanization.city));
             }
             for (let townPlacement of pendingBuildAction.townPlacements) {
                 renderer.renderTownTrack(townPlacement.hex, townPlacement.track, game.activePlayer);
@@ -234,10 +214,11 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
         if (buildingTrackHex) {
             for (let direction of ALL_DIRECTIONS) {
                 let stepHex = applyDirection(buildingTrackHex, direction);
+                let hexType = map.getHexType(stepHex);
                 if (stepHex.x >= 0 && stepHex.y >= 0
-                        && stepHex.x < map.width && stepHex.y < map.height
-                        && map.hexes[stepHex.y][stepHex.x] !== HexType.OFFBOARD
-                        && map.hexes[stepHex.y][stepHex.x] !== HexType.WATER) {
+                        && stepHex.x < map.getWidth() && stepHex.y < map.getHeight()
+                        && hexType !== HexType.OFFBOARD
+                        && hexType !== HexType.WATER) {
                     renderer.renderArrow(stepHex, direction, undefined);
                 }
             }

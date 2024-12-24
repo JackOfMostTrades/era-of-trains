@@ -1,0 +1,13 @@
+package maps
+
+type HexType int
+
+const (
+	OFFBOARD_HEX_TYPE HexType = iota
+	WATER_HEX_TYPE
+	PLAINS_HEX_TYPE
+	RIVER_HEX_TYPE
+	MOUNTAIN_HEX_TYPE
+	TOWN_HEX_TYPE
+	CITY_HEX_TYPE
+)

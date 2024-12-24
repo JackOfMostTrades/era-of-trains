@@ -134,6 +134,7 @@ export enum Color {
     YELLOW,
     BLUE,
     PURPLE,
+    WHITE,
 }
 export interface Link {
     sourceHex: Coordinate;
