@@ -113,7 +113,7 @@ type GameState struct {
 	ProductionCubes []Color `json:"productionCubes"`
 }
 
-func (gameState *GameState) drawCube() (Color, error) {
+func (gameState *GameState) drawCube(randProvider randProvider) (Color, error) {
 	var total int = 0
 	for _, count := range gameState.CubeBag {
 		total += count
@@ -121,7 +121,7 @@ func (gameState *GameState) drawCube() (Color, error) {
 	if total == 0 {
 		return NONE_COLOR, nil
 	}
-	val, err := RandN(total)
+	val, err := randProvider.RandN(total)
 	if err != nil {
 		return NONE_COLOR, fmt.Errorf("failed to get random number: %v", err)
 	}

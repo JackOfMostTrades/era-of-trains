@@ -207,9 +207,10 @@ func main() {
 	}
 
 	server := &GameServer{
-		config: config,
-		db:     db,
-		maps:   maps,
+		config:       config,
+		db:           db,
+		maps:         maps,
+		randProvider: &cryptoRandProvider{},
 	}
 	defer server.Close()
 

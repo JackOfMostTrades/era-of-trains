@@ -12,9 +12,10 @@ import (
 )
 
 type GameServer struct {
-	config *Config
-	db     *sql.DB
-	maps   map[string]*BasicMap
+	config       *Config
+	db           *sql.DB
+	maps         map[string]*BasicMap
+	randProvider randProvider
 }
 
 type User struct {
@@ -506,7 +507,7 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 	for i := 0; i < 12; i++ {
 		gameState.GoodsGrowth[i] = make([]Color, 3)
 		for j := 0; j < 3; j++ {
-			cube, err := gameState.drawCube()
+			cube, err := gameState.drawCube(server.randProvider)
 			if err != nil {
 				return nil, fmt.Errorf("failed to draw cube: %v", err)
 			}
@@ -516,7 +517,7 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 	for i := 12; i < 20; i++ {
 		gameState.GoodsGrowth[i] = make([]Color, 2)
 		for j := 0; j < 2; j++ {
-			cube, err := gameState.drawCube()
+			cube, err := gameState.drawCube(server.randProvider)
 			if err != nil {
 				return nil, fmt.Errorf("failed to draw cube: %v", err)
 			}
@@ -530,7 +531,7 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 	}
 	for _, startingCubeSpec := range theMap.StartingCubes {
 		for i := 0; i < startingCubeSpec.Number; i++ {
-			cube, err := gameState.drawCube()
+			cube, err := gameState.drawCube(server.randProvider)
 			if err != nil {
 				return nil, fmt.Errorf("failed to draw cube: %v", err)
 			}

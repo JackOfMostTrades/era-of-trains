@@ -87,6 +87,7 @@ type confirmMoveHandler struct {
 	activePlayer   string
 	logs           []string
 	playerIdToNick map[string]string
+	randProvider   randProvider
 }
 
 func newConfirmMoveHandler(server *GameServer, gameId string, theMap *BasicMap, gameState *GameState, activePlayer string) (*confirmMoveHandler, error) {
@@ -95,6 +96,7 @@ func newConfirmMoveHandler(server *GameServer, gameId string, theMap *BasicMap, 
 		gameState:      gameState,
 		activePlayer:   activePlayer,
 		playerIdToNick: make(map[string]string),
+		randProvider:   server.randProvider,
 	}
 
 	stmt, err := server.db.Prepare("SELECT id,nickname FROM users INNER JOIN game_player_map ON users.id=game_player_map.player_user_id WHERE game_player_map.game_id=?")
@@ -181,22 +183,7 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 		return nil, fmt.Errorf("failed to initialize handler: %v", err)
 	}
 
-	switch req.ActionName {
-	case SharesActionName:
-		err = handler.handleSharesAction(req.SharesAction)
-	case BidActionName:
-		err = handler.handleBidAction(req.BidAction)
-	case ChooseActionName:
-		err = handler.handleChooseAction(req.ChooseAction)
-	case BuildActionName:
-		err = handler.handleBuildAction(req.BuildAction)
-	case MoveGoodsActionName:
-		err = handler.handleMoveGoodsAction(req.MoveGoodsAction)
-	case ProduceGoodsActionName:
-		err = handler.handleProduceGoodsAction(req.ProduceGoodsAction)
-	default:
-		err = &HttpError{fmt.Sprintf("invalid action: %s", req.ActionName), http.StatusBadRequest}
-	}
+	err = handler.handleAction(req)
 	if err != nil {
 		return nil, err
 	}
@@ -269,6 +256,30 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 	}
 
 	return &ConfirmMoveResponse{}, nil
+}
+
+func (handler *confirmMoveHandler) handleAction(req *ConfirmMoveRequest) error {
+	var err error
+	switch req.ActionName {
+	case SharesActionName:
+		err = handler.handleSharesAction(req.SharesAction)
+	case BidActionName:
+		err = handler.handleBidAction(req.BidAction)
+	case ChooseActionName:
+		err = handler.handleChooseAction(req.ChooseAction)
+	case BuildActionName:
+		err = handler.handleBuildAction(req.BuildAction)
+	case MoveGoodsActionName:
+		err = handler.handleMoveGoodsAction(req.MoveGoodsAction)
+	case ProduceGoodsActionName:
+		err = handler.handleProduceGoodsAction(req.ProduceGoodsAction)
+	default:
+		err = &HttpError{fmt.Sprintf("invalid action: %s", req.ActionName), http.StatusBadRequest}
+	}
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (handler *confirmMoveHandler) handleSharesAction(sharesAction *SharesAction) error {
@@ -825,7 +836,7 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 
 					for n := 0; n < drawCount; n++ {
 						var err error
-						gameState.ProductionCubes[n], err = gameState.drawCube()
+						gameState.ProductionCubes[n], err = gameState.drawCube(handler.randProvider)
 						if err != nil {
 							return err
 						}
@@ -993,7 +1004,7 @@ func (handler *confirmMoveHandler) executeGoodsGrowthPhase(theMap *BasicMap) err
 
 	// Light-side
 	for i := 0; i < numPlayers; i++ {
-		val, err := RandN(6)
+		val, err := handler.randProvider.RandN(6)
 		if err != nil {
 			return fmt.Errorf("failed to get random number: %v", err)
 		}
@@ -1006,7 +1017,7 @@ func (handler *confirmMoveHandler) executeGoodsGrowthPhase(theMap *BasicMap) err
 
 	// Dark-side
 	for i := 0; i < numPlayers; i++ {
-		val, err := RandN(6)
+		val, err := handler.randProvider.RandN(6)
 		if err != nil {
 			return fmt.Errorf("failed to get random number: %v", err)
 		}
