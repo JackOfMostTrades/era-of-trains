@@ -151,7 +151,7 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                         setLoading(false);
                     });
                 }}><Icon name='square' /> Finish moving good</Button>
-                <Button disabled={hasDoneLoco} secondary icon onClick={() => {
+                <Button disabled={hasDoneLoco || game.gameState.playerLoco[game.activePlayer] >= 6} secondary icon onClick={() => {
                     setLoading(true);
                     ConfirmMove({
                         gameId: game.id,

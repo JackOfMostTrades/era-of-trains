@@ -640,10 +640,11 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 		if gameState.PlayerHasDoneLoco[handler.activePlayer] {
 			return &HttpError{"player has already done loco this phase", http.StatusBadRequest}
 		}
-		gameState.PlayerHasDoneLoco[handler.activePlayer] = true
-		if gameState.PlayerLoco[handler.activePlayer] < 6 {
-			gameState.PlayerLoco[handler.activePlayer] += 1
+		if gameState.PlayerLoco[handler.activePlayer] >= 6 {
+			return &HttpError{"player's loco is already at max", http.StatusBadRequest}
 		}
+		gameState.PlayerHasDoneLoco[handler.activePlayer] = true
+		gameState.PlayerLoco[handler.activePlayer] += 1
 		handler.Log("%s skipped delivering a good and increased their loco to %d",
 			handler.ActivePlayerNick(), gameState.PlayerLoco[handler.activePlayer])
 	} else if moveGoodsAction.Color != common.NONE_COLOR {

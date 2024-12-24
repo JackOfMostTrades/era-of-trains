@@ -16,6 +16,7 @@ npm run build
 popd
 
 rsync -avz --progress -e "ssh -p 21098" backend/backend codertks@eot.coderealms.io:eot.coderealms.io/public_html/cgi-bin/api.cgi
+rsync -avz --progress -e "ssh -p 21098" backend/maps/*.json codertks@eot.coderealms.io:eot.coderealms.io/backend/maps/
 rsync -avz -e "ssh -p 21098" frontend/dist/ codertks@eot.coderealms.io:eot.coderealms.io/public_html/
 rsync -avz -e "ssh -p 21098" deployment/htaccess codertks@eot.coderealms.io:eot.coderealms.io/public_html/.htaccess
 
