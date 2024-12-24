@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 )
@@ -668,6 +669,7 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 		}
 
 		loc := moveGoodsAction.StartingLocation
+		seenCities := []Coordinate{loc}
 		for idx, step := range moveGoodsAction.Path {
 			if _, ok := deliveryGraph.hexToDirectionToLink[loc]; !ok {
 				return &HttpError{"invalid path", http.StatusBadRequest}
@@ -678,6 +680,11 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 
 			link := deliveryGraph.hexToDirectionToLink[loc][step]
 			loc = link.destination
+			if slices.Index(seenCities, loc) != -1 {
+				return &HttpError{"cannot repeat a city in the delivery path", http.StatusBadRequest}
+			} else {
+				seenCities = append(seenCities, loc)
+			}
 
 			hex := theMap.Hexes[loc.Y][loc.X]
 			var cityColor Color = NONE_COLOR
