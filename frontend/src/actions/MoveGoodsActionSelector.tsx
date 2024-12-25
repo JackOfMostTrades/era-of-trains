@@ -20,6 +20,7 @@ export interface Step {
     steps?: Direction[];
     currentCubePosition?: Coordinate;
     nextStepOptions?: Array<{direction: Direction, owner: PlayerColor|undefined}>
+    playerToLinkCount?: { [ playerId: string]: number }
 }
 
 function computeNextStop(game: ViewGameResponse, current: Coordinate, direction: Direction): { end: Coordinate, linkOwner: string }|undefined {
@@ -70,6 +71,12 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                     let newStep = Object.assign({}, step);
                     newStep.steps = (newStep.steps || []).slice();
                     newStep.steps.push(direction);
+                    newStep.playerToLinkCount = Object.assign({}, newStep.playerToLinkCount);
+                    if (newStep.playerToLinkCount[nextStop.linkOwner]) {
+                        newStep.playerToLinkCount[nextStop.linkOwner] += 1;
+                    } else {
+                        newStep.playerToLinkCount[nextStop.linkOwner] = 1;
+                    }
                     newStep.currentCubePosition = nextStop.end;
                     newStep.nextStepOptions = [];
                     for (let option of getValidStepDirections(game, nextStop.end)) {
@@ -94,7 +101,8 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                     selectedOrigin: hex,
                     steps: [],
                     currentCubePosition: hex,
-                    nextStepOptions: []
+                    nextStepOptions: [],
+                    playerToLinkCount: {}
                 }
                 for (let option of getValidStepDirections(game, hex)) {
                     newStep.nextStepOptions?.push({direction: option.direction, owner: game.gameState?.playerColor[option.owner]});
@@ -128,6 +136,15 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
         if (game.gameState.playerHasDoneLoco[game.activePlayer]) {
             hasDoneLoco = true;
         }
+        let stepCountLabel: ReactNode = null;
+        if (step.playerToLinkCount && step.steps && step.steps.length > 0) {
+            let myCount = step.playerToLinkCount[game.activePlayer];
+            if (myCount === step.steps.length) {
+                stepCountLabel = " (" + myCount + ")";
+            } else {
+                stepCountLabel = " (" + myCount + " for me, " + (step.steps.length-myCount) + " for others)";
+            }
+        }
 
         content = <>
             <p>Select move goods action:<br/>To move a good, select the cube on the map, then click on one of the arrows that appears to indicate the link you want to move it along. Press the finish button when the cube is at its final destination.</p>
@@ -150,7 +167,7 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                     }).finally(() => {
                         setLoading(false);
                     });
-                }}><Icon name='square' /> Finish moving good</Button>
+                }}><Icon name='square' /> Finish moving good{stepCountLabel}</Button>
                 <Button disabled={hasDoneLoco || game.gameState.playerLoco[game.activePlayer] >= 6} secondary icon onClick={() => {
                     setLoading(true);
                     ConfirmMove({
@@ -186,7 +203,8 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                         selectedColor: Color.NONE,
                         selectedOrigin: {x: 0, y: 0},
                         steps: [],
-                        currentCubePosition: {x: 0, y: 0}
+                        currentCubePosition: {x: 0, y: 0},
+                        playerToLinkCount: {}
                     };
                     setStep(newStep);
                     document.dispatchEvent(new CustomEvent('pendingMoveGoods', { detail: newStep }));
