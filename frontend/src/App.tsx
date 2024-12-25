@@ -107,6 +107,14 @@ function MobileMainMenu() {
                 Era of Trains
             </Menu.Item>
             <MenuMenu position="right">
+                {userSessionContext.userInfo ?
+                    <Menu.Item>
+                        <NavLink to='/mygames'>
+                            <Label color={userSessionContext.userInfo.waitingForMeCount > 0 ? 'red' : 'black'}>
+                                {userSessionContext.userInfo.waitingForMeCount}
+                            </Label>
+                        </NavLink>
+                    </Menu.Item>: null }
                 <Dropdown as={Menu.Item} icon="bars">
                     <DropdownMenu>
                         {userSessionContext.userInfo ? <>
@@ -120,14 +128,7 @@ function MobileMainMenu() {
                         <DropdownItem onClick={() => navigate('/about')}>About</DropdownItem>
                         {userSessionContext.userInfo ? <>
                         <DropdownItem onClick={() => navigate('/games')}>All Games</DropdownItem>
-                            <DropdownItem onClick={() => navigate('/mygames')}>
-                                {userSessionContext.userInfo.waitingForMeCount ?
-                                    <Label color='red'>
-                                        {userSessionContext.userInfo.waitingForMeCount}
-                                    </Label> : null}
-                                My Games
-                            </DropdownItem>
-
+                            <DropdownItem onClick={() => navigate('/mygames')}>My Games</DropdownItem>
                             <DropdownItem onClick={() => logout()}>Logout</DropdownItem>
                         </> : null}
                         {userSessionContext.loading ?
