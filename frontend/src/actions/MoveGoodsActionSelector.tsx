@@ -138,7 +138,7 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
         }
         let stepCountLabel: ReactNode = null;
         if (step.playerToLinkCount && step.steps && step.steps.length > 0) {
-            let myCount = step.playerToLinkCount[game.activePlayer];
+            let myCount = step.playerToLinkCount[game.activePlayer] || 0;
             if (myCount === step.steps.length) {
                 stepCountLabel = " (" + myCount + ")";
             } else {
