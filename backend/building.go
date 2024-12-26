@@ -96,6 +96,37 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 	return nil
 }
 
+func (performer *buildActionPerformer) attemptInterurbanPlacement(interurbanPlacement *InterurbanLinkPlacement) error {
+	hex := interurbanPlacement.Hex
+	direction := interurbanPlacement.Track
+
+	cost := performer.gameMap.GetInterurbanBuildCost(performer.gameState, performer.activePlayer,
+		hex, direction)
+	if cost == 0 {
+		hex = applyDirection(hex, direction)
+		direction = direction.Opposite()
+		cost = performer.gameMap.GetInterurbanBuildCost(performer.gameState, performer.activePlayer,
+			hex, direction)
+		if cost == 0 {
+			return ErrInvalidPlacement
+		}
+	}
+	for _, playerLink := range performer.gameState.Links {
+		if playerLink.SourceHex.X == hex.X && playerLink.SourceHex.Y == hex.Y && playerLink.Steps[0] == direction {
+			return ErrInvalidPlacement
+		}
+	}
+
+	performer.gameState.Links = append(performer.gameState.Links, &common.Link{
+		SourceHex: hex,
+		Steps:     []common.Direction{direction},
+		Owner:     performer.activePlayer,
+		Complete:  true,
+	})
+
+	return nil
+}
+
 func (performer *buildActionPerformer) attemptTrackRedirect(trackRedirect *TrackRedirect) error {
 	hex := trackRedirect.Hex
 	direction := trackRedirect.Track
@@ -416,7 +447,7 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	if gameState.PlayerActions[handler.activePlayer] == common.ENGINEER_SPECIAL_ACTION {
 		placementLimit = 4
 	}
-	if len(buildAction.TrackRedirects)+len(townPlacements)+len(trackPlacements) > placementLimit {
+	if len(buildAction.TrackRedirects)+len(townPlacements)+len(trackPlacements)+len(buildAction.InterurbanLinkPlacements) > placementLimit {
 		return &HttpError{fmt.Sprintf("cannot exceed track placement limit (%d)", placementLimit), http.StatusBadRequest}
 	}
 
@@ -424,6 +455,20 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	redirectCosts := make([]int, len(buildAction.TrackRedirects))
 	for i := 0; i < len(buildAction.TrackRedirects); i++ {
 		redirectCosts[i] = 2
+	}
+	interurbanCosts := make([]int, 0, len(buildAction.InterurbanLinkPlacements))
+	for _, interurbanLinkPlacement := range buildAction.InterurbanLinkPlacements {
+		cost := handler.gameMap.GetInterurbanBuildCost(gameState, handler.activePlayer,
+			interurbanLinkPlacement.Hex, interurbanLinkPlacement.Track)
+		if cost == 0 {
+			cost = handler.gameMap.GetInterurbanBuildCost(gameState, handler.activePlayer,
+				applyDirection(interurbanLinkPlacement.Hex, interurbanLinkPlacement.Track), interurbanLinkPlacement.Track.Opposite())
+			if cost == 0 {
+				return ErrInvalidPlacement
+			}
+		}
+
+		interurbanCosts = append(interurbanCosts, cost)
 	}
 	townCosts := make([]int, 0, len(townPlacements))
 	for hex, tracks := range townPlacements {
@@ -442,7 +487,7 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 		trackCosts = append(trackCosts, cost)
 	}
 	totalCost := handler.gameMap.GetTotalBuildCost(gameState, handler.activePlayer,
-		redirectCosts, townCosts, trackCosts)
+		redirectCosts, townCosts, trackCosts, interurbanCosts)
 	if totalCost > gameState.PlayerCash[performer.activePlayer] {
 		return ErrInvalidPlacement
 	}
@@ -496,6 +541,17 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 		}
 		handler.Log("%s added track on hex (%d,%d)",
 			handler.ActivePlayerNick(), trackPlacement.Hex.X, trackPlacement.Hex.Y)
+	}
+	for _, interurbanPlacement := range buildAction.InterurbanLinkPlacements {
+		err := performer.attemptInterurbanPlacement(interurbanPlacement)
+		if err != nil {
+			if errors.Is(err, ErrInvalidPlacement) {
+				return &HttpError{"invalid tile placement", http.StatusBadRequest}
+			}
+			return err
+		}
+		handler.Log("%s added interurban link on hex (%d,%d)",
+			handler.ActivePlayerNick(), interurbanPlacement.Hex.X, interurbanPlacement.Hex.Y)
 	}
 
 	handler.Log("%s paid a total of $%d for track placements.", handler.ActivePlayerNick(), totalCost)

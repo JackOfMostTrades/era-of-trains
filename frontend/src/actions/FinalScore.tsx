@@ -34,14 +34,22 @@ function FinalScore({game}: {game: ViewGameResponse}) {
             }
 
             let hex = link.sourceHex;
-            for (let i = 0; i < link.steps.length; i++) {
+            // If it's an interurban link, add 1
+            if (link.steps.length === 1
+                && isCity(game.gameState, map, hex)
+                && isCity(game.gameState, map, applyDirection(hex, link.steps[0]))) {
+                trackCount += 1;
+            } else {
+                // Otherwise count steps that aren't part of a city
+                for (let i = 0; i < link.steps.length; i++) {
+                    if (!isCity(game.gameState, map, hex)) {
+                        trackCount += 1;
+                    }
+                    hex = applyDirection(hex, link.steps[i]);
+                }
                 if (!isCity(game.gameState, map, hex)) {
                     trackCount += 1;
                 }
-                hex = applyDirection(hex, link.steps[i]);
-            }
-            if (!isCity(game.gameState, map, hex)) {
-                trackCount += 1;
             }
         }
 

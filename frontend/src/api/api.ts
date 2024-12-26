@@ -270,11 +270,17 @@ export interface TrackRedirect {
     hex: Coordinate;
 }
 
+export interface InterurbanLinkPlacement {
+    track: Direction;
+    hex: Coordinate;
+}
+
 export interface BuildAction {
     urbanization?: Urbanization;
     townPlacements: TownPlacement[];
     trackRedirects: TrackRedirect[];
     trackPlacements: TrackPlacement[];
+    interurbanLinkPlacements: InterurbanLinkPlacement[];
 }
 
 export interface MoveGoodsAction {

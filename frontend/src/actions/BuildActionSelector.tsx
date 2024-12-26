@@ -67,6 +67,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
         trackRedirects: [],
         trackPlacements: [],
         urbanization: undefined,
+        interurbanLinkPlacements: []
     });
     let [showUrbanize, setShowUrbanize] = useState<boolean>(false);
     let [urbanizeSelection, setUrbanizeSelection] = useState<number>(0);
@@ -160,7 +161,33 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                         setAction(newAction);
                         document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
                     } else if (isCity) {
-                        // Do nothing, this is just defining where the route is coming from
+                        // If this is a city and the next is a city, check for an interurban link
+                        let isNextCity = isCityHex(game, map, action.urbanization, newHex);
+                        if (isNextCity) {
+                            for (let interurbanLink of map.getInterurbanLinks()) {
+                                if ((interurbanLink.hex.x === buildingTrackHex.x && interurbanLink.hex.y === buildingTrackHex.y
+                                        && direction === interurbanLink.direction)
+                                    || (interurbanLink.hex.x === newHex.x && interurbanLink.hex.y === newHex.y
+                                        && direction === oppositeDirection(interurbanLink.direction))) {
+                                    let newAction = Object.assign({}, action);
+                                    newAction.interurbanLinkPlacements = newAction.interurbanLinkPlacements.slice();
+                                    newAction.interurbanLinkPlacements.push({
+                                        hex: buildingTrackHex,
+                                        track: direction,
+                                    });
+                                    setAction(newAction);
+                                    document.dispatchEvent(new CustomEvent('pendingBuildAction', {detail: newAction}));
+
+                                    // Clear the selection
+                                    setBuildingTrackHex(undefined);
+                                    setBuildingTrackDirection(undefined);
+                                    document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: undefined }));
+                                    return;
+                                }
+                            }
+                        } else {
+                            // Do nothing, this is just defining where the route is coming from
+                        }
                     } else {
                         // This is either redirect or extending existing track. We need to figure out what track already exists on this hex.
                         let existingRoutes = computeExistingRoutes(game.gameState, map)[buildingTrackHex.y][buildingTrackHex.x];
@@ -257,6 +284,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                                 townPlacements: [],
                                 trackRedirects: [],
                                 trackPlacements: [],
+                                interurbanLinkPlacements: [],
                                 urbanization: undefined,
                             };
                             setAction(newAction);
@@ -276,6 +304,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                             townPlacements: [],
                             trackRedirects: [],
                             trackPlacements: [],
+                            interurbanLinkPlacements: [],
                             urbanization: undefined,
                         };
                         setAction(newAction);

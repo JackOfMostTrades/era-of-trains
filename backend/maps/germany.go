@@ -1,8 +1,8 @@
 package maps
 
 import (
+	"fmt"
 	"github.com/JackOfMostTrades/eot/backend/common"
-	"sort"
 )
 
 type germanyMap struct {
@@ -54,8 +54,11 @@ func (m *germanyMap) GetCityColorForHex(gameState *common.GameState, hex common.
 	}
 	if gameState.MapState != nil {
 		if portColors, ok := gameState.MapState["portColors"]; ok {
-			if portColorsVal, ok := portColors.([]common.Color); ok {
-				return portColorsVal[port-1]
+			if portColorsVal, ok := portColors.([]interface{}); ok {
+				val := portColorsVal[port-1]
+				if colAsFloat, ok := val.(float64); ok {
+					return common.Color(int(colAsFloat))
+				}
 			}
 		}
 	}
@@ -76,9 +79,10 @@ func (m *germanyMap) GetBuildLimit(gameState *common.GameState, player string) (
 }
 
 func (m *germanyMap) GetTotalBuildCost(gameState *common.GameState, player string,
-	redirectCosts []int, townCosts []int, trackCosts []int) int {
+	redirectCosts []int, townCosts []int, trackCosts []int, interurbanCosts []int) int {
 
 	if gameState.PlayerActions[player] == common.ENGINEER_SPECIAL_ACTION {
+		maxCost := 0
 		totalCost := 0
 		for _, cost := range redirectCosts {
 			totalCost += cost
@@ -86,17 +90,32 @@ func (m *germanyMap) GetTotalBuildCost(gameState *common.GameState, player strin
 		for _, cost := range townCosts {
 			totalCost += cost
 		}
-		// Most expensive track cost is halved
-		sort.IntSlice(trackCosts).Sort()
-		for i := 0; i < len(trackCosts)-1; i++ {
-			totalCost += trackCosts[i]
+		for _, cost := range trackCosts {
+			totalCost += cost
+			if cost > maxCost {
+				maxCost = cost
+			}
 		}
-		lastCost := trackCosts[len(trackCosts)-1]
-		totalCost += lastCost/2 + (lastCost % 2)
+		for _, cost := range interurbanCosts {
+			totalCost += cost
+			if cost > maxCost {
+				maxCost = cost
+			}
+		}
+		totalCost -= maxCost / 2
 		return totalCost
 	} else {
-		return m.basicMap.GetTotalBuildCost(gameState, player, redirectCosts, townCosts, trackCosts)
+		return m.basicMap.GetTotalBuildCost(gameState, player, redirectCosts, townCosts, trackCosts, interurbanCosts)
 	}
+}
+
+func (b *germanyMap) PostBuildActionHook(gameState *common.GameState, player string) error {
+	for _, link := range gameState.Links {
+		if !link.Complete {
+			return fmt.Errorf("all links must be complete on this map")
+		}
+	}
+	return nil
 }
 
 func (b *germanyMap) PostGoodsGrowthHook(gameState *common.GameState, randProvider common.RandProvider, log LogFun) error {

@@ -418,6 +418,30 @@ export class HexRenderer {
         this.height = Math.max(this.height, hex.y);
     }
 
+    public renderInterurbanLink(hex: Coordinate, direction: Direction, fillColor: PlayerColor|undefined, cost: number|undefined) {
+        let xpos = hex.x*17.321;
+        if ((hex.y % 2) === 1) {
+            xpos += 8.661;
+        }
+        let ypos = hex.y*5;
+
+        let edge = hexEdgeOffset(direction);
+        let cx = xpos + edge.dx;
+        let cy = ypos + edge.dy;
+
+        let fill: string;
+        if (fillColor === undefined) {
+            fill = '#ffffff';
+        } else {
+            fill = playerColorToHtml(fillColor);
+        }
+
+        this.paths.push(<circle stroke='#000000' strokeWidth={0.25} cx={cx} cy={cy} r={2} fill={fill} />);
+        if (cost !== undefined) {
+            this.paths.push(<text fontSize={1} x={cx} y={cy} dominantBaseline="middle" textAnchor="middle">${cost}</text>);
+        }
+    }
+
     public render(): ReactNode {
         let width = this.width+1;
         let height = this.height+1;

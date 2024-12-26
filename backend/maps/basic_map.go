@@ -20,6 +20,12 @@ type startingCubeSpec struct {
 	Coordinate common.Coordinate `json:"coordinate"`
 }
 
+type interurbanLink struct {
+	Cost      int               `json:"cost"`
+	Hex       common.Coordinate `json:"hex"`
+	Direction common.Direction  `json:"direction"`
+}
+
 type specialTrackPricing struct {
 	Cost int               `json:"cost"`
 	Hex  common.Coordinate `json:"hex"`
@@ -29,9 +35,10 @@ type basicMap struct {
 	*AbstractGameMapImpl
 
 	// Rectangular array height*width in size (y dimension is first)
-	Hexes         [][]HexType        `json:"hexes"`
-	Cities        []basicCity        `json:"cities"`
-	StartingCubes []startingCubeSpec `json:"startingCubes"`
+	Hexes           [][]HexType        `json:"hexes"`
+	Cities          []basicCity        `json:"cities"`
+	StartingCubes   []startingCubeSpec `json:"startingCubes"`
+	InterurbanLinks []interurbanLink   `json:"interurbanLinks"`
 	// Hexes with unusual track costs
 	SpecialTrackPricing []specialTrackPricing `json:"specialTrackPricing,omitempty"`
 }
@@ -106,6 +113,15 @@ func (b *basicMap) GetTrackBuildCost(gameState *common.GameState, player string,
 	}
 
 	return b.AbstractGameMapImpl.GetTrackBuildCost(gameState, player, hexType, hex, trackType, isUpgrade)
+}
+
+func (b *basicMap) GetInterurbanBuildCost(gameState *common.GameState, player string, hex common.Coordinate, direction common.Direction) int {
+	for _, link := range b.InterurbanLinks {
+		if link.Hex.X == hex.X && link.Hex.Y == hex.Y && link.Direction == direction {
+			return link.Cost
+		}
+	}
+	return 0
 }
 
 func loadBasicMap(filename string) (*basicMap, error) {

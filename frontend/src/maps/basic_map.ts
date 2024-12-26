@@ -1,10 +1,16 @@
-import {Color, Coordinate, GameState} from "../api/api.ts";
+import {Color, Coordinate, Direction, GameState} from "../api/api.ts";
 import {CityProperties, GameMap, HexType} from "./index.ts";
 
 interface BasicCity {
     color: Color;
     coordinate: Coordinate;
     goodsGrowth: number[];
+}
+
+export interface InterurbanLink {
+    cost: number;
+    hex: Coordinate;
+    direction: Direction;
 }
 
 interface SpecialTrackPricing {
@@ -15,6 +21,7 @@ interface SpecialTrackPricing {
 export class BasicMap implements GameMap {
     protected hexes: HexType[][] = [];
     protected cities: BasicCity[] = [];
+    protected interurbanLinks: InterurbanLink[] = [];
     protected specialTrackPricing: SpecialTrackPricing[] = [];
 
     public getWidth(): number {
@@ -55,6 +62,10 @@ export class BasicMap implements GameMap {
         return undefined;
     }
 
+    public getInterurbanLinks(): InterurbanLink[] {
+        return this.interurbanLinks || [];
+    }
+
     public getSpecialTrackPricing(hex: Coordinate): number|undefined {
         if (this.specialTrackPricing) {
             for (let pricing of this.specialTrackPricing) {
@@ -70,6 +81,7 @@ export class BasicMap implements GameMap {
         let map = new BasicMap();
         map.hexes = src.hexes;
         map.cities = src.cities;
+        map.interurbanLinks = src.interurbanLinks;
         map.specialTrackPricing = src.specialTrackPricing;
         return map;
     }

@@ -51,11 +51,17 @@ type TrackPlacement struct {
 	Hex   common.Coordinate   `json:"hex"`
 }
 
+type InterurbanLinkPlacement struct {
+	Track common.Direction  `json:"track"`
+	Hex   common.Coordinate `json:"hex"`
+}
+
 type BuildAction struct {
-	Urbanization    *common.Urbanization `json:"urbanization"`
-	TownPlacements  []*TownPlacement     `json:"townPlacements"`
-	TrackRedirects  []*TrackRedirect     `json:"trackRedirects"`
-	TrackPlacements []*TrackPlacement    `json:"trackPlacements"`
+	Urbanization             *common.Urbanization       `json:"urbanization"`
+	TownPlacements           []*TownPlacement           `json:"townPlacements"`
+	TrackRedirects           []*TrackRedirect           `json:"trackRedirects"`
+	TrackPlacements          []*TrackPlacement          `json:"trackPlacements"`
+	InterurbanLinkPlacements []*InterurbanLinkPlacement `json:"interurbanLinkPlacements"`
 }
 
 type MoveGoodsAction struct {

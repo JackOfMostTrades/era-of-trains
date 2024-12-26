@@ -52,6 +52,7 @@ class Germany extends BasicMap {
         let map = new Germany();
         map.hexes = src.hexes;
         map.cities = src.cities;
+        map.interurbanLinks = src.interurbanLinks;
         map.specialTrackPricing = src.specialTrackPricing;
         return map;
     }

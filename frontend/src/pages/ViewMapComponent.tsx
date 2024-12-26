@@ -41,6 +41,14 @@ class RenderMapBuilder {
         }
     }
 
+    public renderEmptyInterurbanLink(hex: Coordinate, direction: Direction, cost: number) {
+        this.hexRenderer.renderInterurbanLink(hex, direction, undefined, cost);
+    }
+
+    public renderOccupiedInterurbanLink(hex: Coordinate, direction: Direction, playerColor: PlayerColor) {
+        this.hexRenderer.renderInterurbanLink(hex, direction, playerColor, undefined);
+    }
+
     public renderSpecialCost(hex: Coordinate, cost: number) {
         this.hexRenderer.renderSpecialCost(hex, cost);
     }
@@ -119,6 +127,36 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
     for (let y = 0; y < map.getHeight(); y++) {
         for (let x = 0; x < map.getWidth(); x++) {
             renderer.renderHex({x: x, y: y});
+        }
+    }
+
+    for (let interurbanLink of map.getInterurbanLinks()) {
+        let owner: string|undefined;
+        if (game.gameState && game.gameState.links) {
+            for (let playerLink of game.gameState.links) {
+                if (playerLink.sourceHex.x === interurbanLink.hex.x && playerLink.sourceHex.y === interurbanLink.hex.y
+                    && playerLink.steps[0] === interurbanLink.direction) {
+                    owner = playerLink.owner;
+                    break;
+                }
+            }
+        }
+        if (pendingBuildAction && pendingBuildAction.interurbanLinkPlacements) {
+            for (let playerLink of pendingBuildAction.interurbanLinkPlacements) {
+                let other = applyDirection(playerLink.hex, playerLink.track);
+                if ((playerLink.hex.x === interurbanLink.hex.x && playerLink.hex.y === interurbanLink.hex.y
+                        && playerLink.track === interurbanLink.direction)
+                    || (other.x === interurbanLink.hex.x && other.y === interurbanLink.hex.y
+                        && oppositeDirection(playerLink.track) === interurbanLink.direction)) {
+                    owner = game.activePlayer;
+                    break;
+                }
+            }
+        }
+        if (owner) {
+            renderer.renderOccupiedInterurbanLink(interurbanLink.hex, interurbanLink.direction, game.gameState?.playerColor[owner] as PlayerColor);
+        } else {
+            renderer.renderEmptyInterurbanLink(interurbanLink.hex, interurbanLink.direction, interurbanLink.cost);
         }
     }
 
