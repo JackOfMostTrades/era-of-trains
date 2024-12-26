@@ -125,26 +125,12 @@ type WhoAmIRequest struct {
 }
 
 type WhoAmIResponse struct {
-	User              *User `json:"user"`
-	WaitingForMeCount int   `json:"waitingForMeCount"`
+	User *User `json:"user"`
 }
 
-func (server *GameServer) whoami(ctx *RequestContext, req *WhoAmIRequest) (resp *WhoAmIResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT COUNT(*) FROM games WHERE finished=0 AND active_player_id=?")
-	if err != nil {
-		return nil, fmt.Errorf("failed to prepare statement: %v", err)
-	}
-	defer stmt.Close()
-	row := stmt.QueryRow(ctx.User.Id)
-	var count int
-	err = row.Scan(&count)
-	if err != nil {
-		return nil, fmt.Errorf("failed to scan row: %v", err)
-	}
-
+func whoami(ctx *RequestContext, req *WhoAmIRequest) (resp *WhoAmIResponse, err error) {
 	return &WhoAmIResponse{
-		User:              ctx.User,
-		WaitingForMeCount: count,
+		User: ctx.User,
 	}, nil
 }
 
@@ -220,7 +206,7 @@ func main() {
 	mux.HandleFunc("/api/login", jsonHandlerUnAuthenticated(server.login))
 	mux.HandleFunc("/api/register", jsonHandlerUnAuthenticated(server.register))
 	mux.HandleFunc("/api/logout", jsonHandlerUnAuthenticated(server.logout))
-	mux.HandleFunc("/api/whoami", jsonHandler(server, server.whoami))
+	mux.HandleFunc("/api/whoami", jsonHandler(server, whoami))
 	mux.HandleFunc("/api/createGame", jsonHandler(server, server.createGame))
 	mux.HandleFunc("/api/joinGame", jsonHandler(server, server.joinGame))
 	mux.HandleFunc("/api/leaveGame", jsonHandler(server, server.leaveGame))

@@ -49,7 +49,6 @@ export interface WhoAmIRequest {
 }
 export interface WhoAmIResponse {
     user: User
-    waitingForMeCount: number
 }
 
 export function WhoAmI(req: WhoAmIRequest): Promise<WhoAmIResponse> {

@@ -82,9 +82,9 @@ function DesktopMainMenu() {
                 <MenuMenu position='right'>
                     {userSessionContext.userInfo ? <>
                         <Menu.Item>
-                            {userSessionContext.userInfo.waitingForMeCount ?
+                            {userSessionContext.waitingForMeCount ?
                                 <Label color='red'>
-                                    {userSessionContext.userInfo.waitingForMeCount}
+                                    {userSessionContext.waitingForMeCount}
                                 </Label> : null}
                             <NavLink to='/mygames'>My Games</NavLink>
                         </Menu.Item>
@@ -110,8 +110,8 @@ function MobileMainMenu() {
                 {userSessionContext.userInfo ?
                     <Menu.Item>
                         <NavLink to='/mygames'>
-                            <Label color={userSessionContext.userInfo.waitingForMeCount > 0 ? 'red' : 'black'}>
-                                {userSessionContext.userInfo.waitingForMeCount}
+                            <Label color={userSessionContext.waitingForMeCount > 0 ? 'red' : 'black'}>
+                                {userSessionContext.waitingForMeCount}
                             </Label>
                         </NavLink>
                     </Menu.Item>: null }

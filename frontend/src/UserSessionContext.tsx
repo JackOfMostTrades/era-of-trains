@@ -1,14 +1,15 @@
 import {createContext, ReactNode, useContext, useEffect, useState} from "react";
-import {Login, Logout, WhoAmI, WhoAmIResponse} from "./api/api.ts";
+import {GetMyGames, Login, Logout, WhoAmI, WhoAmIResponse} from "./api/api.ts";
 import ErrorContext from "./ErrorContext.tsx";
 
 interface UserSession {
     userInfo?: WhoAmIResponse
+    waitingForMeCount: number
     loading?: boolean
     reload: () => Promise<void>
 }
 
-const UserSessionContext = createContext<UserSession>({reload: () => Promise.resolve()});
+const UserSessionContext = createContext<UserSession>({waitingForMeCount: 0, reload: () => Promise.resolve()});
 
 export function oauthSignIn() {
     // Google's OAuth 2.0 endpoint for requesting an access token
@@ -55,14 +56,23 @@ export async function logout() {
 export function UserSessionProvider({ children }: {children: ReactNode}) {
     const reload: () => Promise<void> = async () => {
         try {
-            let res = await WhoAmI({});
-            setUserSession({loading: false, userInfo: res, reload: reload});
+            let userInfoRes = await WhoAmI({});
+            let myGamesRes = await GetMyGames({});
+            let waitingForMeCount = 0;
+            if (myGamesRes.games) {
+                for (let game of myGamesRes.games) {
+                    if (!game.finished && game.activePlayer === userInfoRes.user.id) {
+                        waitingForMeCount += 1;
+                    }
+                }
+            }
+            setUserSession({loading: false, userInfo: userInfoRes, waitingForMeCount: waitingForMeCount, reload: reload});
         } catch (e) {
-            setUserSession({loading: false, reload: reload});
+            setUserSession({loading: false, waitingForMeCount: 0, reload: reload});
         }
     }
 
-    let [userSession, setUserSession] = useState<UserSession>({loading: true, reload: reload});
+    let [userSession, setUserSession] = useState<UserSession>({loading: true, waitingForMeCount: 0, reload: reload});
     let {setError} = useContext(ErrorContext);
 
     useEffect(() => {
