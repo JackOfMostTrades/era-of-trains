@@ -28,7 +28,6 @@ func (b *southernUsMap) PopulateStartingCubes(gameState *common.GameState, randP
 			}
 		}
 	}
-	// FIXME: add white cubes to every town
 	return nil
 }
 

@@ -7,7 +7,6 @@ function Home() {
         <Header as='h2'>Known Issues</Header>
         <List>
             <ListItem>Component limits are not enforced (town markers, number of tiles, etc.)</ListItem>
-            <ListItem>Bankrupt players do not get eliminated (they just go into negative income)</ListItem>
         </List>
     </Container>
 }

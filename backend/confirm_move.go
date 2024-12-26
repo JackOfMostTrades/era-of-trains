@@ -879,9 +879,16 @@ func (handler *confirmMoveHandler) executeIncomeAndExpenses() error {
 			gameState.PlayerCash[player] = 0
 			gameState.PlayerIncome[player] += cash // cash is negative, so this drops income by the deficit
 			handler.Log("%s loses %d in income to pay for excess expenses.", handler.PlayerNick(player), -1*cash)
-			// FIXME: Handle bankruptcy
 		} else {
 			gameState.PlayerCash[player] = cash
+		}
+	}
+
+	for i := 0; i < len(gameState.PlayerOrder); i++ {
+		if gameState.PlayerIncome[gameState.PlayerOrder[i]] < 0 {
+			handler.Log("%s goes bankrupt and is eliminated from the game.", handler.PlayerNick(gameState.PlayerOrder[i]))
+			gameState.PlayerOrder = DeleteFromSliceOrdered(i, gameState.PlayerOrder)
+			i -= 1
 		}
 	}
 
