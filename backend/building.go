@@ -143,73 +143,11 @@ func (performer *buildActionPerformer) attemptTrackRedirect(trackRedirect *Track
 	return nil
 }
 
-type trackTileType int
-
-const (
-	SIMPLE_TRACK_TILE_TYPE = iota
-	COMPLEX_CROSSING_TILE_TYPE
-	COMPLEX_COEXISTING_TILE_TYPE
-)
-
-func routesEqual(a [][2]common.Direction, b [][2]common.Direction) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for _, trackA := range a {
-		found := false
-		for _, trackB := range b {
-			if (trackA[0] == trackB[0] && trackA[1] == trackB[1]) ||
-				(trackA[0] == trackB[1] && trackA[1] == trackB[0]) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-	return true
-}
-
-func getTileType(routes [][2]common.Direction) trackTileType {
-	if len(routes) < 2 {
-		return SIMPLE_TRACK_TILE_TYPE
-	}
-
-	complexCrossingTiles := [][][2]common.Direction{
-		// X
-		{{common.NORTH, common.SOUTH}, {common.SOUTH_WEST, common.NORTH_EAST}},
-		// Gentle X
-		{{common.NORTH, common.SOUTH_EAST}, {common.NORTH_EAST, common.SOUTH}},
-		// Bow and arrow
-		{{common.NORTH, common.SOUTH}, {common.SOUTH_WEST, common.SOUTH_EAST}},
-	}
-	for _, tile := range complexCrossingTiles {
-		for rotation := 0; rotation < 6; rotation++ {
-			rotatedRoutes := make([][2]common.Direction, 0, len(tile))
-			for _, route := range tile {
-				rotatedRoutes = append(rotatedRoutes, [2]common.Direction{
-					common.Direction((int(route[0]) + rotation) % 6), common.Direction((int(route[1]) + rotation) % 6),
-				})
-			}
-			if routesEqual(rotatedRoutes, routes) {
-				return COMPLEX_CROSSING_TILE_TYPE
-			}
-		}
-	}
-
-	return COMPLEX_COEXISTING_TILE_TYPE
-}
-
 func (performer *buildActionPerformer) determineTownBuildCost(hex common.Coordinate, tracks []common.Direction) (int, error) {
 	ts := performer.mapState[hex.Y][hex.X]
 
 	var cost int
-	if len(ts.Routes) == 0 {
-		cost = 1 + len(tracks)
-	} else {
-		cost = 3
-	}
+	cost = performer.gameMap.GetTownBuildCost(performer.gameState, performer.activePlayer, hex, len(tracks), len(ts.Routes) != 0)
 	return cost, nil
 }
 
@@ -221,57 +159,20 @@ func (performer *buildActionPerformer) determineTrackBuildCost(hex common.Coordi
 		return 0, ErrInvalidPlacement
 	}
 
-	var cost int
-	if len(ts.Routes) == 0 {
-		hexType := performer.gameMap.GetHexType(hex)
-		tileType := getTileType(tracks)
-		if hexType == maps.PLAINS_HEX_TYPE {
-			switch tileType {
-			case SIMPLE_TRACK_TILE_TYPE:
-				cost = 2
-			case COMPLEX_COEXISTING_TILE_TYPE:
-				cost = 3
-			case COMPLEX_CROSSING_TILE_TYPE:
-				cost = 4
-			}
-		} else if hexType == maps.RIVER_HEX_TYPE {
-			switch tileType {
-			case SIMPLE_TRACK_TILE_TYPE:
-				cost = 3
-			case COMPLEX_COEXISTING_TILE_TYPE:
-				cost = 4
-			case COMPLEX_CROSSING_TILE_TYPE:
-				cost = 5
-			}
-		} else if hexType == maps.MOUNTAIN_HEX_TYPE {
-			switch tileType {
-			case SIMPLE_TRACK_TILE_TYPE:
-				cost = 4
-			case COMPLEX_COEXISTING_TILE_TYPE:
-				cost = 5
-			case COMPLEX_CROSSING_TILE_TYPE:
-				cost = 6
-			}
-		} else {
-			return 0, ErrInvalidPlacement
-		}
-	} else {
-		allRoutes := make([][2]common.Direction, 0, len(ts.Routes)+len(tracks))
-		for _, route := range ts.Routes {
-			allRoutes = append(allRoutes, [2]common.Direction{route.Left, route.Right})
-		}
-		for _, track := range tracks {
-			allRoutes = append(allRoutes, track)
-		}
-		tileType := getTileType(allRoutes)
-		if tileType == COMPLEX_CROSSING_TILE_TYPE {
-			cost = 3
-		} else {
-			cost = 2
-		}
+	allRoutes := make([][2]common.Direction, 0, len(ts.Routes)+len(tracks))
+	for _, route := range ts.Routes {
+		allRoutes = append(allRoutes, [2]common.Direction{route.Left, route.Right})
 	}
-	if cost == 0 {
-		return 0, fmt.Errorf("failed to determine cost for placing track tile")
+	for _, track := range tracks {
+		allRoutes = append(allRoutes, track)
+	}
+	trackType := common.GetTrackType(allRoutes)
+
+	hexType := performer.gameMap.GetHexType(hex)
+	cost, err := performer.gameMap.GetTrackBuildCost(performer.gameState, performer.activePlayer,
+		hexType, hex, trackType, len(ts.Routes) != 0)
+	if err != nil {
+		return 0, &HttpError{fmt.Sprintf("failed to determine cost for placing track tile: %v", err), http.StatusBadRequest}
 	}
 
 	return cost, nil
@@ -508,7 +409,10 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	}
 
 	// Check the number of placements is valid
-	placementLimit := 3
+	placementLimit, err := handler.gameMap.GetBuildLimit(gameState, handler.activePlayer)
+	if err != nil {
+		return err
+	}
 	if gameState.PlayerActions[handler.activePlayer] == common.ENGINEER_SPECIAL_ACTION {
 		placementLimit = 4
 	}
@@ -517,22 +421,28 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	}
 
 	// Now apply cost
-	totalCost := 0
+	redirectCosts := make([]int, len(buildAction.TrackRedirects))
+	for i := 0; i < len(buildAction.TrackRedirects); i++ {
+		redirectCosts[i] = 2
+	}
+	townCosts := make([]int, 0, len(townPlacements))
 	for hex, tracks := range townPlacements {
 		cost, err := performer.determineTownBuildCost(hex, tracks)
 		if err != nil {
 			return err
 		}
-		totalCost += cost
+		townCosts = append(townCosts, cost)
 	}
-	totalCost += 2 * len(buildAction.TrackRedirects)
+	trackCosts := make([]int, 0, len(trackPlacements))
 	for hex, tracks := range trackPlacements {
 		cost, err := performer.determineTrackBuildCost(hex, tracks)
 		if err != nil {
 			return err
 		}
-		totalCost += cost
+		trackCosts = append(trackCosts, cost)
 	}
+	totalCost := handler.gameMap.GetTotalBuildCost(gameState, handler.activePlayer,
+		redirectCosts, townCosts, trackCosts)
 	if totalCost > gameState.PlayerCash[performer.activePlayer] {
 		return ErrInvalidPlacement
 	}

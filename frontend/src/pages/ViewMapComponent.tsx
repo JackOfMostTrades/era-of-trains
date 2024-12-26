@@ -1,11 +1,11 @@
 import {ALL_DIRECTIONS, BuildAction, Color, Coordinate, Direction, PlayerColor, ViewGameResponse} from "../api/api.ts";
 import {ReactNode, useEffect, useState} from "react";
-import maps, {BasicMap, CityProperties, HexType} from "../map.ts";
+import {CityProperties, GameMap, HexType, maps} from "../maps";
 import {HexRenderer, urbCityProperties} from "../actions/renderer/HexRenderer.tsx";
 import {applyDirection, oppositeDirection} from "../util.ts";
 import {Step as MoveGoodsStep} from "../actions/MoveGoodsActionSelector.tsx";
 
-function getCityProperties(game: ViewGameResponse, map: BasicMap, coordinate: Coordinate): CityProperties|undefined {
+function getCityProperties(game: ViewGameResponse, map: GameMap, coordinate: Coordinate): CityProperties|undefined {
     if (game.gameState && game.gameState.urbanizations) {
         for (let urb of game.gameState.urbanizations) {
             if (urb.hex.x === coordinate.x && urb.hex.y === coordinate.y) {
@@ -14,15 +14,15 @@ function getCityProperties(game: ViewGameResponse, map: BasicMap, coordinate: Co
         }
     }
 
-    return map.getCityProperties(coordinate);
+    return map.getCityProperties(game.gameState, coordinate);
 }
 
 class RenderMapBuilder {
     private game: ViewGameResponse;
-    private map: BasicMap;
+    private map: GameMap;
     private hexRenderer: HexRenderer;
 
-    constructor(game: ViewGameResponse, map: BasicMap) {
+    constructor(game: ViewGameResponse, map: GameMap) {
         this.game = game;
         this.map = map;
         this.hexRenderer = new HexRenderer(true);
@@ -39,6 +39,10 @@ class RenderMapBuilder {
         } else {
             this.hexRenderer.renderHex(hex, this.map.getHexType(hex));
         }
+    }
+
+    public renderSpecialCost(hex: Coordinate, cost: number) {
+        this.hexRenderer.renderSpecialCost(hex, cost);
     }
 
     public renderTownTrack(hex: Coordinate, direction: Direction, player: string) {
@@ -98,6 +102,20 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
     let map = maps[game.mapName];
     let renderer = new RenderMapBuilder(game, map);
 
+    let hexesWithTrack: { [ hexId: string]: boolean } = {};
+    if (game.gameState) {
+        // Render links
+        if (game.gameState.links) {
+            for (let link of game.gameState.links) {
+                let hex = link.sourceHex;
+                for (let i = 1; i < link.steps.length; i++) {
+                    hex = applyDirection(hex, link.steps[i - 1]);
+                    hexesWithTrack[hex.x + "," + hex.y] = true;
+                }
+            }
+        }
+    }
+
     for (let y = 0; y < map.getHeight(); y++) {
         for (let x = 0; x < map.getWidth(); x++) {
             renderer.renderHex({x: x, y: y});
@@ -105,6 +123,8 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
     }
 
     if (game.gameState) {
+        let hexesWithTrack: { [ hexId: string]: boolean } = {};
+
         // Render links
         if (game.gameState.links) {
             for (let link of game.gameState.links) {
@@ -136,6 +156,7 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
                         if (map.getHexType(hex) === HexType.TOWN) {
                             renderer.renderTownTrack(hex, left, link.owner);
                         } else {
+                            hexesWithTrack[hex.x + "," + hex.y] = true;
                             renderer.renderTrack(hex, left, right, link.owner);
                         }
                     }
@@ -161,7 +182,18 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
                 renderer.renderTownTrack(townPlacement.hex, townPlacement.track, game.activePlayer);
             }
             for (let trackPlacement of pendingBuildAction.trackPlacements) {
+                hexesWithTrack[trackPlacement.hex.x + "," + trackPlacement.hex.y] = true;
                 renderer.renderTrack(trackPlacement.hex, trackPlacement.track[0], trackPlacement.track[1], game.activePlayer);
+            }
+        }
+
+        for (let y = 0; y < map.getHeight(); y++) {
+            for (let x = 0; x < map.getWidth(); x++) {
+                let hex: Coordinate = {x: x, y: y};
+                let specialCost = map.getSpecialTrackPricing(hex);
+                if (specialCost !== undefined && !hexesWithTrack[hex.x + "," + hex.y]) {
+                    renderer.renderSpecialCost(hex, specialCost);
+                }
             }
         }
 

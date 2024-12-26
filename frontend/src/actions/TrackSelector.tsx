@@ -2,7 +2,7 @@ import {Direction} from "../api/api.ts";
 import {Grid, GridColumn, GridRow} from "semantic-ui-react";
 import {ReactNode} from "react";
 import {HexRenderer, urbCityProperties} from "./renderer/HexRenderer.tsx";
-import {HexType} from "../map.ts";
+import {HexType} from "../maps";
 import "./TrackSelector.css";
 
 type TrackTile = Array<[Direction, Direction]>;

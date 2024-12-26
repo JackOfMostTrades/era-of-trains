@@ -1,0 +1,129 @@
+package maps
+
+import (
+	"github.com/JackOfMostTrades/eot/backend/common"
+	"sort"
+)
+
+type germanyMap struct {
+	*basicMap
+}
+
+func (m *germanyMap) PostSetupHook(gameState *common.GameState, randProvider common.RandProvider) error {
+	portColors := make([]common.Color, 6)
+	for i := 0; i < len(portColors); i++ {
+		cube, err := gameState.DrawCube(randProvider)
+		if err != nil {
+			return err
+		}
+		portColors[i] = cube
+	}
+	if gameState.MapState == nil {
+		gameState.MapState = make(map[string]interface{})
+	}
+	gameState.MapState["portColors"] = portColors
+	return nil
+}
+
+func (m *germanyMap) getPortNumber(hex common.Coordinate) int {
+	if hex.X == 3 && hex.Y == 1 {
+		return 1
+	}
+	if hex.X == 0 && hex.Y == 10 {
+		return 2
+	}
+	if hex.X == 0 && hex.Y == 16 {
+		return 3
+	}
+	if hex.X == 0 && hex.Y == 22 {
+		return 4
+	}
+	if hex.X == 0 && hex.Y == 28 {
+		return 5
+	}
+	if hex.X == 6 && hex.Y == 10 {
+		return 6
+	}
+	return 0
+}
+
+func (m *germanyMap) GetCityColorForHex(gameState *common.GameState, hex common.Coordinate) common.Color {
+	port := m.getPortNumber(hex)
+	if port == 0 {
+		return m.basicMap.GetCityColorForHex(gameState, hex)
+	}
+	if gameState.MapState != nil {
+		if portColors, ok := gameState.MapState["portColors"]; ok {
+			if portColorsVal, ok := portColors.([]common.Color); ok {
+				return portColorsVal[port-1]
+			}
+		}
+	}
+
+	return common.NONE_COLOR
+}
+
+func (m *germanyMap) LocationBlocksCubePassage(cube common.Color, hex common.Coordinate) bool {
+	port := m.getPortNumber(hex)
+	if port != 0 {
+		return true
+	}
+	return false
+}
+
+func (m *germanyMap) GetBuildLimit(gameState *common.GameState, player string) (int, error) {
+	return 3, nil
+}
+
+func (m *germanyMap) GetTotalBuildCost(gameState *common.GameState, player string,
+	redirectCosts []int, townCosts []int, trackCosts []int) int {
+
+	if gameState.PlayerActions[player] == common.ENGINEER_SPECIAL_ACTION {
+		totalCost := 0
+		for _, cost := range redirectCosts {
+			totalCost += cost
+		}
+		for _, cost := range townCosts {
+			totalCost += cost
+		}
+		// Most expensive track cost is halved
+		sort.IntSlice(trackCosts).Sort()
+		for i := 0; i < len(trackCosts)-1; i++ {
+			totalCost += trackCosts[i]
+		}
+		lastCost := trackCosts[len(trackCosts)-1]
+		totalCost += lastCost/2 + (lastCost % 2)
+		return totalCost
+	} else {
+		return m.basicMap.GetTotalBuildCost(gameState, player, redirectCosts, townCosts, trackCosts)
+	}
+}
+
+func (b *germanyMap) PostGoodsGrowthHook(gameState *common.GameState, randProvider common.RandProvider, log LogFun) error {
+	err := b.basicMap.PostGoodsGrowthHook(gameState, randProvider, log)
+	if err != nil {
+		return err
+	}
+
+	color, err := gameState.DrawCube(randProvider)
+	if err != nil {
+		return err
+	}
+	if color != common.NONE_COLOR {
+		gameState.Cubes = append(gameState.Cubes, &common.BoardCube{
+			Color: color,
+			Hex:   common.Coordinate{X: 4, Y: 9},
+		})
+		log("A %s cube was drawn and added to Berlin.", color.String())
+	}
+
+	return nil
+}
+
+func loadGermanyMap() (GameMap, error) {
+	b, err := loadBasicMap("maps/germany.json")
+	if err != nil {
+		return nil, err
+	}
+	return &germanyMap{b}, nil
+}

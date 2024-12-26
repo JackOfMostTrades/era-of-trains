@@ -535,6 +535,10 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to populate initial board cubes: %v", err)
 	}
+	err = gameMap.PostSetupHook(gameState, server.randProvider)
+	if err != nil {
+		return nil, fmt.Errorf("failed to populate initial board cubes: %v", err)
+	}
 
 	gameStateStr, err := json.Marshal(gameState)
 	if err != nil {

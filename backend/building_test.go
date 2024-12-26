@@ -26,7 +26,7 @@ func (t *testMap) GetHexType(hex common.Coordinate) maps.HexType {
 	return t.hexes[hex.Y][hex.X]
 }
 
-func (t *testMap) GetCityColorForHex(hex common.Coordinate) common.Color {
+func (t *testMap) GetCityColorForHex(gameState *common.GameState, hex common.Coordinate) common.Color {
 	return t.cityColor[hex.Y][hex.X]
 }
 

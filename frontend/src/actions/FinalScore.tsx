@@ -1,9 +1,9 @@
 import {Coordinate, GameState, User, ViewGameResponse} from "../api/api.ts";
-import maps, {BasicMap, HexType} from "../map.ts";
+import {GameMap, HexType, maps} from "../maps";
 import {applyDirection} from "../util.ts";
 import {Header, List, ListItem} from "semantic-ui-react";
 
-function isCity(gameState: GameState, map: BasicMap, hex: Coordinate): boolean {
+function isCity(gameState: GameState, map: GameMap, hex: Coordinate): boolean {
     if (map.getHexType(hex) === HexType.CITY) {
         return true;
     }

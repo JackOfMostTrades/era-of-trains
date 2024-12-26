@@ -83,6 +83,11 @@ function NewGamePage() {
                             text: "Southern U.S.",
                             value: "southern_us",
                         },
+                        {
+                            key: "germany",
+                            text: "Germany",
+                            value: "germany",
+                        },
                     ]}
                 />
             </FormField>

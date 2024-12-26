@@ -1,16 +1,5 @@
-import * as rustBeltRaw from "../../backend/maps/rust_belt.json"
-import * as southernUsRaw from "../../backend/maps/southern_us.json"
-import {Color, Coordinate} from "./api/api.ts";
-
-export enum HexType {
-    OFFBOARD  = 0,
-    WATER ,
-    PLAINS ,
-    RIVER ,
-    MOUNTAIN ,
-    TOWN ,
-    CITY ,
-}
+import {Color, Coordinate, GameState} from "../api/api.ts";
+import {CityProperties, GameMap, HexType} from "./index.ts";
 
 interface BasicCity {
     color: Color;
@@ -18,15 +7,15 @@ interface BasicCity {
     goodsGrowth: number[];
 }
 
-export interface CityProperties {
-    label: string
-    color: Color
-    darkCity: boolean
+interface SpecialTrackPricing {
+    cost: number;
+    hex: Coordinate;
 }
 
-export class BasicMap {
-    private hexes: HexType[][] = [];
-    private cities: BasicCity[] = [];
+export class BasicMap implements GameMap {
+    protected hexes: HexType[][] = [];
+    protected cities: BasicCity[] = [];
+    protected specialTrackPricing: SpecialTrackPricing[] = [];
 
     public getWidth(): number {
         return this.hexes[0].length;
@@ -43,7 +32,7 @@ export class BasicMap {
         return this.hexes[hex.y][hex.x];
     }
 
-    public getCityProperties(hex: Coordinate): CityProperties|undefined {
+    public getCityProperties(_: GameState|undefined, hex: Coordinate): CityProperties|undefined {
         for (let city of this.cities) {
             if (city.coordinate.x === hex.x && city.coordinate.y === hex.y) {
                 let label = city.goodsGrowth.map(n => (n%6)+1).join(',');
@@ -66,20 +55,22 @@ export class BasicMap {
         return undefined;
     }
 
+    public getSpecialTrackPricing(hex: Coordinate): number|undefined {
+        if (this.specialTrackPricing) {
+            for (let pricing of this.specialTrackPricing) {
+                if (pricing.hex.x === hex.x && pricing.hex.y === hex.y) {
+                    return pricing.cost;
+                }
+            }
+        }
+        return undefined;
+    }
+
     public static fromJson(src: any): BasicMap {
         let map = new BasicMap();
         map.hexes = src.hexes;
         map.cities = src.cities;
+        map.specialTrackPricing = src.specialTrackPricing;
         return map;
     }
 }
-
-const rustBelt = BasicMap.fromJson(rustBeltRaw);
-const southernUs = BasicMap.fromJson(southernUsRaw);
-
-const maps: { [mapName: string]: BasicMap } = {
-    "rust_belt": rustBelt,
-    "southern_us": southernUs,
-}
-
-export default maps;

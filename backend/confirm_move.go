@@ -718,15 +718,17 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 				}
 				cityColor = urbColor
 			} else if hexType == maps.CITY_HEX_TYPE {
-				cityColor = gameMap.GetCityColorForHex(loc)
+				cityColor = gameMap.GetCityColorForHex(gameState, loc)
 			} else {
 				return &HttpError{"invalid path", http.StatusBadRequest}
 			}
 
-			locAcceptsCube := cityColor == moveGoodsAction.Color || gameMap.CanAcceptCube(moveGoodsAction.Color, loc)
-			if idx != len(moveGoodsAction.Path)-1 && locAcceptsCube {
+			locBlocksCube := cityColor == moveGoodsAction.Color || gameMap.LocationBlocksCubePassage(moveGoodsAction.Color, loc)
+			if idx != len(moveGoodsAction.Path)-1 && locBlocksCube {
 				return &HttpError{"cannot pass through city matching the cube color", http.StatusBadRequest}
 			}
+
+			locAcceptsCube := cityColor == moveGoodsAction.Color || gameMap.LocationCanAcceptCube(moveGoodsAction.Color, loc)
 			if idx == len(moveGoodsAction.Path)-1 && !locAcceptsCube {
 				return &HttpError{"ending city must match cube color", http.StatusBadRequest}
 			}

@@ -76,6 +76,9 @@ type GameState struct {
 	GoodsGrowth [][]Color `json:"goodsGrowth"`
 	// If cubes have been drawn for the production action, these are the cubes
 	ProductionCubes []Color `json:"productionCubes"`
+
+	// Untyped JSON object that maps can use for map-custom state
+	MapState map[string]interface{} `json:"mapState,omitempty"`
 }
 
 func (gameState *GameState) DrawCube(randProvider RandProvider) (Color, error) {

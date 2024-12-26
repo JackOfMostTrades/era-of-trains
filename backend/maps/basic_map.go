@@ -20,6 +20,11 @@ type startingCubeSpec struct {
 	Coordinate common.Coordinate `json:"coordinate"`
 }
 
+type specialTrackPricing struct {
+	Cost int               `json:"cost"`
+	Hex  common.Coordinate `json:"hex"`
+}
+
 type basicMap struct {
 	*AbstractGameMapImpl
 
@@ -27,6 +32,8 @@ type basicMap struct {
 	Hexes         [][]HexType        `json:"hexes"`
 	Cities        []basicCity        `json:"cities"`
 	StartingCubes []startingCubeSpec `json:"startingCubes"`
+	// Hexes with unusual track costs
+	SpecialTrackPricing []specialTrackPricing `json:"specialTrackPricing,omitempty"`
 }
 
 func (b *basicMap) PopulateStartingCubes(gameState *common.GameState, randProvider common.RandProvider) error {
@@ -45,7 +52,7 @@ func (b *basicMap) PopulateStartingCubes(gameState *common.GameState, randProvid
 	return nil
 }
 
-func (b *basicMap) GetCityColorForHex(hex common.Coordinate) common.Color {
+func (b *basicMap) GetCityColorForHex(gameState *common.GameState, hex common.Coordinate) common.Color {
 	for _, city := range b.Cities {
 		if city.Coordinate.Equals(hex) {
 			return city.Color
@@ -76,6 +83,29 @@ func (b *basicMap) GetHexType(hex common.Coordinate) HexType {
 		return OFFBOARD_HEX_TYPE
 	}
 	return b.Hexes[hex.Y][hex.X]
+}
+
+func (b *basicMap) GetTrackBuildCost(gameState *common.GameState, player string, hexType HexType, hex common.Coordinate, trackType common.TrackType, isUpgrade bool) (int, error) {
+	if !isUpgrade {
+		for _, pricing := range b.SpecialTrackPricing {
+			if pricing.Hex.X == hex.X && pricing.Hex.Y == hex.Y {
+				cost := pricing.Cost
+				switch trackType {
+				case common.SIMPLE_TRACK_TYPE:
+					break
+				case common.COMPLEX_COEXISTING_TRACK_TYPE:
+					cost += 1
+				case common.COMPLEX_CROSSING_TRACK_TYPE:
+					cost += 2
+				default:
+					panic(fmt.Errorf("Unhandled track type: %d", trackType))
+				}
+				return cost, nil
+			}
+		}
+	}
+
+	return b.AbstractGameMapImpl.GetTrackBuildCost(gameState, player, hexType, hex, trackType, isUpgrade)
 }
 
 func loadBasicMap(filename string) (*basicMap, error) {

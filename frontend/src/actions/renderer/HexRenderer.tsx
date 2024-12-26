@@ -1,5 +1,5 @@
 import {Color, Coordinate, Direction, PlayerColor} from "../../api/api.ts";
-import {CityProperties, HexType} from "../../map.ts";
+import {CityProperties, HexType} from "../../maps";
 import {ReactNode} from "react";
 
 export function colorToHtml(color: Color): string {
@@ -212,6 +212,23 @@ export class HexRenderer {
 
         this.width = Math.max(this.width, hex.x);
         this.height = Math.max(this.height, hex.y);
+    }
+
+    public renderSpecialCost(hex: Coordinate, cost: number) {
+        let xpos = hex.x*17.321;
+        if ((hex.y % 2) === 1) {
+            xpos += 8.661;
+        }
+        let ypos = hex.y*5;
+
+        // const s = 5.4, a=3.118
+        // [[0, 2.7], [1.559, 0], [4.677,0], [6.236, 2.7], [4.677, 5.4], [1.559, 5.4]]
+        // dx=(11.547-6.236)/2, dy=(10-5.4)/2,
+        // dx=2.6555, dy=2.3
+        // [[ 2.6555, 5 ], [ 4.2145, 2.3 ], [ 7.3325, 2.3 ], [ 8.8915, 5 ], [ 7.3325, 7.7 ], [ 4.2145, 7.7 ]]
+        let points = `${xpos + 2.6555},${ypos + 5} ${xpos + 4.2145},${ypos + 2.3} ${xpos + 7.3325},${ypos + 2.3} ${xpos + 8.8915},${ypos + 5} ${xpos + 7.3325},${ypos + 7.7} ${xpos + 4.2145},${ypos + 7.7}`
+        this.paths.push(<polygon fill='#cfddbb' points={points} />);
+        this.paths.push(<text fill='#b63421' fontSize={2.5} x={xpos + 5.7735} y={ypos+5.3} dominantBaseline="middle" textAnchor="middle">${cost}</text>);
     }
 
     public renderTownTrack(hex: Coordinate, direction: Direction, playerColor: PlayerColor|undefined) {

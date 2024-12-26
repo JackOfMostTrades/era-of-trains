@@ -190,6 +190,9 @@ export interface GameState {
     goodsGrowth: Color[][]
     // If cubes have been drawn for the production action, these are the cubes
     productionCubes: Color[]
+
+    // State specific to the map
+    mapState: any|undefined
 }
 export interface ViewGameRequest {
     gameId: string;

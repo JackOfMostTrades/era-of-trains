@@ -77,10 +77,7 @@ func (b *southernUsMap) PostGoodsGrowthHook(gameState *common.GameState, randPro
 	return nil
 }
 
-func (b *southernUsMap) CanAcceptCube(cube common.Color, hex common.Coordinate) bool {
-	if cube != common.WHITE {
-		return false
-	}
+func (b *southernUsMap) isWhiteCity(hex common.Coordinate) bool {
 	if hex.X == 0 && hex.Y == 22 {
 		return true
 	}
@@ -91,6 +88,20 @@ func (b *southernUsMap) CanAcceptCube(cube common.Color, hex common.Coordinate) 
 		return true
 	}
 	if hex.X == 7 && hex.Y == 14 {
+		return true
+	}
+	return false
+}
+
+func (b *southernUsMap) LocationBlocksCubePassage(cube common.Color, hex common.Coordinate) bool {
+	if cube == common.WHITE && b.isWhiteCity(hex) {
+		return true
+	}
+	return false
+}
+
+func (b *southernUsMap) LocationCanAcceptCube(cube common.Color, hex common.Coordinate) bool {
+	if cube == common.WHITE && b.isWhiteCity(hex) {
 		return true
 	}
 	return false

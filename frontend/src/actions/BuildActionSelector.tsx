@@ -13,10 +13,10 @@ import {ReactNode, useContext, useEffect, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
 import {NewCitySelector,} from "./TrackSelector.tsx";
 import ErrorContext from "../ErrorContext.tsx";
-import maps, {BasicMap, HexType} from "../map.ts";
+import {GameMap, HexType, maps} from "../maps";
 import {applyDirection, oppositeDirection} from "../util.ts";
 
-function isCityHex(game: ViewGameResponse, map: BasicMap, urbanization: Urbanization|undefined, hex: Coordinate): boolean {
+function isCityHex(game: ViewGameResponse, map: GameMap, urbanization: Urbanization|undefined, hex: Coordinate): boolean {
     if (map.getHexType(hex) === HexType.CITY) {
         return true;
     }
@@ -36,7 +36,7 @@ function isCityHex(game: ViewGameResponse, map: BasicMap, urbanization: Urbaniza
     return false;
 }
 
-function computeExistingRoutes(gameState: GameState|undefined, map: BasicMap): Array<Array<Array<{Left: Direction, Right: Direction}>>> {
+function computeExistingRoutes(gameState: GameState|undefined, map: GameMap): Array<Array<Array<{Left: Direction, Right: Direction}>>> {
     let routes: Array<Array<Array<{Left: Direction, Right: Direction}>>> = [];
     for (let y = 0; y < map.getHeight(); y++) {
         routes.push([]);
