@@ -41,8 +41,6 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 		}
 	}
 
-	// FIXME: Check component limits (8 town marker tokens)
-
 	// If it hits a stop add a new link for the player
 	// If it hits player existing track, add this new step to the link and mark it as complete
 	// If it hits nothing, add an incomplete new link for the player
@@ -555,6 +553,12 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	}
 
 	handler.Log("%s paid a total of $%d for track placements.", handler.ActivePlayerNick(), totalCost)
+
+	// Verify we have not exceeded any component limits by this build
+	err = checkTownMarkerLimit(performer.mapState)
+	if err != nil {
+		return err
+	}
 
 	// Remove ownership of any incomplete links not extended
 	for _, link := range gameState.Links {
