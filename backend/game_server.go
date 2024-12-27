@@ -459,7 +459,7 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 	})
 
 	// Randomize player colors
-	playerColor, err := assignPlayerColors(joinedUsers)
+	playerColor, err := assignPlayerColors(server.db, joinedUsers)
 
 	// Setup initial game state
 	gameState := &common.GameState{
