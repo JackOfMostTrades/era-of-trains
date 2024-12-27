@@ -329,3 +329,24 @@ export interface GetGameLogsResponse {
 export function GetGameLogs(req: GetGameLogsRequest): Promise<GetGameLogsResponse> {
     return doApiCall('/api/getGameLogs', req);
 }
+
+export interface GetMyProfileRequest {
+}
+export interface GetMyProfileResponse {
+    id: string;
+    nickname: string;
+    email: string;
+    colorPreferences?: PlayerColor[];
+}
+export function GetMyProfile(req: GetMyProfileRequest): Promise<GetMyProfileResponse> {
+    return doApiCall('/api/getMyProfile', req);
+}
+
+export interface SetMyProfileRequest {
+    colorPreferences?: PlayerColor[];
+}
+export interface SetMyProfileResponse {
+}
+export function SetMyProfile(req: SetMyProfileRequest): Promise<SetMyProfileResponse> {
+    return doApiCall('/api/setMyProfile', req);
+}

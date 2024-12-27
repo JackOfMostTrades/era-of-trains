@@ -216,6 +216,8 @@ func main() {
 	mux.HandleFunc("/api/viewGame", jsonHandler(server, server.viewGame))
 	mux.HandleFunc("/api/getGameLogs", jsonHandler(server, server.getGameLogs))
 	mux.HandleFunc("/api/getMyGames", jsonHandler(server, server.getMyGames))
+	mux.HandleFunc("/api/getMyProfile", jsonHandler(server, server.getMyProfile))
+	mux.HandleFunc("/api/setMyProfile", jsonHandler(server, server.setMyProfile))
 
 	if config.CgiMode {
 		err = cgi.Serve(mux)

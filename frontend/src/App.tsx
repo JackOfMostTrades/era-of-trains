@@ -26,6 +26,7 @@ import SignInPage from "./pages/SignInPage.tsx";
 import RegisterPage from "./pages/RegisterPage.tsx";
 import MyGames from "./pages/MyGames.tsx";
 import {createMedia} from '@artsy/fresnel'
+import ProfilePage from "./pages/ProfilePage.tsx";
 
 const { MediaContextProvider, Media } = createMedia({
     breakpoints: {
@@ -47,9 +48,11 @@ function UserMenu() {
     if (userSessionContext.userInfo) {
         return <>
             <MenuItem>
-                <Label color="black">
-                    <Icon name='user' /> {userSessionContext.userInfo.user.nickname}
-                </Label>
+                <NavLink to='/profile'>
+                    <Label color="black">
+                        <Icon name='user' /> {userSessionContext.userInfo.user.nickname}
+                    </Label>
+                </NavLink>
             </MenuItem>
             <MenuItem
                 name='Logout'
@@ -118,7 +121,7 @@ function MobileMainMenu() {
                 <Dropdown as={Menu.Item} icon="bars">
                     <DropdownMenu>
                         {userSessionContext.userInfo ? <>
-                            <DropdownItem disabled>
+                            <DropdownItem onClick={() => navigate('/profile')}>
                                 <Label color="black">
                                     <Icon name='user' /> {userSessionContext.userInfo.user.nickname}
                                 </Label>
@@ -165,6 +168,7 @@ function App() {
                                 <Route path="/dev/login/:nickname" element={<DevLogin />}/>
                                 <Route path="/signin" element={<SignInPage />}/>
                                 <Route path="/register" element={<RegisterPage />}/>
+                                <Route path="/profile" element={<ProfilePage />}/>
                                 <Route path="/" element={<Home />}/>
                             </Routes>
                         </Container>

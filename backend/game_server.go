@@ -459,17 +459,7 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 	})
 
 	// Randomize player colors
-	shuffledColors := make([]int, 6) // 6 colors available to players, regardless of player count
-	for idx := 0; idx < len(shuffledColors); idx++ {
-		shuffledColors[idx] = idx
-	}
-	rand.Shuffle(len(shuffledColors), func(i, j int) {
-		shuffledColors[i], shuffledColors[j] = shuffledColors[j], shuffledColors[i]
-	})
-	playerColor := make(map[string]int)
-	for idx, playerId := range playerOrder {
-		playerColor[playerId] = shuffledColors[idx]
-	}
+	playerColor, err := assignPlayerColors(joinedUsers)
 
 	// Setup initial game state
 	gameState := &common.GameState{
@@ -825,4 +815,75 @@ func (server *GameServer) getMyGames(ctx *RequestContext, req *GetMyGamesRequest
 	return &GetMyGamesResponse{
 		Games: games,
 	}, nil
+}
+
+type GetMyProfileRequest struct {
+}
+type GetMyProfileResponse struct {
+	Id               string `json:"id"`
+	Nickname         string `json:"nickname"`
+	Email            string `json:"email"`
+	ColorPreferences []int  `json:"colorPreferences"`
+}
+
+func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesRequest) (resp *GetMyProfileResponse, err error) {
+	stmt, err := server.db.Prepare("SELECT nickname,email,color_preferences FROM users WHERE id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+
+	row := stmt.QueryRow(ctx.User.Id)
+	var nickname string
+	var email string
+	var colorPreferencesStr sql.NullString
+	err = row.Scan(&nickname, &email, &colorPreferencesStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan row: %v", err)
+	}
+
+	var colorPreferences []int
+	if colorPreferencesStr.Valid {
+		err = json.Unmarshal([]byte(colorPreferencesStr.String), &colorPreferences)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal color preferences: %v", err)
+		}
+	}
+
+	return &GetMyProfileResponse{
+		Id:               ctx.User.Id,
+		Nickname:         nickname,
+		Email:            email,
+		ColorPreferences: colorPreferences,
+	}, nil
+}
+
+type SetMyProfileRequest struct {
+	ColorPreferences []int `json:"colorPreferences"`
+}
+type SetMyProfileResponse struct {
+}
+
+func (server *GameServer) setMyProfile(ctx *RequestContext, req *SetMyProfileRequest) (resp *SetMyProfileResponse, err error) {
+	stmt, err := server.db.Prepare("UPDATE users SET color_preferences=? WHERE id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+
+	var colorPreferencesStr sql.NullString
+	if len(req.ColorPreferences) != 0 {
+		jsonBytes, err := json.Marshal(req.ColorPreferences)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal color preferences: %v", err)
+		}
+		colorPreferencesStr.Valid = true
+		colorPreferencesStr.String = string(jsonBytes)
+	}
+	_, err = stmt.Exec(colorPreferencesStr, ctx.User.Id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+
+	return &SetMyProfileResponse{}, nil
 }
