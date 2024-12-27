@@ -1,5 +1,6 @@
+import {ReactNode} from "react";
 import {Color, Coordinate, Direction, GameState} from "../api/api.ts";
-import {CityProperties, GameMap, HexType} from "./index.ts";
+import {CityProperties, GameMap, HexType} from "./index.tsx";
 
 interface BasicCity {
     color: Color;
@@ -84,12 +85,20 @@ export class BasicMap implements GameMap {
         return 3;
     }
 
+    public getMapInfo(): ReactNode {
+        return null;
+    }
+
+    protected initializeFromJson(src: any) {
+        this.hexes = src.hexes;
+        this.cities = src.cities;
+        this.interurbanLinks = src.interurbanLinks;
+        this.specialTrackPricing = src.specialTrackPricing;
+    }
+
     public static fromJson(src: any): BasicMap {
         let map = new BasicMap();
-        map.hexes = src.hexes;
-        map.cities = src.cities;
-        map.interurbanLinks = src.interurbanLinks;
-        map.specialTrackPricing = src.specialTrackPricing;
+        map.initializeFromJson(src);
         return map;
     }
 }

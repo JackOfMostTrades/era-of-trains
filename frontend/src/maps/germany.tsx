@@ -1,6 +1,7 @@
-import {BasicMap} from "./basic_map.ts";
+import {BasicMap} from "./basic_map.tsx";
 import {Color, Coordinate, GameState} from "../api/api.ts";
-import {CityProperties} from "./index.ts";
+import {CityProperties} from "./index.tsx";
+import {ReactNode} from "react";
 
 class Germany extends BasicMap {
 
@@ -52,12 +53,18 @@ class Germany extends BasicMap {
         return 3;
     }
 
+    public getMapInfo(): ReactNode {
+        return <>
+            <p>The color of the six unnumbered border cities is randomly determined during setup. Cubes can never pass through these cities (only end there).</p>
+            <p>Engineer only allows 3 builds, but the cost of one track tile placement (the most expensive) is halved (rounded up).</p>
+            <p>You cannot have any incomplete track at the end of your build action.</p>
+            <p>Berlin (the unnumbered black city in the center) always receives one cube during Goods Growth.</p>
+        </>;
+    }
+
     public static fromJson(src: any): Germany {
         let map = new Germany();
-        map.hexes = src.hexes;
-        map.cities = src.cities;
-        map.interurbanLinks = src.interurbanLinks;
-        map.specialTrackPricing = src.specialTrackPricing;
+        map.initializeFromJson(src);
         return map;
     }
 }

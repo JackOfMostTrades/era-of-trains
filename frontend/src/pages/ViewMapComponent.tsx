@@ -1,6 +1,6 @@
 import {ALL_DIRECTIONS, BuildAction, Color, Coordinate, Direction, PlayerColor, ViewGameResponse} from "../api/api.ts";
 import {ReactNode, useEffect, useState} from "react";
-import {CityProperties, GameMap, HexType, maps} from "../maps";
+import {CityProperties, GameMap, HexType} from "../maps";
 import {HexRenderer, urbCityProperties} from "../actions/renderer/HexRenderer.tsx";
 import {applyDirection, oppositeDirection} from "../util.ts";
 import {Step as MoveGoodsStep} from "../actions/MoveGoodsActionSelector.tsx";
@@ -78,7 +78,7 @@ class RenderMapBuilder {
     }
 }
 
-function ViewMapComponent({game}: {game: ViewGameResponse}) {
+function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
     let [pendingBuildAction, setPendingBuildAction] = useState<BuildAction|undefined>(undefined);
     let [pendingMoveGoods, setPendingMoveGoods] = useState<MoveGoodsStep|undefined>(undefined)
     let [buildingTrackHex, setBuildingTrackHex] = useState<Coordinate|undefined>(undefined);
@@ -107,7 +107,6 @@ function ViewMapComponent({game}: {game: ViewGameResponse}) {
         return () => document.removeEventListener('pendingMoveGoods', handler);
     }, []);
 
-    let map = maps[game.mapName];
     let renderer = new RenderMapBuilder(game, map);
 
     let hexesWithTrack: { [ hexId: string]: boolean } = {};

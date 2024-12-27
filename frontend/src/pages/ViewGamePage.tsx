@@ -14,6 +14,7 @@ import ProductionAction from "../actions/ProductionAction.tsx";
 import {playerColorToHtml} from "../actions/renderer/HexRenderer.tsx";
 import GameLogsComponent from "./GameLogsComponent.tsx";
 import FinalScore from "../actions/FinalScore.tsx";
+import {maps} from "../maps";
 
 function WaitingForPlayersPage({game, onJoin}: {game: ViewGameResponse, onJoin: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
@@ -210,10 +211,13 @@ function ViewGamePage() {
             content = <WaitingForStartPage game={game} onStart={() => reload()}/>
         }
     } else {
+        let map = maps[game.mapName];
+        let mapInfo = map.getMapInfo();
         content = <>
             <PlayerStatus game={game} onConfirmMove={() => reload()}/>
-            <ViewMapComponent game={game} />
+            <ViewMapComponent game={game} map={map} />
             <GoodsGrowthTable game={game} />
+            {!mapInfo ? null : <Segment><Header as='h2'>Map Info</Header>{mapInfo}</Segment>}
             <GameLogsComponent gameId={game.id} game={game} reloadTime={reloadTime} />
         </>
     }
