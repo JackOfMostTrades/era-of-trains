@@ -27,6 +27,7 @@ export interface GameMap {
     getHexType(hex: Coordinate): HexType;
     getCityProperties(gameState: GameState|undefined, hex: Coordinate): CityProperties|undefined;
     getSpecialTrackPricing(hex: Coordinate): number|undefined;
+    getBuildLimit(gameState: GameState|undefined, player: string): number;
 }
 
 const rustBelt = BasicMap.fromJson(rustBeltRaw);

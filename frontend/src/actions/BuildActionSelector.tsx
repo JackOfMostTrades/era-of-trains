@@ -8,7 +8,16 @@ import {
     User,
     ViewGameResponse
 } from "../api/api.ts";
-import {Button, Header, Icon} from "semantic-ui-react";
+import {
+    Button,
+    Header,
+    Icon,
+    Modal,
+    ModalActions,
+    ModalContent,
+    ModalDescription,
+    ModalHeader
+} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
 import {NewCitySelector,} from "./TrackSelector.tsx";
@@ -59,9 +68,28 @@ function computeExistingRoutes(gameState: GameState|undefined, map: GameMap): Ar
     return routes;
 }
 
+function ConfirmSkipBuildsModal({open, onConfirm, onCancel}: {open: 'urbanization'|'tracks'|undefined, onConfirm: () => void, onCancel: () => void}) {
+    return (
+        <Modal open={!!open}>
+            <ModalHeader>Skip Actions?</ModalHeader>
+            <ModalContent>
+                <ModalDescription>
+                    <Header>{open === 'urbanization' ? <>You haven't urbanized yet</> : <>You haven't built as much as you can</>}</Header>
+                    <p>{open === 'urbanization' ? <>You haven't placed a new city. Do you really want to forego urbanization?</> : <>You haven't built on as many hexes as you can. Do you really want to forego builds?</>}</p>
+                </ModalDescription>
+            </ModalContent>
+            <ModalActions>
+                <Button primary onClick={onConfirm}>Yes, finish the action</Button>
+                <Button negative onClick={onCancel}>Cancel</Button>
+            </ModalActions>
+        </Modal>
+    )
+}
+
 function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
     let {setError} = useContext(ErrorContext);
+    let [showConfirmModal, setShowConfirmModal] = useState<'urbanization'|'tracks'|undefined>(undefined);
     let [action, setAction] = useState<BuildAction>({
         townPlacements: [],
         trackRedirects: [],
@@ -260,6 +288,33 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                 </>
             }
 
+            const commitAction = () => {
+                setLoading(true);
+                ConfirmMove({
+                    gameId: game.id,
+                    actionName: "build",
+                    buildAction: action,
+                }).then(() => {
+                    let newAction: BuildAction = {
+                        townPlacements: [],
+                        trackRedirects: [],
+                        trackPlacements: [],
+                        interurbanLinkPlacements: [],
+                        urbanization: undefined,
+                    };
+                    setAction(newAction);
+                    document.dispatchEvent(new CustomEvent('pendingBuildAction', {detail: newAction}));
+                    setBuildingTrackHex(undefined);
+                    setBuildingTrackDirection(undefined);
+                    document.dispatchEvent(new CustomEvent('buildingTrackHex', {detail: undefined}));
+                    return onDone();
+                }).catch(err => {
+                    setError(err);
+                }).finally(() => {
+                    setLoading(false);
+                });
+            };
+
             content = <>
                 <p>To build track, select a starting hex (either a city, town, or a hex after the end of a dangling
                     track). Then click on the arrows to create track.</p>
@@ -274,31 +329,25 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                 <div>
                     {urbanizeButton}
                     <Button primary loading={loading} onClick={() => {
-                        setLoading(true);
-                        ConfirmMove({
-                            gameId: game.id,
-                            actionName: "build",
-                            buildAction: action,
-                        }).then(() => {
-                            let newAction: BuildAction = {
-                                townPlacements: [],
-                                trackRedirects: [],
-                                trackPlacements: [],
-                                interurbanLinkPlacements: [],
-                                urbanization: undefined,
-                            };
-                            setAction(newAction);
-                            document.dispatchEvent(new CustomEvent('pendingBuildAction', {detail: newAction}));
-                            setBuildingTrackHex(undefined);
-                            setBuildingTrackDirection(undefined);
-                            document.dispatchEvent(new CustomEvent('buildingTrackHex', {detail: undefined}));
-                            return onDone();
-                        }).catch(err => {
-                            setError(err);
-                        }).finally(() => {
-                            setLoading(false);
-                        });
+                        if (!action.urbanization && urbanizeButton) {
+                            setShowConfirmModal('urbanization');
+                            return;
+                        }
+                        let buildLimit = map.getBuildLimit(game.gameState, game.activePlayer);
+                        if (action.townPlacements.length + action.trackPlacements.length + action.interurbanLinkPlacements.length + action.trackRedirects.length < buildLimit) {
+                            setShowConfirmModal('tracks');
+                            return;
+                        }
+
+                        commitAction();
                     }}>Finish Action</Button>
+                    <ConfirmSkipBuildsModal
+                        open={showConfirmModal}
+                        onConfirm={() => {
+                            setShowConfirmModal(undefined);
+                            commitAction();
+                        }}
+                        onCancel={() => setShowConfirmModal(undefined)} />
                     <Button negative loading={loading} onClick={() => {
                         let newAction: BuildAction = {
                             townPlacements: [],

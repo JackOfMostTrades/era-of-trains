@@ -77,6 +77,13 @@ export class BasicMap implements GameMap {
         return undefined;
     }
 
+    public getBuildLimit(gameState: GameState | undefined, player: string): number {
+        if (gameState && gameState.playerActions[player] === 'engineer') {
+            return 4;
+        }
+        return 3;
+    }
+
     public static fromJson(src: any): BasicMap {
         let map = new BasicMap();
         map.hexes = src.hexes;

@@ -48,6 +48,10 @@ class Germany extends BasicMap {
         return undefined;
     }
 
+    public getBuildLimit(_gameState: GameState | undefined, _player: string): number {
+        return 3;
+    }
+
     public static fromJson(src: any): Germany {
         let map = new Germany();
         map.hexes = src.hexes;
