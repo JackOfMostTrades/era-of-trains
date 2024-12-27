@@ -222,8 +222,6 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 		}
 	}
 
-	// FIXME: Check component limits
-
 	//        On each side, determine if it hits a stop or extends the player's track
 	//          If nothing on either side, this is invalid build
 	//          If stop on one side, add this as a new incomplete link
@@ -556,6 +554,10 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 
 	// Verify we have not exceeded any component limits by this build
 	err = checkTownMarkerLimit(performer.mapState)
+	if err != nil {
+		return err
+	}
+	err = checkTrackTileLimit(performer.mapState)
 	if err != nil {
 		return err
 	}

@@ -25,8 +25,14 @@ function FinalScore({game}: {game: ViewGameResponse}) {
 
     let scores: { [playerId: string]: number} = {}
     for (let player of game.joinedUsers) {
-        let shares = game.gameState.playerShares[player.id];
         let income = game.gameState.playerIncome[player.id];
+        if (income < 0) {
+            scores[player.id] = -1;
+            continue;
+        }
+
+        let shares = game.gameState.playerShares[player.id];
+
         let trackCount = 0;
         for (let link of game.gameState.links) {
             if (!link.complete || link.owner !== player.id) {
@@ -70,7 +76,8 @@ function FinalScore({game}: {game: ViewGameResponse}) {
         <Header as='h2'>Final Scores</Header>
         <List>
             {playerIds.map(playerId => {
-                return <ListItem>{playersById[playerId].nickname}: {scores[playerId]}</ListItem>
+                let score = scores[playerId];
+                return <ListItem>{playersById[playerId].nickname}: {score < 0 ? <span style={{fontStyle: "italic"}}>bankrupt</span> : <span>{score}</span>}</ListItem>
             })}
         </List>
     </>
