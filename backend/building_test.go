@@ -780,3 +780,47 @@ func TestRedirectAndCompleteTrack(t *testing.T) {
 	assert.Equal(t, common.Coordinate{X: 0, Y: 0}, link.SourceHex)
 	assert.Equal(t, []common.Direction{common.SOUTH_EAST, common.NORTH_EAST, common.SOUTH_EAST, common.NORTH_EAST}, link.Steps)
 }
+
+func TestIssue18Regression(t *testing.T) {
+	playerId := "player1"
+	gameMap := &testMap{
+		hexes: [][]maps.HexType{
+			{maps.TOWN_HEX_TYPE, maps.CITY_HEX_TYPE},
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+		},
+	}
+	gameState := &common.GameState{
+		GamePhase:  common.BUILDING_GAME_PHASE,
+		PlayerCash: map[string]int{playerId: 10},
+		Links: []*common.Link{
+			{
+				SourceHex: common.Coordinate{X: 1, Y: 0},
+				Steps:     []common.Direction{common.SOUTH_WEST, common.NORTH_WEST},
+				Owner:     playerId,
+				Complete:  false,
+			},
+		},
+	}
+
+	handler := &confirmMoveHandler{
+		gameMap:      gameMap,
+		gameState:    gameState,
+		activePlayer: playerId,
+	}
+	err := handler.performBuildAction(&BuildAction{
+		TownPlacements: []*TownPlacement{
+			{
+				Track: common.SOUTH_EAST,
+				Hex:   common.Coordinate{X: 0, Y: 0},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, len(gameState.Links))
+	link := gameState.Links[0]
+	assert.Equal(t, true, link.Complete)
+	assert.Equal(t, playerId, link.Owner)
+	assert.Equal(t, common.Coordinate{X: 1, Y: 0}, link.SourceHex)
+	assert.Equal(t, []common.Direction{common.SOUTH_WEST, common.NORTH_WEST}, link.Steps)
+}

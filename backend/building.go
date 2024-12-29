@@ -42,7 +42,7 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 	}
 
 	// If it hits a stop add a new link for the player
-	// If it hits player existing track, add this new step to the link and mark it as complete
+	// If it hits player existing track, then mark it as complete
 	// If it hits nothing, add an incomplete new link for the player
 
 	nextHex := applyDirection(hex, direction)
@@ -66,7 +66,6 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 				}
 
 				link = route.Link
-				route.Link.Steps = append(route.Link.Steps, direction.Opposite())
 				route.Link.Complete = true
 				route.Link.Owner = performer.activePlayer
 				isJoiningRoute = true
