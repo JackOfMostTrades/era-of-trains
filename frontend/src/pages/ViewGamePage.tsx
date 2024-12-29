@@ -15,6 +15,7 @@ import {playerColorToHtml} from "../actions/renderer/HexRenderer.tsx";
 import GameLogsComponent from "./GameLogsComponent.tsx";
 import FinalScore from "../actions/FinalScore.tsx";
 import {maps} from "../maps";
+import "./ViewGamePage.css";
 
 function WaitingForPlayersPage({game, onJoin}: {game: ViewGameResponse, onJoin: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
@@ -97,6 +98,8 @@ function PlayerColorAndName({nickname, color}: {nickname: string, color: PlayerC
 }
 
 function PlayerStatus({game, onConfirmMove}: { game: ViewGameResponse, onConfirmMove: () => Promise<void> }) {
+    let userSessionContext = useContext(UserSessionContext);
+
     if (!game.gameState) {
         return null;
     }
@@ -168,7 +171,7 @@ function PlayerStatus({game, onConfirmMove}: { game: ViewGameResponse, onConfirm
             Game Phase: {game.gameState.gamePhase}<br/>
             Turn: {game.gameState.turnNumber}<br/>
         </Segment>
-        <Segment>
+        <Segment className={"action-holder " + (game.activePlayer === userSessionContext.userInfo?.user.id ? "my-turn" : "other-player-turn") }>
             {actionHolder}
         </Segment>
     </>
