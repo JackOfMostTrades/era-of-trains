@@ -475,7 +475,8 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 			break
 		}
 		if nextPlayer == "" {
-			return &HttpError{"unable to find next player", http.StatusInternalServerError}
+			// Active player returns to the current player; this should only happen when using TOP and there are 2 players left. See #13
+			nextPlayer = currentPlayer
 		}
 		handler.activePlayer = nextPlayer
 	}
