@@ -179,7 +179,7 @@ export interface GameState {
     // Which users did loco during move goods (to ensure they don't double-loco)
     playerHasDoneLoco: { [playerId: string]: boolean }
     links: Link[];
-    urbanizations: Urbanization[];
+    urbanizations: Urbanization[]|undefined;
 
     // Map from color to number of cubes of that color in the bag
     cubeBag: { [ color: string ]: number }

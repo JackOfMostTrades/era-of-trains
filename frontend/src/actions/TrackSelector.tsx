@@ -1,5 +1,5 @@
 import {Direction} from "../api/api.ts";
-import {Grid, GridColumn, GridRow} from "semantic-ui-react";
+import {Container, Grid, GridColumn, GridRow} from "semantic-ui-react";
 import {ReactNode} from "react";
 import {HexRenderer, urbCityProperties} from "./renderer/HexRenderer.tsx";
 import {HexType} from "../maps";
@@ -148,7 +148,13 @@ export function TownTrackSelector(props: Props) {
     </Grid>
 }
 
-export function NewCitySelector(props: Props) {
+interface NewCitySelectorProps {
+    selected: number
+    alreadyUrbanized: number[]
+    onChange: (selected: number) => void
+}
+
+export function NewCitySelector(props: NewCitySelectorProps) {
     let columns: ReactNode[] = [];
     for (let newCityNum = 0; newCityNum < 8; newCityNum++) {
         let renderer = new HexRenderer(false);
@@ -158,12 +164,17 @@ export function NewCitySelector(props: Props) {
         if (newCityNum === props.selected) {
             classNames += " selected";
         }
+        let available = props.alreadyUrbanized.indexOf(newCityNum) === -1;
+        let onClick: undefined | (() => void);
+        if (available) {
+            onClick = () => props.onChange(newCityNum);
+        } else {
+            classNames += " unavailable";
+        }
 
-        columns.push(<GridColumn><div className={classNames} onClick={() => props.onChange(newCityNum)}>{renderer.render()}</div></GridColumn>)
+        columns.push(<div className={classNames} onClick={onClick}>{renderer.render()}</div>)
     }
-    return <Grid>
-        <GridRow columns="equal">
-            {columns}
-        </GridRow>
-    </Grid>
+    return <Container>
+        {columns}
+    </Container>
 }

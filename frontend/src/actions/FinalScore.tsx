@@ -7,9 +7,11 @@ function isCity(gameState: GameState, map: GameMap, hex: Coordinate): boolean {
     if (map.getHexType(hex) === HexType.CITY) {
         return true;
     }
-    for (let urb of gameState.urbanizations) {
-        if (urb.hex.x === hex.x && urb.hex.y === hex.y) {
-            return true;
+    if (gameState.urbanizations) {
+        for (let urb of gameState.urbanizations) {
+            if (urb.hex.x === hex.x && urb.hex.y === hex.y) {
+                return true;
+            }
         }
     }
 

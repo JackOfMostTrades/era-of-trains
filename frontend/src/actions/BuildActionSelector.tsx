@@ -267,9 +267,17 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
         content = <p>Waiting for {activePlayer?.nickname} to build...</p>
     } else {
         if (showUrbanize) {
+            let alreadyUrbanized: number[] = [];
+
+            if (game.gameState.urbanizations) {
+                for (let urb of game.gameState.urbanizations) {
+                    alreadyUrbanized.push(urb.city);
+                }
+            }
+
             content = <p>
                 <p>Select new city to build, then click on hex:</p>
-                <NewCitySelector selected={urbanizeSelection} onChange={(value) => {
+                <NewCitySelector selected={urbanizeSelection} alreadyUrbanized={alreadyUrbanized} onChange={(value) => {
                     setUrbanizeSelection(value)
                 }} />
                 <Button negative onClick={() => setShowUrbanize(false)}>Cancel</Button>

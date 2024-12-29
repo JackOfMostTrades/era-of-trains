@@ -1,11 +1,14 @@
 div.track-select {
     display: inline-block;
-    padding: 2px;
-    margin: 2px;
+    padding: 4px;
+    margin: 4px;
     width: 80px;
     line-height: 0;
 }
 div.track-select.selected {
     border: 2px solid black;
-    margin: 0;
+    padding: 2px;
+}
+div.track-select.unavailable {
+    opacity: 0.2;
 }
