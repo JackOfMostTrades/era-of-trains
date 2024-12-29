@@ -16,7 +16,7 @@ import {ReactNode, useContext, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
 import ErrorContext from "../ErrorContext.tsx";
 
-function ConfirmForegoTopModal({open, onConfirm, onCancel}: {open: boolean, onConfirm: () => void, onCancel: () => void}) {
+function ConfirmBidWithTopModal({open, onConfirm, onCancel}: {open: boolean, onConfirm: () => void, onCancel: () => void}) {
     return (
         <Modal open={open}>
             <ModalHeader>Skip using turn-order pass?</ModalHeader>
@@ -34,12 +34,31 @@ function ConfirmForegoTopModal({open, onConfirm, onCancel}: {open: boolean, onCo
     )
 }
 
+function ConfirmPassWithTopModal({open, onConfirm, onCancel}: {open: boolean, onConfirm: () => void, onCancel: () => void}) {
+    return (
+        <Modal open={open}>
+            <ModalHeader>Skip using turn-order pass?</ModalHeader>
+            <ModalContent>
+                <ModalDescription>
+                    <Header>You have turn-order pass</Header>
+                    <p>You have turn-order pass. Do you really want to pass instead of using it?</p>
+                </ModalDescription>
+            </ModalContent>
+            <ModalActions>
+                <Button primary onClick={onConfirm}>Yes, pass and give up turn-order pass</Button>
+                <Button negative onClick={onCancel}>Cancel</Button>
+            </ModalActions>
+        </Modal>
+    )
+}
+
 function AuctionAction({game, onDone}: {game: ViewGameResponse, onDone: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
     let {setError} = useContext(ErrorContext);
     let [amount, setAmount] = useState<number>(0);
     let [loading, setLoading] = useState<boolean>(false);
-    let [showTopModal, setShowTopModal] = useState<boolean>(false);
+    let [showBidWithTopModal, setShowBidWithTopModal] = useState<boolean>(false);
+    let [showPassWithTopModal, setShowPassWithTopModal] = useState<boolean>(false);
 
     if (!game.gameState) {
         return null;
@@ -116,18 +135,30 @@ function AuctionAction({game, onDone}: {game: ViewGameResponse, onDone: () => Pr
                       options={options}/><br/>
             <Button primary loading={loading} onClick={() => {
                 if (hasTurnOrderPass) {
-                    setShowTopModal(true);
+                    setShowBidWithTopModal(true);
                 } else {
                     doBid(amount)
                 }
             }}>Bid</Button>
             {turnOrderPassButton}
-            <Button negative loading={loading} onClick={() => doBid(-1)}>Pass</Button>
-            <ConfirmForegoTopModal open={showTopModal} onConfirm={() => {
-                setShowTopModal(false);
+            <Button negative loading={loading} onClick={() => {
+                if (hasTurnOrderPass) {
+                    setShowPassWithTopModal(true);
+                } else {
+                    doBid(-1)
+                }
+            }}>Pass</Button>
+            <ConfirmBidWithTopModal open={showBidWithTopModal} onConfirm={() => {
+                setShowBidWithTopModal(false);
                 doBid(amount);
             }} onCancel={() => {
-                setShowTopModal(false);
+                setShowBidWithTopModal(false);
+            }} />
+            <ConfirmPassWithTopModal open={showPassWithTopModal} onConfirm={() => {
+                setShowPassWithTopModal(false);
+                doBid(-1);
+            }} onCancel={() => {
+                setShowPassWithTopModal(false);
             }} />
         </>;
     }
