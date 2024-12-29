@@ -63,6 +63,15 @@ export class BasicMap implements GameMap {
         return undefined;
     }
 
+    public getCityColor(goodsGrowthNumber: number): Color {
+        for (let city of this.cities) {
+            if (city.goodsGrowth.indexOf(goodsGrowthNumber) !== -1) {
+                return city.color;
+            }
+        }
+        return Color.NONE;
+    }
+
     public getInterurbanLinks(): InterurbanLink[] {
         return this.interurbanLinks || [];
     }

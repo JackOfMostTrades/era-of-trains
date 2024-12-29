@@ -1,14 +1,13 @@
 div.goodsGrowthHeader {
     font-weight: bold;
     text-align: center;
+    color: white;
 }
 div.lightCity {
-    color: black;
-    background: white;
+    border: 2px solid #d0d0d0;
 }
 div.darkCity {
-    color: white;
-    background: black;
+    border: 2px solid black;
 }
 
 div.cubeSpot {
@@ -21,4 +20,8 @@ div.cube {
     width: 12px;
     height: 12px;
     box-shadow: 3px 3px 3px black;
+}
+
+tr.goodsGrowthHeaderRow > td {
+    background: #F8F0E3;
 }

@@ -28,6 +28,7 @@ export interface GameMap {
     getHeight(): number;
     getHexType(hex: Coordinate): HexType;
     getCityProperties(gameState: GameState|undefined, hex: Coordinate): CityProperties|undefined;
+    getCityColor(goodsGrowthNumber: number): Color;
     getInterurbanLinks(): InterurbanLink[];
     getSpecialTrackPricing(hex: Coordinate): number|undefined;
     getBuildLimit(gameState: GameState|undefined, player: string): number;

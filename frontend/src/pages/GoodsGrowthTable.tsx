@@ -1,8 +1,9 @@
 import {Header, Segment, Table, TableBody, TableCell, TableRow} from "semantic-ui-react";
 import {Color, ViewGameResponse} from "../api/api.ts";
 import './GoodsGrowthTable.css';
-import {ReactNode} from "react";
-import {colorToHtml} from "../actions/renderer/HexRenderer.tsx";
+import {CSSProperties, ReactNode} from "react";
+import {colorToHtml, urbCityProperties} from "../actions/renderer/HexRenderer.tsx";
+import {GameMap} from "../maps";
 
 function emitEvent(x: number, y: number) {
     let event = new CustomEvent('goodsGrowthClickEvent', {
@@ -14,7 +15,17 @@ function emitEvent(x: number, y: number) {
     document.dispatchEvent(event);
 }
 
-function GoodsGrowthTable({ game }: {game: ViewGameResponse}) {
+function cssStyleForCity(cityColor: Color): CSSProperties {
+    let style: CSSProperties = {};
+    if (cityColor != Color.NONE) {
+        style.background = colorToHtml(cityColor);
+    } else {
+        style.background = '#777777';
+    }
+    return style;
+}
+
+function GoodsGrowthTable({ game, map }: {game: ViewGameResponse, map: GameMap}) {
     if (!game.gameState) {
         return
     }
@@ -25,12 +36,12 @@ function GoodsGrowthTable({ game }: {game: ViewGameResponse}) {
 
     let topHeaderCells: ReactNode[] = [];
     for (let i = 0; i < 6; i++) {
-        topHeaderCells.push(<TableCell key={i}><div className="goodsGrowthHeader lightCity">{i+1}</div></TableCell>);
+        topHeaderCells.push(<TableCell key={i}><div style={cssStyleForCity(map.getCityColor(i))} className="goodsGrowthHeader lightCity">{i+1}</div></TableCell>);
     }
     for (let i = 0; i < 6; i++) {
-        topHeaderCells.push(<TableCell key={i+6}><div className="goodsGrowthHeader darkCity">{i+1}</div></TableCell>);
+        topHeaderCells.push(<TableCell key={i+6}><div style={cssStyleForCity(map.getCityColor(i+6))} className="goodsGrowthHeader darkCity">{i+1}</div></TableCell>);
     }
-    tableRows.push(<TableRow key={0}>{topHeaderCells}</TableRow>);
+    tableRows.push(<TableRow key={0} className="goodsGrowthHeaderRow">{topHeaderCells}</TableRow>);
     for (let i = 0; i < 3; i++) {
         let cells: ReactNode[] = [];
         for (let j = 0; j < 12; j++) {
@@ -46,12 +57,12 @@ function GoodsGrowthTable({ game }: {game: ViewGameResponse}) {
 
     let bottomHeaderCells: ReactNode[] = [];
     for (let i = 0; i < 4; i++) {
-        bottomHeaderCells.push(<TableCell key={i}><div className="goodsGrowthHeader lightCity">{String.fromCharCode(i+'A'.charCodeAt(0))}</div></TableCell>);
+        bottomHeaderCells.push(<TableCell key={i}><div style={cssStyleForCity(urbCityProperties(i).color)} className="goodsGrowthHeader lightCity">{String.fromCharCode(i+'A'.charCodeAt(0))}</div></TableCell>);
     }
     for (let i = 0; i < 4; i++) {
-        bottomHeaderCells.push(<TableCell key={i+4}><div className="goodsGrowthHeader darkCity">{String.fromCharCode(i+'E'.charCodeAt(0))}</div></TableCell>);
+        bottomHeaderCells.push(<TableCell key={i+4}><div style={cssStyleForCity(urbCityProperties(i+4).color)} className="goodsGrowthHeader darkCity">{String.fromCharCode(i+'E'.charCodeAt(0))}</div></TableCell>);
     }
-    tableRows.push(<TableRow key={4}><TableCell/><TableCell/>{bottomHeaderCells}<TableCell/><TableCell/></TableRow>);
+    tableRows.push(<TableRow key={4} className="goodsGrowthHeaderRow"><TableCell/><TableCell/>{bottomHeaderCells}<TableCell/><TableCell/></TableRow>);
 
     for (let i = 0; i < 2; i++) {
         let cells: ReactNode[] = [];
