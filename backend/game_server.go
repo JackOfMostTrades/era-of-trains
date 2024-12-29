@@ -179,7 +179,7 @@ func (server *GameServer) register(ctx *RequestContext, req *RegisterRequest) (r
 		return nil, fmt.Errorf("failed to verify access token: %v", err)
 	}
 
-	stmt, err = server.db.Prepare("INSERT INTO users (id,nickname,email,google_user_id) VALUES(?,?,?,?)")
+	stmt, err = server.db.Prepare("INSERT INTO users (id,nickname,email,email_notifications_enabled,google_user_id) VALUES(?,?,?,1,?)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare statement: %v", err)
 	}
@@ -820,14 +820,15 @@ func (server *GameServer) getMyGames(ctx *RequestContext, req *GetMyGamesRequest
 type GetMyProfileRequest struct {
 }
 type GetMyProfileResponse struct {
-	Id               string `json:"id"`
-	Nickname         string `json:"nickname"`
-	Email            string `json:"email"`
-	ColorPreferences []int  `json:"colorPreferences"`
+	Id                        string `json:"id"`
+	Nickname                  string `json:"nickname"`
+	Email                     string `json:"email"`
+	EmailNotificationsEnabled bool   `json:"emailNotificationsEnabled"`
+	ColorPreferences          []int  `json:"colorPreferences"`
 }
 
 func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesRequest) (resp *GetMyProfileResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT nickname,email,color_preferences FROM users WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT nickname,email,users.email_notifications_enabled,color_preferences FROM users WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -836,8 +837,9 @@ func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesReque
 	row := stmt.QueryRow(ctx.User.Id)
 	var nickname string
 	var email string
+	var emailNotificationsEnabled int
 	var colorPreferencesStr sql.NullString
-	err = row.Scan(&nickname, &email, &colorPreferencesStr)
+	err = row.Scan(&nickname, &email, &emailNotificationsEnabled, &colorPreferencesStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan row: %v", err)
 	}
@@ -851,21 +853,23 @@ func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesReque
 	}
 
 	return &GetMyProfileResponse{
-		Id:               ctx.User.Id,
-		Nickname:         nickname,
-		Email:            email,
-		ColorPreferences: colorPreferences,
+		Id:                        ctx.User.Id,
+		Nickname:                  nickname,
+		Email:                     email,
+		EmailNotificationsEnabled: emailNotificationsEnabled != 0,
+		ColorPreferences:          colorPreferences,
 	}, nil
 }
 
 type SetMyProfileRequest struct {
-	ColorPreferences []int `json:"colorPreferences"`
+	EmailNotificationsEnabled bool  `json:"emailNotificationsEnabled"`
+	ColorPreferences          []int `json:"colorPreferences"`
 }
 type SetMyProfileResponse struct {
 }
 
 func (server *GameServer) setMyProfile(ctx *RequestContext, req *SetMyProfileRequest) (resp *SetMyProfileResponse, err error) {
-	stmt, err := server.db.Prepare("UPDATE users SET color_preferences=? WHERE id=?")
+	stmt, err := server.db.Prepare("UPDATE users SET users.email_notifications_enabled=?,color_preferences=? WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -880,7 +884,12 @@ func (server *GameServer) setMyProfile(ctx *RequestContext, req *SetMyProfileReq
 		colorPreferencesStr.Valid = true
 		colorPreferencesStr.String = string(jsonBytes)
 	}
-	_, err = stmt.Exec(colorPreferencesStr, ctx.User.Id)
+
+	var emailNotificationsEnabled int
+	if req.EmailNotificationsEnabled {
+		emailNotificationsEnabled = 1
+	}
+	_, err = stmt.Exec(emailNotificationsEnabled, colorPreferencesStr, ctx.User.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}

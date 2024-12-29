@@ -336,6 +336,7 @@ export interface GetMyProfileResponse {
     id: string;
     nickname: string;
     email: string;
+    emailNotificationsEnabled: boolean;
     colorPreferences?: PlayerColor[];
 }
 export function GetMyProfile(req: GetMyProfileRequest): Promise<GetMyProfileResponse> {
@@ -343,6 +344,7 @@ export function GetMyProfile(req: GetMyProfileRequest): Promise<GetMyProfileResp
 }
 
 export interface SetMyProfileRequest {
+    emailNotificationsEnabled?: boolean;
     colorPreferences?: PlayerColor[];
 }
 export interface SetMyProfileResponse {

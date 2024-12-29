@@ -1,4 +1,5 @@
 import {
+    Checkbox,
     Form,
     FormButton,
     FormField,
@@ -39,6 +40,7 @@ function ProfilePage() {
         GetMyProfile({}).then(res => {
             setProfile(res);
             setNewProfile({
+                emailNotificationsEnabled: res.emailNotificationsEnabled,
                 colorPreferences: res.colorPreferences
             })
         }).catch(err => {
@@ -71,7 +73,18 @@ function ProfilePage() {
                 </FormField>
                 <FormField>
                     <label>Email</label>
-                    <FormInput disabled value={profile.email} />
+                    <p>This is automatically determined from your linked Google account.</p>
+                    <FormInput disabled value={profile.email}/>
+                </FormField>
+                <FormField>
+                    <label>Email Notifications</label>
+                    <p>When enabled, you will receive an email to the above address whenever it becomes your turn on any game.
+                    If it is not enabled, you will instead receive a summary email once a day if there are any games where it's your turn.</p>
+                    <Checkbox toggle checked={newProfile?.emailNotificationsEnabled} onChange={(_, val) => {
+                        let newNewProfile = Object.assign({}, newProfile);
+                        newNewProfile.emailNotificationsEnabled = val.checked;
+                        setNewProfile(newNewProfile);
+                    }} />
                 </FormField>
             </FormGroup>
             <Header as='h2'>Color Preferences</Header>

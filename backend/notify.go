@@ -15,14 +15,15 @@ func (server *GameServer) notifyPlayer(gameId string, userId string) error {
 		return nil
 	}
 
-	stmt, err := server.db.Prepare("SELECT email FROM users WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT email,email_notifications_enabled FROM users WHERE id=?")
 	if err != nil {
 		return fmt.Errorf("failed to get email for user: %v", err)
 	}
 	defer stmt.Close()
 	row := stmt.QueryRow(userId)
 	var email string
-	err = row.Scan(&email)
+	var emailNotificationsEnabled int
+	err = row.Scan(&email, &emailNotificationsEnabled)
 	if err != nil {
 		return fmt.Errorf("failed to get email for user: %v", err)
 	}
@@ -37,6 +38,10 @@ func (server *GameServer) notifyPlayer(gameId string, userId string) error {
 	err = row.Scan(&finishedFlag, &gameName)
 	if err != nil {
 		return fmt.Errorf("failed to get status of game: %v", err)
+	}
+
+	if emailNotificationsEnabled == 0 && finishedFlag == 0 {
+		return nil
 	}
 
 	message := mail.NewMsg()

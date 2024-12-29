@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS users (
     nickname text,
     email text,
     google_user_id text,
-    color_preferences text
+    color_preferences text,
+    email_notifications_enabled int
 );
 
 CREATE TABLE IF NOT EXISTS games (

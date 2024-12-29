@@ -28,7 +28,7 @@ function SignInPage() {
                         accessToken: accessToken,
                         nickname: nickname,
                     }).then(() => {
-                        return navigate('/');
+                        return navigate('/profile');
                     }).then(() => {
                         window.location.reload();
                     }).catch(err => {
