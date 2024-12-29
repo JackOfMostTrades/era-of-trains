@@ -116,13 +116,28 @@ export class HexRenderer {
         this.filterId = HexRenderer.nextFilterId;
         HexRenderer.nextFilterId += 1;
     }
+    
+    private getHexXY(hex: Coordinate): {x: number, y: number} {
+        let x = hex.x*17.321;
+        if ((hex.y % 2) === 1) {
+            x += 8.661;
+        }
+        let y = hex.y*5;
+        return {x: x, y: y};
+    }
+
+    private getHexCenter(hex: Coordinate): {x: number, y: number} {
+        let pos = this.getHexXY(hex);
+
+        // Offset to the center of the hex
+        pos.x += 5.7735;
+        pos.y += 5;
+
+        return pos;
+    }
 
     public renderCityHex(hex: Coordinate, cityProperties: CityProperties) {
-        let xpos = hex.x*17.321;
-        if ((hex.y % 2) === 1) {
-            xpos += 8.661;
-        }
-        let ypos = hex.y*5;
+        let pos = this.getHexXY(hex);
 
         let onClick: undefined | (() => void);
         if (this.emitOnClick) {
@@ -142,7 +157,7 @@ export class HexRenderer {
             color = '#222222';
         }
 
-        let points = `${xpos},${ypos+5} ${xpos+2.887},${ypos} ${xpos+8.661},${ypos} ${xpos+11.547},${ypos+5} ${xpos+8.661},${ypos+10} ${xpos+2.887},${ypos+10}`
+        let points = `${pos.x},${pos.y+5} ${pos.x+2.887},${pos.y} ${pos.x+8.661},${pos.y} ${pos.x+11.547},${pos.y+5} ${pos.x+8.661},${pos.y+10} ${pos.x+2.887},${pos.y+10}`
         this.paths.push(<polygon stroke='#000000' strokeWidth={0.1} fill={color} points={points} onClick={onClick}/>);
 
         let cityColor = colorToHtml(cityProperties.color);
@@ -150,10 +165,10 @@ export class HexRenderer {
         if (cityProperties.darkCity) {
             strokeColor = '#ffffff';
         }
-        points = `${xpos + 0.8},${ypos + 5} ${xpos + 3.225},${ypos + 0.8} ${xpos + 8.075},${ypos + 0.8} ${xpos + 10.747},${ypos + 5} ${xpos + 8.075},${ypos + 9.2} ${xpos + 3.225},${ypos + 9.2}`
+        points = `${pos.x + 0.8},${pos.y + 5} ${pos.x + 3.225},${pos.y + 0.8} ${pos.x + 8.075},${pos.y + 0.8} ${pos.x + 10.747},${pos.y + 5} ${pos.x + 8.075},${pos.y + 9.2} ${pos.x + 3.225},${pos.y + 9.2}`
         this.paths.push(<polygon stroke={strokeColor} strokeWidth={0.2} fill={cityColor} points={points} onClick={onClick}/>);
-        this.paths.push(<circle cx={xpos + 5.7735} cy={ypos + 5} r={2.5} fill='#FFFFFF' onClick={onClick}/>);
-        this.paths.push(<text fontSize={2.5} x={xpos + 5.7735} y={ypos+5.3} dominantBaseline="middle" textAnchor="middle">{cityProperties.label}</text>);
+        this.paths.push(<circle cx={pos.x + 5.7735} cy={pos.y + 5} r={2.5} fill='#FFFFFF' onClick={onClick}/>);
+        this.paths.push(<text fontSize={2.5} x={pos.x + 5.7735} y={pos.y+5.3} dominantBaseline="middle" textAnchor="middle">{cityProperties.label}</text>);
 
         this.width = Math.max(this.width, hex.x);
         this.height = Math.max(this.height, hex.y);
@@ -184,11 +199,7 @@ export class HexRenderer {
             case HexType.CITY:
                 throw new Error("city hexes must be added with renderCityHex");
         }
-        let xpos = hex.x * 17.321;
-        if ((hex.y % 2) === 1) {
-            xpos += 8.661;
-        }
-        let ypos = hex.y * 5;
+        let pos = this.getHexXY(hex);
 
         let onClick: undefined | (() => void);
         if (this.emitOnClick) {
@@ -203,11 +214,11 @@ export class HexRenderer {
             }
         }
 
-        let points = `${xpos},${ypos + 5} ${xpos + 2.887},${ypos} ${xpos + 8.661},${ypos} ${xpos + 11.547},${ypos + 5} ${xpos + 8.661},${ypos + 10} ${xpos + 2.887},${ypos + 10}`
+        let points = `${pos.x},${pos.y + 5} ${pos.x + 2.887},${pos.y} ${pos.x + 8.661},${pos.y} ${pos.x + 11.547},${pos.y + 5} ${pos.x + 8.661},${pos.y + 10} ${pos.x + 2.887},${pos.y + 10}`
         this.paths.push(<polygon stroke='#000000' strokeWidth={0.1} fill={color} points={points} onClick={onClick}/>);
 
         if (hexType === HexType.TOWN) {
-            this.paths.push(<circle cx={xpos + 5.7735} cy={ypos + 5} r={2.5} fill='#FFFFFF' onClick={onClick}/>);
+            this.paths.push(<circle cx={pos.x + 5.7735} cy={pos.y + 5} r={2.5} fill='#FFFFFF' onClick={onClick}/>);
         }
 
         this.width = Math.max(this.width, hex.x);
@@ -215,42 +226,30 @@ export class HexRenderer {
     }
 
     public renderSpecialCost(hex: Coordinate, cost: number) {
-        let xpos = hex.x*17.321;
-        if ((hex.y % 2) === 1) {
-            xpos += 8.661;
-        }
-        let ypos = hex.y*5;
+        let pos = this.getHexXY(hex);
 
         // const s = 5.4, a=3.118
         // [[0, 2.7], [1.559, 0], [4.677,0], [6.236, 2.7], [4.677, 5.4], [1.559, 5.4]]
         // dx=(11.547-6.236)/2, dy=(10-5.4)/2,
         // dx=2.6555, dy=2.3
         // [[ 2.6555, 5 ], [ 4.2145, 2.3 ], [ 7.3325, 2.3 ], [ 8.8915, 5 ], [ 7.3325, 7.7 ], [ 4.2145, 7.7 ]]
-        let points = `${xpos + 2.6555},${ypos + 5} ${xpos + 4.2145},${ypos + 2.3} ${xpos + 7.3325},${ypos + 2.3} ${xpos + 8.8915},${ypos + 5} ${xpos + 7.3325},${ypos + 7.7} ${xpos + 4.2145},${ypos + 7.7}`
+        let points = `${pos.x + 2.6555},${pos.y + 5} ${pos.x + 4.2145},${pos.y + 2.3} ${pos.x + 7.3325},${pos.y + 2.3} ${pos.x + 8.8915},${pos.y + 5} ${pos.x + 7.3325},${pos.y + 7.7} ${pos.x + 4.2145},${pos.y + 7.7}`
         this.paths.push(<polygon fill='#cfddbb' points={points} />);
-        this.paths.push(<text fill='#b63421' fontSize={2.5} x={xpos + 5.7735} y={ypos+5.3} dominantBaseline="middle" textAnchor="middle">${cost}</text>);
+        this.paths.push(<text fill='#b63421' fontSize={2.5} x={pos.x + 5.7735} y={pos.y+5.3} dominantBaseline="middle" textAnchor="middle">${cost}</text>);
     }
 
     public renderTownTrack(hex: Coordinate, direction: Direction, playerColor: PlayerColor|undefined) {
-        let xpos = hex.x*17.321;
-        if ((hex.y % 2) === 1) {
-            xpos += 8.661;
-        }
-        let ypos = hex.y*5;
+        let pos = this.getHexXY(hex);
 
         let offset = hexEdgeOffset(direction);
-        this.paths.push(<line stroke={playerColorToHtml(playerColor)} strokeWidth={1} x1={xpos+5.7735} y1={ypos+5} x2={xpos+offset.dx} y2={ypos+offset.dy} />);
+        this.paths.push(<line stroke={playerColorToHtml(playerColor)} strokeWidth={1} x1={pos.x+5.7735} y1={pos.y+5} x2={pos.x+offset.dx} y2={pos.y+offset.dy} />);
 
         this.width = Math.max(this.width, hex.x);
         this.height = Math.max(this.height, hex.y);
     }
 
     public renderTrack(hex: Coordinate, left: Direction, right: Direction, playerColor: PlayerColor|undefined) {
-        let xpos = hex.x*17.321;
-        if ((hex.y % 2) === 1) {
-            xpos += 8.661;
-        }
-        let ypos = hex.y*5;
+        let pos = this.getHexXY(hex);
 
         let htmlColor = playerColorToHtml(playerColor);
 
@@ -263,13 +262,13 @@ export class HexRenderer {
             let controlX = 5.7735 + (leftOffset.dx - 5.7735)/4 + (rightOffset.dx - 5.7735)/4
             let controlY = 5 + (leftOffset.dy - 5)/4 + (rightOffset.dy - 5)/4
 
-            this.paths.push(<path stroke={htmlColor} strokeWidth={1} fill="none" d={`M ${xpos+leftOffset.dx} ${ypos+leftOffset.dy} Q ${xpos+controlX} ${ypos+controlY} ${xpos+rightOffset.dx} ${ypos+rightOffset.dy}`} />);
+            this.paths.push(<path stroke={htmlColor} strokeWidth={1} fill="none" d={`M ${pos.x+leftOffset.dx} ${pos.y+leftOffset.dy} Q ${pos.x+controlX} ${pos.y+controlY} ${pos.x+rightOffset.dx} ${pos.y+rightOffset.dy}`} />);
         } else if (edgeDelta === 2 || edgeDelta === 4) {
             // Gentle curve
-            this.paths.push(<path stroke={htmlColor} strokeWidth={1} fill="none" d={`M ${xpos+leftOffset.dx} ${ypos+leftOffset.dy} Q ${xpos+5.7735} ${ypos+5} ${xpos+rightOffset.dx} ${ypos+rightOffset.dy}`} />);
+            this.paths.push(<path stroke={htmlColor} strokeWidth={1} fill="none" d={`M ${pos.x+leftOffset.dx} ${pos.y+leftOffset.dy} Q ${pos.x+5.7735} ${pos.y+5} ${pos.x+rightOffset.dx} ${pos.y+rightOffset.dy}`} />);
         } else {
             // Straight
-            this.paths.push(<line stroke={htmlColor} strokeWidth={1} x1={xpos+leftOffset.dx} y1={ypos+leftOffset.dy} x2={xpos+rightOffset.dx} y2={ypos+rightOffset.dy} />);
+            this.paths.push(<line stroke={htmlColor} strokeWidth={1} x1={pos.x+leftOffset.dx} y1={pos.y+leftOffset.dy} x2={pos.x+rightOffset.dx} y2={pos.y+rightOffset.dy} />);
         }
 
         this.width = Math.max(this.width, hex.x);
@@ -277,14 +276,10 @@ export class HexRenderer {
     }
 
     public renderCubes(hex: Coordinate, cubes: Color[]) {
-        let xpos = hex.x*17.321;
-        if ((hex.y % 2) === 1) {
-            xpos += 8.661;
-        }
-        let ypos = hex.y*5;
+        let pos = this.getHexXY(hex);
 
-        // Center the xpos
-        xpos += (11.547-cubes.length*2.5+0.5)/2;
+        // Center the pos.x
+        pos.x += (11.547-cubes.length*2.5+0.5)/2;
 
         for (let i = 0; i < cubes.length; i++) {
             let cube = cubes[i];
@@ -306,7 +301,7 @@ export class HexRenderer {
                 }
             }
 
-            let points = `${xpos+i*2.5},${ypos+0.5} ${xpos+2+i*2.5},${ypos+0.5} ${xpos+2+i*2.5},${ypos+2.5} ${xpos+i*2.5},${ypos+2.5}`
+            let points = `${pos.x+i*2.5},${pos.y+0.5} ${pos.x+2+i*2.5},${pos.y+0.5} ${pos.x+2+i*2.5},${pos.y+2.5} ${pos.x+i*2.5},${pos.y+2.5}`
             this.paths.push(<polygon stroke='#222222' strokeWidth={0.25} fill={colorToHtml(cube)} points={points} filter={`url(#${this.filterId})`} onClick={onClick}/>);
         }
 
@@ -314,23 +309,33 @@ export class HexRenderer {
         this.height = Math.max(this.height, hex.y);
     }
 
-    public renderActiveCube(hex: Coordinate, cube: Color) {
+    public renderActiveCube(hex: Coordinate, cube: Color, moveAlong: Coordinate[]|undefined) {
         if (cube === Color.NONE) {
             return;
         }
 
-        let xpos = hex.x*17.321;
-        if ((hex.y % 2) === 1) {
-            xpos += 8.661;
+        let cubeCoord = this.getHexCenter(hex);
+
+        let animate: ReactNode
+        if (moveAlong && moveAlong.length > 0) {
+            let start = this.getHexCenter(moveAlong[0]);
+            let path = `M${start.x-cubeCoord.x},${start.y-cubeCoord.y}`
+            for (let i = 1; i < moveAlong.length; i++) {
+                let point = this.getHexCenter(moveAlong[i]);
+                path += ` L${point.x-cubeCoord.x},${point.y-cubeCoord.y}`
+            }
+            path += " L0,0"
+
+            animate = <animateMotion
+                ref={ref => {
+                    if (ref) {
+                        (ref as SVGAnimateMotionElement).beginElement();
+                    }
+                }}
+                begin="indefinite" dur={(150*moveAlong.length+1) + "ms"} path={path} />
         }
-        let ypos = hex.y*5;
-
-        // Center the xpos,ypos based on a 3.5x3.5 size
-        xpos += 4.0235;
-        ypos += 3.25;
-
-        let points = `${xpos},${ypos} ${xpos+2.5},${ypos} ${xpos+2.5},${ypos+2.5} ${xpos},${ypos+2.5}`
-        this.paths.push(<polygon stroke='#FFFF00' strokeWidth={0.5} fill={colorToHtml(cube)} points={points} filter={`url(#${this.filterId})`}/>);
+        let points = `${cubeCoord.x-1.25},${cubeCoord.y-1.25} ${cubeCoord.x+1.25},${cubeCoord.y-1.25} ${cubeCoord.x+1.25},${cubeCoord.y+1.25} ${cubeCoord.x-1.25},${cubeCoord.y+1.25}`
+        this.paths.push(<polygon stroke='#FFFF00' strokeWidth={0.5} fill={colorToHtml(cube)} points={points} filter={`url(#${this.filterId})`}>{animate}</polygon>);
 
         this.width = Math.max(this.width, hex.x);
         this.height = Math.max(this.height, hex.y);
@@ -389,14 +394,10 @@ export class HexRenderer {
                 throw new Error("Unhandled direction: " + direction);
         }
 
-        let xpos = hex.x*17.321;
-        if ((hex.y % 2) === 1) {
-            xpos += 8.661;
-        }
-        let ypos = hex.y*5;
+        let pos = this.getHexXY(hex);
         for (let point of points) {
-            point[0] += xpos;
-            point[1] += ypos;
+            point[0] += pos.x;
+            point[1] += pos.y;
         }
 
         let onClick: undefined | (() => void);
@@ -419,15 +420,11 @@ export class HexRenderer {
     }
 
     public renderInterurbanLink(hex: Coordinate, direction: Direction, fillColor: PlayerColor|undefined, cost: number|undefined) {
-        let xpos = hex.x*17.321;
-        if ((hex.y % 2) === 1) {
-            xpos += 8.661;
-        }
-        let ypos = hex.y*5;
+        let pos = this.getHexXY(hex);
 
         let edge = hexEdgeOffset(direction);
-        let cx = xpos + edge.dx;
-        let cy = ypos + edge.dy;
+        let cx = pos.x + edge.dx;
+        let cy = pos.y + edge.dy;
 
         let fill: string;
         if (fillColor === undefined) {

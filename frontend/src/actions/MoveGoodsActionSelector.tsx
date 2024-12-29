@@ -18,12 +18,13 @@ export interface Step {
     selectedColor?: Color;
     selectedOrigin?: Coordinate;
     steps?: Direction[];
+    moveAlong?: Coordinate[];
     currentCubePosition?: Coordinate;
     nextStepOptions?: Array<{direction: Direction, owner: PlayerColor|undefined}>
     playerToLinkCount?: { [ playerId: string]: number }
 }
 
-function computeNextStop(game: ViewGameResponse, current: Coordinate, direction: Direction): { end: Coordinate, linkOwner: string }|undefined {
+function computeNextStop(game: ViewGameResponse, current: Coordinate, direction: Direction): { end: Coordinate, moveAlong: Coordinate[], linkOwner: string }|undefined {
     if (!game.gameState || !game.gameState.links) {
         return undefined;
     }
@@ -32,14 +33,18 @@ function computeNextStop(game: ViewGameResponse, current: Coordinate, direction:
             continue;
         }
         let end = link.sourceHex;
+        let moveAlong = [end];
         for (let dir of link.steps) {
             end = applyDirection(end, dir);
+            moveAlong.push(end);
         }
         if (link.sourceHex.x === current.x && link.sourceHex.y === current.y && link.steps[0] === direction) {
-            return {end: end, linkOwner: link.owner};
+            moveAlong = moveAlong.slice(0, moveAlong.length-1);
+            return {end: end, moveAlong: moveAlong, linkOwner: link.owner};
         }
         if (end.x === current.x && end.y === current.y && direction === oppositeDirection(link.steps[link.steps.length-1])) {
-            return {end: link.sourceHex, linkOwner: link.owner};
+            moveAlong = moveAlong.reverse().slice(0, moveAlong.length-1);
+            return {end: link.sourceHex, moveAlong: moveAlong, linkOwner: link.owner};
         }
     }
     return undefined;
@@ -77,6 +82,7 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                     } else {
                         newStep.playerToLinkCount[nextStop.linkOwner] = 1;
                     }
+                    newStep.moveAlong = nextStop.moveAlong;
                     newStep.currentCubePosition = nextStop.end;
                     newStep.nextStepOptions = [];
                     for (let option of getValidStepDirections(game, nextStop.end)) {
@@ -100,6 +106,7 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                     selectedColor: e.detail.color,
                     selectedOrigin: hex,
                     steps: [],
+                    moveAlong: undefined,
                     currentCubePosition: hex,
                     nextStepOptions: [],
                     playerToLinkCount: {}
@@ -203,6 +210,7 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                         selectedColor: Color.NONE,
                         selectedOrigin: {x: 0, y: 0},
                         steps: [],
+                        moveAlong: undefined,
                         currentCubePosition: {x: 0, y: 0},
                         playerToLinkCount: {}
                     };

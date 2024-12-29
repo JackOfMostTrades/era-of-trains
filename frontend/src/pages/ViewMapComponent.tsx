@@ -65,8 +65,8 @@ class RenderMapBuilder {
         this.hexRenderer.renderCubes(hex, cubes);
     }
 
-    public renderActiveCube(hex: Coordinate, cube: Color) {
-        this.hexRenderer.renderActiveCube(hex, cube);
+    public renderActiveCube(hex: Coordinate, cube: Color, moveAlong: Coordinate[]|undefined) {
+        this.hexRenderer.renderActiveCube(hex, cube, moveAlong);
     }
 
     public renderArrow(hex: Coordinate, direction: Direction, color: PlayerColor|undefined) {
@@ -271,7 +271,8 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
         if (pendingMoveGoods && pendingMoveGoods.selectedColor !== Color.NONE
                 && pendingMoveGoods.selectedColor !== undefined
                 && pendingMoveGoods.currentCubePosition) {
-            renderer.renderActiveCube(pendingMoveGoods.currentCubePosition, pendingMoveGoods.selectedColor);
+            renderer.renderActiveCube(pendingMoveGoods.currentCubePosition, pendingMoveGoods.selectedColor,
+                pendingMoveGoods.moveAlong);
             if (pendingMoveGoods.nextStepOptions) {
                 for (let option of pendingMoveGoods.nextStepOptions) {
                     let hex = applyDirection(pendingMoveGoods.currentCubePosition, option.direction);
