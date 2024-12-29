@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
@@ -8,5 +8,8 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:8080'
     }
-  }
+  },
+  define: {
+    GITREV: JSON.stringify(process.env["GITREV"] || 'dev')
+  },
 })

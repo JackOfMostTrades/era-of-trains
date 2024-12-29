@@ -7,6 +7,8 @@ if [[ ! -d backend ]]; then
   exit 1
 fi
 
+export GITREV=$(git describe --always --dirty)
+
 pushd backend
 go test -v ./...
 GOOS=linux GOARCH=amd64 go build

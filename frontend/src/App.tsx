@@ -172,6 +172,9 @@ function App() {
                                 <Route path="/" element={<Home />}/>
                             </Routes>
                         </Container>
+                        <Container style={{marginTop: "1em", padding: "1em", fontSize: "0.8em", textAlign: "right"}}>
+                            Version: {GITREV}
+                        </Container>
                     </div>
                 </Router>
             </UserSessionProvider>
