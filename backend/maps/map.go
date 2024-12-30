@@ -92,7 +92,7 @@ func (*AbstractGameMapImpl) GetTrackBuildCost(gameState *common.GameState, playe
 			case common.COMPLEX_CROSSING_TRACK_TYPE:
 				return 4, nil
 			}
-		} else if hexType == RIVER_HEX_TYPE {
+		} else if hexType == RIVER_HEX_TYPE || hexType == HILLS_HEX_TYPE {
 			switch trackType {
 			case common.SIMPLE_TRACK_TYPE:
 				return 3, nil

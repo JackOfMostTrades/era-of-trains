@@ -19,6 +19,8 @@ interface SpecialTrackPricing {
     hex: Coordinate;
 }
 
+export const RIVER_COLOR = "#009bb2";
+
 export class BasicMap implements GameMap {
     protected hexes: HexType[][] = [];
     protected cities: BasicCity[] = [];
@@ -95,6 +97,10 @@ export class BasicMap implements GameMap {
     }
 
     public getMapInfo(): ReactNode {
+        return null;
+    }
+
+    public getRiverLayer(): ReactNode {
         return null;
     }
 

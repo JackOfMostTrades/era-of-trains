@@ -19,7 +19,7 @@ export function playerColorToHtml(color: PlayerColor|undefined): string {
         return '#222222';
     }
     switch (color) {
-        case PlayerColor.BLUE: return '#00839d';
+        case PlayerColor.BLUE: return '#035f70';
         case PlayerColor.GREEN: return "#a7ed36";
         case PlayerColor.YELLOW: return '#f3db70';
         case PlayerColor.PINK: return '#bf88a9';
@@ -185,6 +185,9 @@ export class HexRenderer {
                 color = '#579ba8';
                 break;
             case HexType.RIVER:
+                color = '#99c37b';
+                break;
+            case HexType.HILLS:
                 color = '#537845';
                 break;
             case HexType.PLAINS:
@@ -437,6 +440,10 @@ export class HexRenderer {
         if (cost !== undefined) {
             this.paths.push(<text fontSize={1} x={cx} y={cy} dominantBaseline="middle" textAnchor="middle">${cost}</text>);
         }
+    }
+
+    public renderLayer(node: ReactNode) {
+        this.paths.push(node);
     }
 
     public render(): ReactNode {

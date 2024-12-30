@@ -41,6 +41,10 @@ class RenderMapBuilder {
         }
     }
 
+    public renderLayer(node: ReactNode) {
+        this.hexRenderer.renderLayer(node);
+    }
+
     public renderEmptyInterurbanLink(hex: Coordinate, direction: Direction, cost: number) {
         this.hexRenderer.renderInterurbanLink(hex, direction, undefined, cost);
     }
@@ -128,6 +132,7 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
             renderer.renderHex({x: x, y: y});
         }
     }
+    renderer.renderLayer(map.getRiverLayer());
 
     for (let interurbanLink of map.getInterurbanLinks()) {
         let owner: string|undefined;

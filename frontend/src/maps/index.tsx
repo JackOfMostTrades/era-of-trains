@@ -6,6 +6,7 @@ import {BasicMap, InterurbanLink} from "./basic_map.tsx";
 import Germany from "./germany.tsx";
 import {ReactNode} from "react";
 import SouthernUS from "./southern_us.tsx";
+import RustBelt from "./rust_belt.tsx";
 
 export enum HexType {
     OFFBOARD  = 0,
@@ -15,6 +16,7 @@ export enum HexType {
     MOUNTAIN ,
     TOWN ,
     CITY ,
+    HILLS
 }
 
 export interface CityProperties {
@@ -33,9 +35,10 @@ export interface GameMap {
     getSpecialTrackPricing(hex: Coordinate): number|undefined;
     getBuildLimit(gameState: GameState|undefined, player: string): number;
     getMapInfo(): ReactNode;
+    getRiverLayer(): ReactNode;
 }
 
-const rustBelt = BasicMap.fromJson(rustBeltRaw);
+const rustBelt = RustBelt.fromJson(rustBeltRaw);
 const southernUs = SouthernUS.fromJson(southernUsRaw);
 const germany = Germany.fromJson(germanyRaw);
 
