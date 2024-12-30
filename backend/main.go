@@ -202,6 +202,20 @@ func main() {
 	}
 	defer server.Close()
 
+	if len(os.Args) >= 2 && os.Args[1] == "run-task" {
+		err = runTask(server, os.Args[2:])
+		if err != nil {
+			panic(fmt.Errorf("failed to run task: %v", err))
+		}
+	} else {
+		err = runHttpServer(server)
+		if err != nil {
+			panic(fmt.Errorf("failed to run http server: %v", err))
+		}
+	}
+}
+
+func runHttpServer(server *GameServer) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/login", jsonHandlerUnAuthenticated(server.login))
 	mux.HandleFunc("/api/register", jsonHandlerUnAuthenticated(server.register))
@@ -219,23 +233,22 @@ func main() {
 	mux.HandleFunc("/api/getMyProfile", jsonHandler(server, server.getMyProfile))
 	mux.HandleFunc("/api/setMyProfile", jsonHandler(server, server.setMyProfile))
 
-	if config.CgiMode {
+	var err error
+	if server.config.CgiMode {
 		err = cgi.Serve(mux)
-		if err != nil {
-			panic(err)
-		}
 	} else {
 		wg := &sync.WaitGroup{}
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err = http.ListenAndServe("localhost:8080", mux)
-			if err != http.ErrServerClosed {
-				panic(err)
+			serveErr := http.ListenAndServe("localhost:8080", mux)
+			if serveErr != http.ErrServerClosed {
+				err = serveErr
 			}
 		}()
 
 		slog.Info("Listening on port 8080...")
 		wg.Wait()
 	}
+	return err
 }
