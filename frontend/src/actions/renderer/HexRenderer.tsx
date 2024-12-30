@@ -185,7 +185,7 @@ export class HexRenderer {
                 color = '#579ba8';
                 break;
             case HexType.RIVER:
-                color = '#99c37b';
+                color = '#8eb572';
                 break;
             case HexType.HILLS:
                 color = '#537845';
