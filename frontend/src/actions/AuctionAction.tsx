@@ -19,11 +19,11 @@ import ErrorContext from "../ErrorContext.tsx";
 function ConfirmBidWithTopModal({open, onConfirm, onCancel}: {open: boolean, onConfirm: () => void, onCancel: () => void}) {
     return (
         <Modal open={open}>
-            <ModalHeader>Skip using turn-order pass?</ModalHeader>
+            <ModalHeader>Skip using turn order pass?</ModalHeader>
             <ModalContent>
                 <ModalDescription>
-                    <Header>You have turn-order pass</Header>
-                    <p>You have turn-order pass. Do you really want to skip using it?</p>
+                    <Header>You have turn order pass</Header>
+                    <p>You have turn order pass. Do you really want to skip using it?</p>
                 </ModalDescription>
             </ModalContent>
             <ModalActions>
@@ -37,15 +37,15 @@ function ConfirmBidWithTopModal({open, onConfirm, onCancel}: {open: boolean, onC
 function ConfirmPassWithTopModal({open, onConfirm, onCancel}: {open: boolean, onConfirm: () => void, onCancel: () => void}) {
     return (
         <Modal open={open}>
-            <ModalHeader>Skip using turn-order pass?</ModalHeader>
+            <ModalHeader>Skip using turn order pass?</ModalHeader>
             <ModalContent>
                 <ModalDescription>
-                    <Header>You have turn-order pass</Header>
-                    <p>You have turn-order pass. Do you really want to pass instead of using it?</p>
+                    <Header>You have turn order pass</Header>
+                    <p>You have turn order pass. Do you really want to pass instead of using it?</p>
                 </ModalDescription>
             </ModalContent>
             <ModalActions>
-                <Button primary onClick={onConfirm}>Yes, pass and give up turn-order pass</Button>
+                <Button primary onClick={onConfirm}>Yes, pass and give up turn order pass</Button>
                 <Button negative onClick={onCancel}>Cancel</Button>
             </ModalActions>
         </Modal>
@@ -124,7 +124,7 @@ function AuctionAction({game, onDone}: {game: ViewGameResponse, onDone: () => Pr
         let hasTurnOrderPass = game.gameState.playerActions[game.activePlayer] === 'turn_order_pass';
         let turnOrderPassButton: ReactNode;
         if (hasTurnOrderPass) {
-            turnOrderPassButton = <><Button secondary loading={loading} onClick={() => doBid(0)}>Turn-Order Pass</Button></>
+            turnOrderPassButton = <><Button secondary loading={loading} onClick={() => doBid(0)}>Turn Order Pass</Button></>
         }
 
         content = <>

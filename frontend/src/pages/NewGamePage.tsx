@@ -2,6 +2,7 @@ import {Button, Dropdown, Form, FormField, Header, Input} from "semantic-ui-reac
 import {useNavigate} from "react-router";
 import {CreateGame, CreateGameRequest} from "../api/api.ts";
 import {useState} from "react";
+import {mapNameToDisplayName} from "../util.ts";
 
 function NewGamePage() {
     const navigate = useNavigate();
@@ -72,23 +73,11 @@ function NewGamePage() {
                         newReq.mapName = value as string;
                         setReq(newReq);
                     }}
-                    options={[
-                        {
-                            key: "rust_belt",
-                            text: "Rust Belt",
-                            value: "rust_belt",
-                        },
-                        {
-                            key: "southern_us",
-                            text: "Southern U.S.",
-                            value: "southern_us",
-                        },
-                        {
-                            key: "germany",
-                            text: "Germany",
-                            value: "germany",
-                        },
-                    ]}
+                    options={["rust_belt", "southern_us", "germany"].map(mapName => ({
+                        key: mapName,
+                        value: mapName,
+                        text: mapNameToDisplayName(mapName)
+                    }))}
                 />
             </FormField>
             <Button primary loading={loading} type='submit' onClick={() => {

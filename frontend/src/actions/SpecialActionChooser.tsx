@@ -3,6 +3,7 @@ import {Button, Dropdown, DropdownItemProps, Header} from "semantic-ui-react";
 import {ReactNode, useContext, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
 import ErrorContext from "../ErrorContext.tsx";
+import {specialActionToDisplayName} from "../util.ts";
 
 function SpecialActionChooser({game, onDone}: {game: ViewGameResponse, onDone: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
@@ -14,54 +15,24 @@ function SpecialActionChooser({game, onDone}: {game: ViewGameResponse, onDone: (
         return null;
     }
 
-    let options: DropdownItemProps[] = [
-        {
-            key: "first_move",
-            value: "first_move",
-            text: "First Move",
-        },
-        {
-            key: "first_build",
-            value: "first_build",
-            text: "First Build",
-        },
-        {
-            key: "engineer",
-            value: "engineer",
-            text: "Engineer",
-        },
-        {
-            key: "loco",
-            value: "loco",
-            text: "Locomotive",
-        },
-        {
-            key: "urbanization",
-            value: "urbanization",
-            text: "Urbanization",
-        },
-        {
-            key: "production",
-            value: "production",
-            text: "Production",
-        },
-        {
-            key: "turn_order_pass",
-            value: "turn_order_pass",
-            text: "Turn-Order Pass"
-        },
-    ]
+    let availableSpecialActions: SpecialAction[] = ['first_move', 'first_build', 'engineer', 'loco', 'urbanization', 'production', 'turn_order_pass'];
     for (let playerId of Object.keys(game.gameState.playerActions)) {
         let action = game.gameState.playerActions[playerId];
         if (action) {
-            for (let i = 0; i < options.length; i++) {
-                if (options[i].value === action) {
-                    options.splice(i, 1);
+            for (let i = 0; i < availableSpecialActions.length; i++) {
+                if (availableSpecialActions[i] === action) {
+                    availableSpecialActions.splice(i, 1);
                     break;
                 }
             }
         }
     }
+    let options: DropdownItemProps[] = availableSpecialActions
+        .map(specialAction => ({
+            key: specialAction,
+            value: specialAction,
+            text: specialActionToDisplayName(specialAction)
+        }))
 
     let playerById: { [playerId: string]: User } = {};
     for (let player of game.joinedUsers) {

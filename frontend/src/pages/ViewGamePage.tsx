@@ -16,6 +16,7 @@ import GameLogsComponent from "./GameLogsComponent.tsx";
 import FinalScore from "../actions/FinalScore.tsx";
 import {maps} from "../maps";
 import "./ViewGamePage.css";
+import {mapNameToDisplayName, specialActionToDisplayName} from "../util.ts";
 
 function WaitingForPlayersPage({game, onJoin}: {game: ViewGameResponse, onJoin: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
@@ -126,7 +127,7 @@ function PlayerStatus({game, onConfirmMove}: { game: ViewGameResponse, onConfirm
                 Shares: {game.gameState.playerShares[playerId]}<br/>
                 Income: {game.gameState.playerIncome[playerId]}<br/>
                 Loco: {game.gameState.playerLoco[playerId]}<br/>
-                Special Action: {game.gameState.playerActions[playerId]}<br/>
+                Special Action: {specialActionToDisplayName(game.gameState.playerActions[playerId])}<br/>
             </Segment></Grid.Column>);
     }
 
@@ -229,7 +230,7 @@ function ViewGamePage() {
         <Header as='h1'>Game: {game.name}</Header>
         <Segment>
             <Header as='h2'>Table Info</Header>
-            Map: {game.mapName}<br/>
+            Map: {mapNameToDisplayName(game.mapName)}<br/>
             Player Count: {game.numPlayers}<br/>
             Table Owner: {game.ownerUser.nickname}<br/>
         </Segment>

@@ -391,10 +391,10 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 
 	} else if bidAction.Amount == 0 {
 		// Bid amount of 0 indicates use of turn-order-pass
-		handler.Log("%s uses turn-order pass.", handler.ActivePlayerNick())
+		handler.Log("%s uses turn order pass.", handler.ActivePlayerNick())
 
 		if gameState.PlayerActions[currentPlayer] != common.TURN_ORDER_PASS_SPECIAL_ACTION {
-			return &HttpError{"current player cannot use turn-order pass", http.StatusBadRequest}
+			return &HttpError{"current player cannot use turn order pass", http.StatusBadRequest}
 		}
 
 		// Do not update this user's bid amount

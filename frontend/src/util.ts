@@ -1,4 +1,4 @@
-import {Coordinate, Direction} from "./api/api.ts";
+import {Coordinate, Direction, SpecialAction} from "./api/api.ts";
 
 export function applyDirection(coordinate: Coordinate, direction: Direction): Coordinate {
     switch (direction) {
@@ -43,4 +43,42 @@ export function oppositeDirection(direction: Direction): Direction {
         case Direction.SOUTH_WEST: return Direction.NORTH_EAST;
         case Direction.NORTH_WEST: return Direction.SOUTH_EAST;
     }
+}
+
+export function mapNameToDisplayName(mapName: string): string {
+    if (mapName === 'rust_belt') {
+        return "Rust Belt";
+    }
+    if (mapName === 'southern_us') {
+        return "Southern U.S.";
+    }
+    if (mapName === 'germany') {
+        return "Germany";
+    }
+    return mapName;
+}
+
+export function specialActionToDisplayName(specialAction: SpecialAction): string {
+    if (specialAction === 'first_move') {
+        return "First Move";
+    }
+    if (specialAction === 'first_build') {
+        return "First Build";
+    }
+    if (specialAction === 'engineer') {
+        return "Engineer";
+    }
+    if (specialAction === 'loco') {
+        return "Locomotive";
+    }
+    if (specialAction === 'urbanization') {
+        return "Urbanization";
+    }
+    if (specialAction === 'production') {
+        return "Production";
+    }
+    if (specialAction === 'turn_order_pass') {
+        return "Turn Order Pass"
+    }
+    return specialAction;
 }
