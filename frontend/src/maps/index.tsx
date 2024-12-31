@@ -2,7 +2,7 @@ import * as rustBeltRaw from "../../../backend/maps/rust_belt.json"
 import * as southernUsRaw from "../../../backend/maps/southern_us.json"
 import * as germanyRaw from "../../../backend/maps/germany.json"
 import * as scotlandRaw from "../../../backend/maps/scotland.json"
-import {Color, Coordinate, GameState} from "../api/api.ts";
+import {BuildAction, Color, Coordinate, GameState} from "../api/api.ts";
 import {BasicMap, TeleportLink} from "./basic_map.tsx";
 import Germany from "./germany.tsx";
 import {ReactNode} from "react";
@@ -33,7 +33,7 @@ export interface GameMap {
     getHexType(hex: Coordinate): HexType;
     getCityProperties(gameState: GameState|undefined, hex: Coordinate): CityProperties|undefined;
     getCityColor(goodsGrowthNumber: number): Color;
-    getTeleportLinks(): TeleportLink[];
+    getTeleportLinks(gameState: GameState|undefined, pendingBuildAction: BuildAction|undefined): TeleportLink[];
     getSpecialTrackPricing(hex: Coordinate): number|undefined;
     getTurnLimit(playerCount: number): number
     getBuildLimit(gameState: GameState|undefined, player: string): number;

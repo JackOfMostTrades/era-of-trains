@@ -1,8 +1,9 @@
-import {Coordinate, Direction, SpecialAction} from "./api/api.ts";
+import {BuildAction, Coordinate, Direction, GameState, SpecialAction} from "./api/api.ts";
 import {GameMap} from "./maps";
 
-export function applyTeleport(map: GameMap, coordinate: Coordinate, direction: Direction): Coordinate|undefined {
-    for (let teleportLink of map.getTeleportLinks()) {
+export function applyTeleport(map: GameMap, gameState: GameState|undefined, pendingBuildAction: BuildAction|undefined,
+                              coordinate: Coordinate, direction: Direction): Coordinate|undefined {
+    for (let teleportLink of map.getTeleportLinks(gameState, pendingBuildAction)) {
         if (teleportLink.left.hex.x === coordinate.x && teleportLink.left.hex.y === coordinate.y && teleportLink.left.direction === direction) {
             return teleportLink.right.hex;
         }
@@ -13,8 +14,8 @@ export function applyTeleport(map: GameMap, coordinate: Coordinate, direction: D
     return undefined;
 }
 
-export function applyMapDirection(map: GameMap, coordinate: Coordinate, direction: Direction): Coordinate {
-    let teleportDest = applyTeleport(map, coordinate, direction);
+export function applyMapDirection(map: GameMap, gameState: GameState|undefined, pendingBuildAction: BuildAction|undefined, coordinate: Coordinate, direction: Direction): Coordinate {
+    let teleportDest = applyTeleport(map, gameState, pendingBuildAction, coordinate, direction);
     if (teleportDest !== undefined) {
         return teleportDest;
     }

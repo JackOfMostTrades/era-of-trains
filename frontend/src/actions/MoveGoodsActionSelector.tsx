@@ -36,7 +36,7 @@ function computeNextStop(game: ViewGameResponse, map: GameMap, current: Coordina
         let end = link.sourceHex;
         let moveAlong = [end];
         for (let dir of link.steps) {
-            end = applyMapDirection(map, end, dir);
+            end = applyMapDirection(map, game.gameState, undefined, end, dir);
             moveAlong.push(end);
         }
         if (link.sourceHex.x === current.x && link.sourceHex.y === current.y && link.steps[0] === direction) {

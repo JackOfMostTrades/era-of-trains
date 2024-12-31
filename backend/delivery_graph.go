@@ -59,7 +59,7 @@ func computeDeliveryGraph(gameState *common.GameState, gameMap maps.GameMap) *De
 		src := link.SourceHex
 		dest := src
 		for _, step := range link.Steps {
-			if teleportDest, _ := gameMap.GetTeleportLink(dest, step); teleportDest != nil {
+			if teleportDest, _ := gameMap.GetTeleportLink(gameState, dest, step); teleportDest != nil {
 				dest = *teleportDest
 			} else {
 				dest = applyDirection(dest, step)

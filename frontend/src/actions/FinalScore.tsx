@@ -47,7 +47,7 @@ function FinalScore({game}: {game: ViewGameResponse}) {
                 if (!isCity(game.gameState, map, hex)) {
                     trackCount += 1;
                 }
-                let nextHex = applyTeleport(map, hex, link.steps[i]);
+                let nextHex = applyTeleport(map, game.gameState, undefined, hex, link.steps[i]);
                 if (nextHex !== undefined) {
                     trackCount += 1;
                 } else {

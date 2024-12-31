@@ -45,7 +45,7 @@ function isCityHex(game: ViewGameResponse, map: GameMap, urbanization: Urbanizat
     return false;
 }
 
-function computeExistingRoutes(gameState: GameState|undefined, map: GameMap): Array<Array<Array<{Left: Direction, Right: Direction}>>> {
+function computeExistingRoutes(gameState: GameState|undefined, pendingBuildAction: BuildAction|undefined, map: GameMap): Array<Array<Array<{Left: Direction, Right: Direction}>>> {
     let routes: Array<Array<Array<{Left: Direction, Right: Direction}>>> = [];
     for (let y = 0; y < map.getHeight(); y++) {
         routes.push([]);
@@ -58,7 +58,7 @@ function computeExistingRoutes(gameState: GameState|undefined, map: GameMap): Ar
         for (let link of gameState.links) {
             let hex = link.sourceHex;
             for (let i = 1; i < link.steps.length; i++) {
-                hex = applyMapDirection(map, hex, link.steps[i-1]);
+                hex = applyMapDirection(map, gameState, pendingBuildAction, hex, link.steps[i-1]);
                 let left = oppositeDirection(link.steps[i-1]);
                 let right = link.steps[i];
                 routes[hex.y][hex.x].push({Left: left, Right: right});
@@ -139,7 +139,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
 
                 // If this was a teleport, we need to update the action
                 let newAction = Object.assign({}, action);
-                if (applyTeleport(map, buildingTrackHex, direction) !== undefined) {
+                if (applyTeleport(map, game.gameState, newAction, buildingTrackHex, direction) !== undefined) {
                     newAction.teleportLinkPlacements = newAction.teleportLinkPlacements.slice();
                     newAction.teleportLinkPlacements.push({
                         hex: buildingTrackHex,
@@ -149,7 +149,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                     document.dispatchEvent(new CustomEvent('pendingBuildAction', {detail: newAction}));
                 }
 
-                let newHex = applyMapDirection(map, buildingTrackHex, direction);
+                let newHex = applyMapDirection(map, game.gameState, newAction, buildingTrackHex, direction);
                 if (priorDirection !== undefined) {
                     if (map.getHexType(buildingTrackHex) === HexType.TOWN) {
                         // If we've built into a town, just ignore the direction and complete the link
@@ -212,7 +212,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                         }
                     } else {
                         // This is either redirect or extending existing track. We need to figure out what track already exists on this hex.
-                        let existingRoutes = computeExistingRoutes(game.gameState, map)[buildingTrackHex.y][buildingTrackHex.x];
+                        let existingRoutes = computeExistingRoutes(game.gameState, newAction, map)[buildingTrackHex.y][buildingTrackHex.x];
                         let isExistingRoute = false;
                         for (let route of existingRoutes) {
                             if (route.Left === direction || route.Right === direction) {

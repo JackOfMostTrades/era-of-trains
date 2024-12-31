@@ -120,7 +120,7 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
             for (let link of game.gameState.links) {
                 let hex = link.sourceHex;
                 for (let i = 1; i < link.steps.length; i++) {
-                    hex = applyMapDirection(map, hex, link.steps[i - 1]);
+                    hex = applyMapDirection(map, game.gameState, pendingBuildAction, hex, link.steps[i - 1]);
                     hexesWithTrack[hex.x + "," + hex.y] = true;
                 }
             }
@@ -134,7 +134,7 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
     }
     renderer.renderLayer(map.getRiverLayer());
 
-    for (let teleportLink of map.getTeleportLinks()) {
+    for (let teleportLink of map.getTeleportLinks(game.gameState, pendingBuildAction)) {
         let owner: string|undefined;
         if (game.gameState && game.gameState.links) {
             for (let playerLink of game.gameState.links) {
@@ -145,7 +145,7 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
                         owner = playerLink.owner;
                         break;
                     }
-                    hex = applyMapDirection(map, hex, step);
+                    hex = applyMapDirection(map, game.gameState, pendingBuildAction, hex, step);
                 }
                 if (owner) {
                     break;
@@ -186,7 +186,7 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
                 }
 
                 for (let i = 1; i < link.steps.length; i++) {
-                    hex = applyMapDirection(map, hex, link.steps[i-1]);
+                    hex = applyMapDirection(map, game.gameState, pendingBuildAction, hex, link.steps[i-1]);
                     let cityProperties = getCityProperties(game, map, hex);
                     if (!cityProperties) {
                         let left = oppositeDirection(link.steps[i-1]);
@@ -211,7 +211,7 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
                 }
 
                 // Render the last step in a completed link to a town
-                hex = applyMapDirection(map, hex, link.steps[link.steps.length-1]);
+                hex = applyMapDirection(map, game.gameState, pendingBuildAction, hex, link.steps[link.steps.length-1]);
                 if (link.complete && map.getHexType(hex) === HexType.TOWN) {
                     let cityProperties = getCityProperties(game, map, hex);
                     if (!cityProperties) {
@@ -294,7 +294,7 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
 
         if (buildingTrackHex) {
             for (let direction of ALL_DIRECTIONS) {
-                let stepHex = applyMapDirection(map, buildingTrackHex, direction);
+                let stepHex = applyMapDirection(map, game.gameState, pendingBuildAction, buildingTrackHex, direction);
                 let hexType = map.getHexType(stepHex);
                 if (stepHex.x >= 0 && stepHex.y >= 0
                         && stepHex.x < map.getWidth() && stepHex.y < map.getHeight()

@@ -16,7 +16,7 @@ type GameMap interface {
 	PopulateStartingCubes(gameState *common.GameState, randProvider common.RandProvider) error
 	GetTurnLimit(playerCount int) int
 	GetGoodsGrowthDiceCount(playerCount int) int
-	GetTeleportLink(src common.Coordinate, direction common.Direction) (*common.Coordinate, common.Direction)
+	GetTeleportLink(gameState *common.GameState, src common.Coordinate, direction common.Direction) (*common.Coordinate, common.Direction)
 
 	GetBuildLimit(gameState *common.GameState, player string) (int, error)
 	GetTownBuildCost(gameState *common.GameState, player string, hex common.Coordinate, routeCount int, isUpgrade bool) int
@@ -76,7 +76,7 @@ func (*AbstractGameMapImpl) GetGoodsGrowthDiceCount(playerCount int) int {
 	return playerCount
 }
 
-func (*AbstractGameMapImpl) GetTeleportLink(src common.Coordinate, direction common.Direction) (*common.Coordinate, common.Direction) {
+func (*AbstractGameMapImpl) GetTeleportLink(gameState *common.GameState, src common.Coordinate, direction common.Direction) (*common.Coordinate, common.Direction) {
 	return nil, 0
 }
 

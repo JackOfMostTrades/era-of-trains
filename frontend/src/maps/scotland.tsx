@@ -1,5 +1,6 @@
-import {BasicMap, RIVER_COLOR} from "./basic_map.tsx";
+import {BasicMap, RIVER_COLOR, TeleportLink} from "./basic_map.tsx";
 import {ReactNode} from "react";
+import {BuildAction, GameState, Urbanization} from "../api/api.ts";
 
 class Scotland extends BasicMap {
 
@@ -11,6 +12,37 @@ class Scotland extends BasicMap {
             <p>Four dice are rolled for each of the light and dark goods growth phases.</p>
             <p>The game lasts 8 turns.</p>
         </>;
+    }
+
+    public getTeleportLinks(gameState: GameState|undefined, pendingBuildAction: BuildAction|undefined): TeleportLink[] {
+        let teleportLinks = super.getTeleportLinks(gameState, pendingBuildAction).slice();
+        let urbs: Urbanization[] = [];
+        if (pendingBuildAction && pendingBuildAction.urbanization) {
+            urbs.push(pendingBuildAction.urbanization);
+        }
+        if (gameState && gameState.urbanizations) {
+            for (let urb of gameState.urbanizations) {
+                urbs.push(urb);
+            }
+        }
+        for (let urb of urbs) {
+            if (urb.hex.x === 0 && urb.hex.y === 13) {
+                teleportLinks.push({
+                    left: {
+                        hex: {x: 0, y: 13},
+                        direction: 1,
+                    },
+                    right: {
+                        hex: {x: 1, y: 12},
+                        direction: 4,
+                    },
+                    cost: 2,
+                    costLocation: {x: 0, y: 13},
+                    costLocationEdge: 1,
+                });
+            }
+        }
+        return teleportLinks;
     }
 
     public getTurnLimit(_: number): number {

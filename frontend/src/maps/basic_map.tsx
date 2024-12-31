@@ -1,5 +1,5 @@
 import {ReactNode} from "react";
-import {Color, Coordinate, Direction, GameState} from "../api/api.ts";
+import {BuildAction, Color, Coordinate, Direction, GameState} from "../api/api.ts";
 import {CityProperties, GameMap, HexType} from "./index.tsx";
 
 interface BasicCity {
@@ -81,7 +81,7 @@ export class BasicMap implements GameMap {
         return Color.NONE;
     }
 
-    public getTeleportLinks(): TeleportLink[] {
+    public getTeleportLinks(_gameState: GameState|undefined, _pendingBuildAction: BuildAction|undefined): TeleportLink[] {
         return this.teleportLinks || [];
     }
 

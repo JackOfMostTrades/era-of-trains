@@ -132,7 +132,7 @@ func (b *basicMap) GetTeleportLinkBuildCost(gameState *common.GameState, player 
 	return 0
 }
 
-func (b *basicMap) GetTeleportLink(src common.Coordinate, direction common.Direction) (*common.Coordinate, common.Direction) {
+func (b *basicMap) GetTeleportLink(gameState *common.GameState, src common.Coordinate, direction common.Direction) (*common.Coordinate, common.Direction) {
 	for _, teleportLink := range b.TeleportLinks {
 		if teleportLink.Left.Hex == src && teleportLink.Left.Direction == direction {
 			dest := teleportLink.Right.Hex

@@ -62,6 +62,34 @@ func (m *scotlandMap) PostBuildActionHook(gameState *common.GameState, player st
 	return nil
 }
 
+func (m *scotlandMap) GetTeleportLink(gameState *common.GameState, src common.Coordinate, direction common.Direction) (*common.Coordinate, common.Direction) {
+	dest, destDir := m.basicMap.GetTeleportLink(gameState, src, direction)
+	if dest != nil {
+		return dest, destDir
+	}
+
+	for _, urb := range gameState.Urbanizations {
+		if urb.Hex.X == 0 && urb.Hex.Y == 13 {
+			if src.X == 0 && src.Y == 13 && direction == common.NORTH_EAST {
+				return &common.Coordinate{X: 1, Y: 12}, common.SOUTH_WEST
+			}
+			if src.X == 1 && src.Y == 12 && direction == common.SOUTH_WEST {
+				return &common.Coordinate{X: 0, Y: 13}, common.NORTH_EAST
+			}
+		}
+	}
+	return nil, 0
+}
+
+func (m *scotlandMap) GetTeleportLinkBuildCost(gameState *common.GameState, player string, hex common.Coordinate, direction common.Direction) int {
+	for _, urb := range gameState.Urbanizations {
+		if urb.Hex.X == 0 && urb.Hex.Y == 13 {
+			return 2
+		}
+	}
+	return m.GetTeleportLinkBuildCost(gameState, player, hex, direction)
+}
+
 func loadScotlandMap() (GameMap, error) {
 	b, err := loadBasicMap("maps/scotland.json")
 	if err != nil {

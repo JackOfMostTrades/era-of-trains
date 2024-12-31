@@ -97,7 +97,7 @@ func (performer *buildActionPerformer) attemptTeleportLinkPlacement(teleportLink
 	hex := teleportLinkPlacement.Hex
 	direction := teleportLinkPlacement.Track
 
-	otherHex, otherDirection := performer.gameMap.GetTeleportLink(hex, direction)
+	otherHex, otherDirection := performer.gameMap.GetTeleportLink(performer.gameState, hex, direction)
 	if otherHex == nil {
 		return ErrInvalidPlacement
 	}
