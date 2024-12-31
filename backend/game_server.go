@@ -495,15 +495,22 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 		gameState.PlayerCash[userId] = 10
 	}
 
+	gameMap := server.gameMaps[mapName]
+	if gameMap == nil {
+		return nil, fmt.Errorf("failed to lookup map: %s", mapName)
+	}
+
 	// Populate the goods growth table
 	for i := 0; i < 12; i++ {
 		gameState.GoodsGrowth[i] = make([]common.Color, 3)
-		for j := 0; j < 3; j++ {
-			cube, err := gameState.DrawCube(server.randProvider)
-			if err != nil {
-				return nil, fmt.Errorf("failed to draw cube: %v", err)
+		if gameMap.GetCityHexForGoodsGrowth(i).X >= 0 {
+			for j := 0; j < 3; j++ {
+				cube, err := gameState.DrawCube(server.randProvider)
+				if err != nil {
+					return nil, fmt.Errorf("failed to draw cube: %v", err)
+				}
+				gameState.GoodsGrowth[i][j] = cube
 			}
-			gameState.GoodsGrowth[i][j] = cube
 		}
 	}
 	for i := 12; i < 20; i++ {
@@ -517,10 +524,6 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 		}
 	}
 
-	gameMap := server.gameMaps[mapName]
-	if gameMap == nil {
-		return nil, fmt.Errorf("failed to lookup map: %s", mapName)
-	}
 	err = gameMap.PopulateStartingCubes(gameState, server.randProvider)
 	if err != nil {
 		return nil, fmt.Errorf("failed to populate initial board cubes: %v", err)
