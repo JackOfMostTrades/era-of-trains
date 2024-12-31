@@ -84,7 +84,12 @@ func (m *scotlandMap) GetTeleportLink(gameState *common.GameState, src common.Co
 func (m *scotlandMap) GetTeleportLinkBuildCost(gameState *common.GameState, player string, hex common.Coordinate, direction common.Direction) int {
 	for _, urb := range gameState.Urbanizations {
 		if urb.Hex.X == 0 && urb.Hex.Y == 13 {
-			return 2
+			if hex.X == 0 && hex.Y == 13 && direction == common.NORTH_EAST {
+				return 2
+			}
+			if hex.X == 1 && hex.Y == 12 && direction == common.SOUTH_WEST {
+				return 2
+			}
 		}
 	}
 	return m.GetTeleportLinkBuildCost(gameState, player, hex, direction)
