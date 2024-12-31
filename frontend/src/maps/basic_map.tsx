@@ -89,6 +89,17 @@ export class BasicMap implements GameMap {
         return undefined;
     }
 
+    public getTurnLimit(playerCount: number): number {
+        if (playerCount === 6) {
+            return 6
+        } else if (playerCount === 5) {
+            return 7
+        } else if (playerCount === 4) {
+            return 8
+        }
+        return 10
+    }
+
     public getBuildLimit(gameState: GameState | undefined, player: string): number {
         if (gameState && gameState.playerActions[player] === 'engineer') {
             return 4;

@@ -14,6 +14,7 @@ type GameMap interface {
 	GetCityColorForHex(gameState *common.GameState, hex common.Coordinate) common.Color
 	GetCityHexForGoodsGrowth(goodsGrowth int) common.Coordinate
 	PopulateStartingCubes(gameState *common.GameState, randProvider common.RandProvider) error
+	GetTurnLimit(playerCount int) int
 
 	GetBuildLimit(gameState *common.GameState, player string) (int, error)
 	GetTownBuildCost(gameState *common.GameState, player string, hex common.Coordinate, routeCount int, isUpgrade bool) int
@@ -55,6 +56,17 @@ func (*AbstractGameMapImpl) GetCityHexForGoodsGrowth(goodsGrowth int) common.Coo
 
 func (*AbstractGameMapImpl) PopulateStartingCubes(gameState *common.GameState, randProvider common.RandProvider) error {
 	return nil
+}
+
+func (*AbstractGameMapImpl) GetTurnLimit(playerCount int) int {
+	if playerCount == 6 {
+		return 6
+	} else if playerCount == 5 {
+		return 7
+	} else if playerCount == 4 {
+		return 8
+	}
+	return 10
 }
 
 func (*AbstractGameMapImpl) GetBuildLimit(gameState *common.GameState, player string) (int, error) {

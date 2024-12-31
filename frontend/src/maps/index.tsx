@@ -33,6 +33,7 @@ export interface GameMap {
     getCityColor(goodsGrowthNumber: number): Color;
     getInterurbanLinks(): InterurbanLink[];
     getSpecialTrackPricing(hex: Coordinate): number|undefined;
+    getTurnLimit(playerCount: number): number
     getBuildLimit(gameState: GameState|undefined, player: string): number;
     getMapInfo(): ReactNode;
     getRiverLayer(): ReactNode;

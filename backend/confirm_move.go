@@ -203,14 +203,7 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 	}
 
 	// Determine if the game is over
-	turnLimit := 10
-	if len(gameState.PlayerOrder) == 6 {
-		turnLimit = 6
-	} else if len(gameState.PlayerOrder) == 5 {
-		turnLimit = 7
-	} else if len(gameState.PlayerOrder) == 4 {
-		turnLimit = 8
-	}
+	turnLimit := handler.gameMap.GetTurnLimit(numPlayers)
 	if gameState.TurnNumber > turnLimit {
 		finishedFlag = 1
 	}

@@ -14,7 +14,7 @@ import ProductionAction from "../actions/ProductionAction.tsx";
 import {playerColorToHtml} from "../actions/renderer/HexRenderer.tsx";
 import GameLogsComponent from "./GameLogsComponent.tsx";
 import FinalScore from "../actions/FinalScore.tsx";
-import {maps} from "../maps";
+import {GameMap, maps} from "../maps";
 import "./ViewGamePage.css";
 import {mapNameToDisplayName, specialActionToDisplayName} from "../util.ts";
 
@@ -98,7 +98,7 @@ function PlayerColorAndName({nickname, color}: {nickname: string, color: PlayerC
     }}/> {nickname}</>
 }
 
-function PlayerStatus({game, onConfirmMove}: { game: ViewGameResponse, onConfirmMove: () => Promise<void> }) {
+function PlayerStatus({game, map, onConfirmMove}: { game: ViewGameResponse, map: GameMap, onConfirmMove: () => Promise<void> }) {
     let userSessionContext = useContext(UserSessionContext);
 
     if (!game.gameState) {
@@ -170,7 +170,7 @@ function PlayerStatus({game, onConfirmMove}: { game: ViewGameResponse, onConfirm
                 <>{idx===0?null:', '}<PlayerColorAndName nickname={playerById[playerId].nickname} color={game.gameState?.playerColor[playerId]} /></>)}<br/>
             Active player: <PlayerColorAndName nickname={playerById[game.activePlayer].nickname} color={game.gameState?.playerColor[game.activePlayer]} /><br/>
             Game Phase: {game.gameState.gamePhase}<br/>
-            Turn: {game.gameState.turnNumber}<br/>
+            Turn: {game.gameState.turnNumber} / {map.getTurnLimit(game.numPlayers)} <br/>
         </Segment>
         <Segment className={"action-holder " + (game.activePlayer === userSessionContext.userInfo?.user.id ? "my-turn" : "other-player-turn") }>
             {actionHolder}
@@ -218,7 +218,7 @@ function ViewGamePage() {
         let map = maps[game.mapName];
         let mapInfo = map.getMapInfo();
         content = <>
-            <PlayerStatus game={game} onConfirmMove={() => reload()}/>
+            <PlayerStatus game={game} map={map} onConfirmMove={() => reload()}/>
             <ViewMapComponent game={game} map={map} />
             <GoodsGrowthTable game={game} map={map} />
             {!mapInfo ? null : <Segment><Header as='h2'>Map Info</Header>{mapInfo}</Segment>}
