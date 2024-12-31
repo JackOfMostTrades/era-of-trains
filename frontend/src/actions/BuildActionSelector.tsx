@@ -23,7 +23,7 @@ import UserSessionContext from "../UserSessionContext.tsx";
 import {NewCitySelector,} from "./TrackSelector.tsx";
 import ErrorContext from "../ErrorContext.tsx";
 import {GameMap, HexType, maps} from "../maps";
-import {applyDirection, oppositeDirection} from "../util.ts";
+import {applyMapDirection, applyTeleport, oppositeDirection} from "../util.ts";
 
 function isCityHex(game: ViewGameResponse, map: GameMap, urbanization: Urbanization|undefined, hex: Coordinate): boolean {
     if (map.getHexType(hex) === HexType.CITY) {
@@ -58,7 +58,7 @@ function computeExistingRoutes(gameState: GameState|undefined, map: GameMap): Ar
         for (let link of gameState.links) {
             let hex = link.sourceHex;
             for (let i = 1; i < link.steps.length; i++) {
-                hex = applyDirection(hex, link.steps[i-1]);
+                hex = applyMapDirection(map, hex, link.steps[i-1]);
                 let left = oppositeDirection(link.steps[i-1]);
                 let right = link.steps[i];
                 routes[hex.y][hex.x].push({Left: left, Right: right});
@@ -95,7 +95,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
         trackRedirects: [],
         trackPlacements: [],
         urbanization: undefined,
-        interurbanLinkPlacements: []
+        teleportLinkPlacements: []
     });
     let [showUrbanize, setShowUrbanize] = useState<boolean>(false);
     let [urbanizeSelection, setUrbanizeSelection] = useState<number>(0);
@@ -136,11 +136,23 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
             if (e.detail && buildingTrackHex !== undefined) {
                 let direction = e.detail.direction;
                 let priorDirection = buildingTrackDirection;
-                let newHex = applyDirection(buildingTrackHex, direction);
+
+                // If this was a teleport, we need to update the action
+                let newAction = Object.assign({}, action);
+                if (applyTeleport(map, buildingTrackHex, direction) !== undefined) {
+                    newAction.teleportLinkPlacements = newAction.teleportLinkPlacements.slice();
+                    newAction.teleportLinkPlacements.push({
+                        hex: buildingTrackHex,
+                        track: direction,
+                    });
+                    setAction(newAction);
+                    document.dispatchEvent(new CustomEvent('pendingBuildAction', {detail: newAction}));
+                }
+
+                let newHex = applyMapDirection(map, buildingTrackHex, direction);
                 if (priorDirection !== undefined) {
                     if (map.getHexType(buildingTrackHex) === HexType.TOWN) {
                         // If we've built into a town, just ignore the direction and complete the link
-                        let newAction = Object.assign({}, action);
                         newAction.townPlacements = newAction.townPlacements.slice();
                         newAction.townPlacements.push({
                             hex: buildingTrackHex,
@@ -155,7 +167,6 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                         document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: undefined }));
                     } else {
                         // Just add some ordinary track...
-                        let newAction = Object.assign({}, action);
                         newAction.trackPlacements = newAction.trackPlacements.slice();
                         newAction.trackPlacements.push({
                             hex: buildingTrackHex,
@@ -180,7 +191,6 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                     let isCity = isCityHex(game, map, action.urbanization, buildingTrackHex);
                     // If building from a town (and it's not urbanized), add a town placement
                     if (map.getHexType(buildingTrackHex) === HexType.TOWN && !isCity) {
-                        let newAction = Object.assign({}, action);
                         newAction.townPlacements = newAction.townPlacements.slice();
                         newAction.townPlacements.push({
                             hex: buildingTrackHex,
@@ -192,27 +202,11 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                         // If this is a city and the next is a city, check for an interurban link
                         let isNextCity = isCityHex(game, map, action.urbanization, newHex);
                         if (isNextCity) {
-                            for (let interurbanLink of map.getInterurbanLinks()) {
-                                if ((interurbanLink.hex.x === buildingTrackHex.x && interurbanLink.hex.y === buildingTrackHex.y
-                                        && direction === interurbanLink.direction)
-                                    || (interurbanLink.hex.x === newHex.x && interurbanLink.hex.y === newHex.y
-                                        && direction === oppositeDirection(interurbanLink.direction))) {
-                                    let newAction = Object.assign({}, action);
-                                    newAction.interurbanLinkPlacements = newAction.interurbanLinkPlacements.slice();
-                                    newAction.interurbanLinkPlacements.push({
-                                        hex: buildingTrackHex,
-                                        track: direction,
-                                    });
-                                    setAction(newAction);
-                                    document.dispatchEvent(new CustomEvent('pendingBuildAction', {detail: newAction}));
-
-                                    // Clear the selection
-                                    setBuildingTrackHex(undefined);
-                                    setBuildingTrackDirection(undefined);
-                                    document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: undefined }));
-                                    return;
-                                }
-                            }
+                            // Clear the selection
+                            setBuildingTrackHex(undefined);
+                            setBuildingTrackDirection(undefined);
+                            document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: undefined }));
+                            return;
                         } else {
                             // Do nothing, this is just defining where the route is coming from
                         }
@@ -230,7 +224,6 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                             // Do nothing
                         } else {
                             // This is a redirect
-                            let newAction = Object.assign({}, action);
                             newAction.trackRedirects = newAction.trackRedirects.slice();
                             newAction.trackRedirects.push({
                                 hex: buildingTrackHex,
@@ -307,7 +300,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                         townPlacements: [],
                         trackRedirects: [],
                         trackPlacements: [],
-                        interurbanLinkPlacements: [],
+                        teleportLinkPlacements: [],
                         urbanization: undefined,
                     };
                     setAction(newAction);
@@ -342,7 +335,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                             return;
                         }
                         let buildLimit = map.getBuildLimit(game.gameState, game.activePlayer);
-                        if (action.townPlacements.length + action.trackPlacements.length + action.interurbanLinkPlacements.length + action.trackRedirects.length < buildLimit) {
+                        if (action.townPlacements.length + action.trackPlacements.length + action.teleportLinkPlacements.length + action.trackRedirects.length < buildLimit) {
                             setShowConfirmModal('tracks');
                             return;
                         }
@@ -361,7 +354,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                             townPlacements: [],
                             trackRedirects: [],
                             trackPlacements: [],
-                            interurbanLinkPlacements: [],
+                            teleportLinkPlacements: [],
                             urbanization: undefined,
                         };
                         setAction(newAction);

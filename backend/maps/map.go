@@ -15,14 +15,17 @@ type GameMap interface {
 	GetCityHexForGoodsGrowth(goodsGrowth int) common.Coordinate
 	PopulateStartingCubes(gameState *common.GameState, randProvider common.RandProvider) error
 	GetTurnLimit(playerCount int) int
+	GetGoodsGrowthDiceCount(playerCount int) int
+	GetTeleportLink(src common.Coordinate, direction common.Direction) (*common.Coordinate, common.Direction)
 
 	GetBuildLimit(gameState *common.GameState, player string) (int, error)
 	GetTownBuildCost(gameState *common.GameState, player string, hex common.Coordinate, routeCount int, isUpgrade bool) int
 	GetTrackBuildCost(gameState *common.GameState, player string, hexType HexType, hex common.Coordinate, trackType common.TrackType, isUpgrade bool) (int, error)
-	GetTotalBuildCost(gameState *common.GameState, player string, redirectCosts []int, townCosts []int, trackCosts []int, interurbanCosts []int) int
-	GetInterurbanBuildCost(gameState *common.GameState, player string, hex common.Coordinate, direction common.Direction) int
+	GetTotalBuildCost(gameState *common.GameState, player string, redirectCosts []int, townCosts []int, trackCosts []int, teleportCosts []int) int
+	GetTeleportLinkBuildCost(gameState *common.GameState, player string, hex common.Coordinate, direction common.Direction) int
 	GetIncomeReduction(gameState *common.GameState, player string) (int, error)
 	PostSetupHook(gameState *common.GameState, randProvider common.RandProvider) error
+	PreAuctionHook(gameState *common.GameState, log LogFun) error
 	PostBuildActionHook(gameState *common.GameState, player string) error
 	PostGoodsGrowthHook(gameState *common.GameState, randProvider common.RandProvider, log LogFun) error
 	GetDeliveryBonus(color common.Color) int
@@ -67,6 +70,14 @@ func (*AbstractGameMapImpl) GetTurnLimit(playerCount int) int {
 		return 8
 	}
 	return 10
+}
+
+func (*AbstractGameMapImpl) GetGoodsGrowthDiceCount(playerCount int) int {
+	return playerCount
+}
+
+func (*AbstractGameMapImpl) GetTeleportLink(src common.Coordinate, direction common.Direction) (*common.Coordinate, common.Direction) {
+	return nil, 0
 }
 
 func (*AbstractGameMapImpl) GetBuildLimit(gameState *common.GameState, player string) (int, error) {
@@ -128,7 +139,7 @@ func (*AbstractGameMapImpl) GetTrackBuildCost(gameState *common.GameState, playe
 }
 
 func (*AbstractGameMapImpl) GetTotalBuildCost(gameState *common.GameState, player string,
-	redirectCosts []int, townCosts []int, trackCosts []int, interurbanCosts []int) int {
+	redirectCosts []int, townCosts []int, trackCosts []int, teleportCosts []int) int {
 
 	totalCost := 0
 	for _, cost := range redirectCosts {
@@ -140,7 +151,7 @@ func (*AbstractGameMapImpl) GetTotalBuildCost(gameState *common.GameState, playe
 	for _, cost := range trackCosts {
 		totalCost += cost
 	}
-	for _, cost := range interurbanCosts {
+	for _, cost := range teleportCosts {
 		totalCost += cost
 	}
 	return totalCost
@@ -165,11 +176,15 @@ func (*AbstractGameMapImpl) GetIncomeReduction(gameState *common.GameState, play
 	return reduction, nil
 }
 
-func (*AbstractGameMapImpl) GetInterurbanBuildCost(gameState *common.GameState, player string, hex common.Coordinate, direction common.Direction) int {
+func (*AbstractGameMapImpl) GetTeleportLinkBuildCost(gameState *common.GameState, player string, hex common.Coordinate, direction common.Direction) int {
 	return 0
 }
 
 func (*AbstractGameMapImpl) PostSetupHook(gameState *common.GameState, randProvider common.RandProvider) error {
+	return nil
+}
+
+func (*AbstractGameMapImpl) PreAuctionHook(gameState *common.GameState, log LogFun) error {
 	return nil
 }
 
@@ -213,6 +228,12 @@ func LoadMaps() (map[string]GameMap, error) {
 		return nil, err
 	}
 	maps["germany"] = germany
+
+	scotland, err := loadScotlandMap()
+	if err != nil {
+		return nil, err
+	}
+	maps["scotland"] = scotland
 
 	return maps, nil
 }

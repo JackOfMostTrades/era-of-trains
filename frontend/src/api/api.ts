@@ -269,7 +269,7 @@ export interface TrackRedirect {
     hex: Coordinate;
 }
 
-export interface InterurbanLinkPlacement {
+export interface TeleportLinkPlacement {
     track: Direction;
     hex: Coordinate;
 }
@@ -279,7 +279,7 @@ export interface BuildAction {
     townPlacements: TownPlacement[];
     trackRedirects: TrackRedirect[];
     trackPlacements: TrackPlacement[];
-    interurbanLinkPlacements: InterurbanLinkPlacement[];
+    teleportLinkPlacements: TeleportLinkPlacement[];
 }
 
 export interface MoveGoodsAction {

@@ -11,8 +11,9 @@ import {
 import {Button, Header, Icon} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
-import {applyDirection, oppositeDirection} from "../util.ts";
+import {applyMapDirection, oppositeDirection} from "../util.ts";
 import ErrorContext from "../ErrorContext.tsx";
+import {GameMap, maps} from "../maps";
 
 export interface Step {
     selectedColor?: Color;
@@ -24,7 +25,7 @@ export interface Step {
     playerToLinkCount?: { [ playerId: string]: number }
 }
 
-function computeNextStop(game: ViewGameResponse, current: Coordinate, direction: Direction): { end: Coordinate, moveAlong: Coordinate[], linkOwner: string }|undefined {
+function computeNextStop(game: ViewGameResponse, map: GameMap, current: Coordinate, direction: Direction): { end: Coordinate, moveAlong: Coordinate[], linkOwner: string }|undefined {
     if (!game.gameState || !game.gameState.links) {
         return undefined;
     }
@@ -35,7 +36,7 @@ function computeNextStop(game: ViewGameResponse, current: Coordinate, direction:
         let end = link.sourceHex;
         let moveAlong = [end];
         for (let dir of link.steps) {
-            end = applyDirection(end, dir);
+            end = applyMapDirection(map, end, dir);
             moveAlong.push(end);
         }
         if (link.sourceHex.x === current.x && link.sourceHex.y === current.y && link.steps[0] === direction) {
@@ -50,10 +51,10 @@ function computeNextStop(game: ViewGameResponse, current: Coordinate, direction:
     return undefined;
 }
 
-function getValidStepDirections(game: ViewGameResponse, origin: Coordinate): Array<{direction: Direction, owner: string}> {
+function getValidStepDirections(game: ViewGameResponse, map: GameMap, origin: Coordinate): Array<{direction: Direction, owner: string}> {
     let results = [];
     for (let direction of ALL_DIRECTIONS) {
-        let nextStop = computeNextStop(game, origin, direction);
+        let nextStop = computeNextStop(game, map, origin, direction);
         if (nextStop !== undefined) {
             results.push({direction: direction, owner: nextStop.linkOwner});
         }
@@ -67,11 +68,13 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
     let [step, setStep] = useState<Step>({})
     let [loading, setLoading] = useState<boolean>(false);
 
+    let map = maps[game.mapName];
+
     useEffect(() => {
         const handler = (e:CustomEventInit<{direction: Direction}>) => {
             if (e.detail && step.selectedColor !== undefined && step.currentCubePosition) {
                 let direction = e.detail.direction;
-                let nextStop = computeNextStop(game, step.currentCubePosition, direction);
+                let nextStop = computeNextStop(game, map, step.currentCubePosition, direction);
                 if (nextStop !== undefined) {
                     let newStep = Object.assign({}, step);
                     newStep.steps = (newStep.steps || []).slice();
@@ -85,7 +88,7 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                     newStep.moveAlong = nextStop.moveAlong;
                     newStep.currentCubePosition = nextStop.end;
                     newStep.nextStepOptions = [];
-                    for (let option of getValidStepDirections(game, nextStop.end)) {
+                    for (let option of getValidStepDirections(game, map, nextStop.end)) {
                         newStep.nextStepOptions?.push({direction: option.direction, owner: game.gameState?.playerColor[option.owner]});
                     }
                     setStep(newStep);
@@ -111,7 +114,7 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                     nextStepOptions: [],
                     playerToLinkCount: {}
                 }
-                for (let option of getValidStepDirections(game, hex)) {
+                for (let option of getValidStepDirections(game, map, hex)) {
                     newStep.nextStepOptions?.push({direction: option.direction, owner: game.gameState?.playerColor[option.owner]});
                 }
 

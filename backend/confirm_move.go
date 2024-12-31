@@ -51,17 +51,17 @@ type TrackPlacement struct {
 	Hex   common.Coordinate   `json:"hex"`
 }
 
-type InterurbanLinkPlacement struct {
+type TeleportLinkPlacement struct {
 	Track common.Direction  `json:"track"`
 	Hex   common.Coordinate `json:"hex"`
 }
 
 type BuildAction struct {
-	Urbanization             *common.Urbanization       `json:"urbanization"`
-	TownPlacements           []*TownPlacement           `json:"townPlacements"`
-	TrackRedirects           []*TrackRedirect           `json:"trackRedirects"`
-	TrackPlacements          []*TrackPlacement          `json:"trackPlacements"`
-	InterurbanLinkPlacements []*InterurbanLinkPlacement `json:"interurbanLinkPlacements"`
+	Urbanization           *common.Urbanization     `json:"urbanization"`
+	TownPlacements         []*TownPlacement         `json:"townPlacements"`
+	TrackRedirects         []*TrackRedirect         `json:"trackRedirects"`
+	TrackPlacements        []*TrackPlacement        `json:"trackPlacements"`
+	TeleportLinkPlacements []*TeleportLinkPlacement `json:"teleportLinkPlacements"`
 }
 
 type MoveGoodsAction struct {
@@ -313,6 +313,10 @@ func (handler *confirmMoveHandler) handleSharesAction(sharesAction *SharesAction
 	if nextPlayerId == "" {
 		// Advance game phase
 		gameState.GamePhase = common.AUCTION_GAME_PHASE
+		err := handler.gameMap.PreAuctionHook(gameState, handler.Log)
+		if err != nil {
+			return err
+		}
 		handler.activePlayer = gameState.PlayerOrder[0]
 	} else {
 		handler.activePlayer = nextPlayerId
@@ -649,7 +653,7 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 			handler.ActivePlayerNick(), gameState.PlayerLoco[handler.activePlayer])
 	} else if moveGoodsAction.Color != common.NONE_COLOR {
 
-		deliveryGraph := computeDeliveryGraph(gameState)
+		deliveryGraph := computeDeliveryGraph(gameState, gameMap)
 
 		// Verify that there is a cube on the board of a matching color and the start location
 		foundCube := false
@@ -1002,7 +1006,8 @@ func (handler *confirmMoveHandler) executeGoodsGrowthPhase(gameMap maps.GameMap)
 	}
 
 	// Light-side
-	for i := 0; i < numPlayers; i++ {
+	diceCount := gameMap.GetGoodsGrowthDiceCount(numPlayers)
+	for i := 0; i < diceCount; i++ {
 		val, err := handler.randProvider.RandN(6)
 		if err != nil {
 			return fmt.Errorf("failed to get random number: %v", err)
@@ -1015,7 +1020,7 @@ func (handler *confirmMoveHandler) executeGoodsGrowthPhase(gameMap maps.GameMap)
 	}
 
 	// Dark-side
-	for i := 0; i < numPlayers; i++ {
+	for i := 0; i < diceCount; i++ {
 		val, err := handler.randProvider.RandN(6)
 		if err != nil {
 			return fmt.Errorf("failed to get random number: %v", err)

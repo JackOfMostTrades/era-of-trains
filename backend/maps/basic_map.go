@@ -20,25 +20,32 @@ type startingCubeSpec struct {
 	Coordinate common.Coordinate `json:"coordinate"`
 }
 
-type interurbanLink struct {
-	Cost      int               `json:"cost"`
-	Hex       common.Coordinate `json:"hex"`
-	Direction common.Direction  `json:"direction"`
-}
-
 type specialTrackPricing struct {
 	Cost int               `json:"cost"`
 	Hex  common.Coordinate `json:"hex"`
+}
+
+type teleportLink struct {
+	Left             *teleportLinkEdge `json:"left"`
+	Right            *teleportLinkEdge `json:"right"`
+	Cost             int               `json:"cost"`
+	CostLocation     common.Coordinate `json:"costLocation"`
+	CostLocationEdge common.Direction  `json:"costLocationEdge"`
+}
+
+type teleportLinkEdge struct {
+	Hex       common.Coordinate `json:"hex"`
+	Direction common.Direction  `json:"direction"`
 }
 
 type basicMap struct {
 	*AbstractGameMapImpl
 
 	// Rectangular array height*width in size (y dimension is first)
-	Hexes           [][]HexType        `json:"hexes"`
-	Cities          []basicCity        `json:"cities"`
-	StartingCubes   []startingCubeSpec `json:"startingCubes"`
-	InterurbanLinks []interurbanLink   `json:"interurbanLinks"`
+	Hexes         [][]HexType        `json:"hexes"`
+	Cities        []basicCity        `json:"cities"`
+	StartingCubes []startingCubeSpec `json:"startingCubes"`
+	TeleportLinks []teleportLink     `json:"teleportLinks"`
 	// Hexes with unusual track costs
 	SpecialTrackPricing []specialTrackPricing `json:"specialTrackPricing,omitempty"`
 }
@@ -115,13 +122,28 @@ func (b *basicMap) GetTrackBuildCost(gameState *common.GameState, player string,
 	return b.AbstractGameMapImpl.GetTrackBuildCost(gameState, player, hexType, hex, trackType, isUpgrade)
 }
 
-func (b *basicMap) GetInterurbanBuildCost(gameState *common.GameState, player string, hex common.Coordinate, direction common.Direction) int {
-	for _, link := range b.InterurbanLinks {
-		if link.Hex.X == hex.X && link.Hex.Y == hex.Y && link.Direction == direction {
+func (b *basicMap) GetTeleportLinkBuildCost(gameState *common.GameState, player string, hex common.Coordinate, direction common.Direction) int {
+	for _, link := range b.TeleportLinks {
+		if (link.Left.Hex == hex && link.Left.Direction == direction) ||
+			(link.Right.Hex == hex && link.Right.Direction == direction) {
 			return link.Cost
 		}
 	}
 	return 0
+}
+
+func (b *basicMap) GetTeleportLink(src common.Coordinate, direction common.Direction) (*common.Coordinate, common.Direction) {
+	for _, teleportLink := range b.TeleportLinks {
+		if teleportLink.Left.Hex == src && teleportLink.Left.Direction == direction {
+			dest := teleportLink.Right.Hex
+			return &dest, teleportLink.Right.Direction
+		}
+		if teleportLink.Right.Hex == src && teleportLink.Right.Direction == direction {
+			dest := teleportLink.Left.Hex
+			return &dest, teleportLink.Left.Direction
+		}
+	}
+	return nil, 0
 }
 
 func loadBasicMap(filename string) (*basicMap, error) {

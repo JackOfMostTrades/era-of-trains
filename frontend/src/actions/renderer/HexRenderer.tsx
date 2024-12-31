@@ -422,12 +422,17 @@ export class HexRenderer {
         this.height = Math.max(this.height, hex.y);
     }
 
-    public renderInterurbanLink(hex: Coordinate, direction: Direction, fillColor: PlayerColor|undefined, cost: number|undefined) {
-        let pos = this.getHexXY(hex);
+    public renderTeleportLink(hex: Coordinate, offset: Direction|-1, fillColor: PlayerColor|undefined, cost: number|undefined) {
 
-        let edge = hexEdgeOffset(direction);
-        let cx = pos.x + edge.dx;
-        let cy = pos.y + edge.dy;
+        let pos: {x: number, y: number};
+        if (offset === -1) {
+            pos = this.getHexCenter(hex);
+        } else {
+            pos = this.getHexXY(hex);
+            let edge = hexEdgeOffset(offset);
+            pos.x += edge.dx;
+            pos.y += edge.dy;
+        }
 
         let fill: string;
         if (fillColor === undefined) {
@@ -436,9 +441,9 @@ export class HexRenderer {
             fill = playerColorToHtml(fillColor);
         }
 
-        this.paths.push(<circle stroke='#000000' strokeWidth={0.25} cx={cx} cy={cy} r={2} fill={fill} />);
+        this.paths.push(<circle stroke='#000000' strokeWidth={0.25} cx={pos.x} cy={pos.y} r={2} fill={fill} />);
         if (cost !== undefined) {
-            this.paths.push(<text fontSize={1} x={cx} y={cy} dominantBaseline="middle" textAnchor="middle">${cost}</text>);
+            this.paths.push(<text fill='#b63421' fontSize={1.5} x={pos.x} y={pos.y+0.125} dominantBaseline="middle" textAnchor="middle">${cost}</text>);
         }
     }
 

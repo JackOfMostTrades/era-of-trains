@@ -1,4 +1,25 @@
 import {Coordinate, Direction, SpecialAction} from "./api/api.ts";
+import {GameMap} from "./maps";
+
+export function applyTeleport(map: GameMap, coordinate: Coordinate, direction: Direction): Coordinate|undefined {
+    for (let teleportLink of map.getTeleportLinks()) {
+        if (teleportLink.left.hex.x === coordinate.x && teleportLink.left.hex.y === coordinate.y && teleportLink.left.direction === direction) {
+            return teleportLink.right.hex;
+        }
+        if (teleportLink.right.hex.x === coordinate.x && teleportLink.right.hex.y === coordinate.y && teleportLink.right.direction === direction) {
+            return teleportLink.left.hex;
+        }
+    }
+    return undefined;
+}
+
+export function applyMapDirection(map: GameMap, coordinate: Coordinate, direction: Direction): Coordinate {
+    let teleportDest = applyTeleport(map, coordinate, direction);
+    if (teleportDest !== undefined) {
+        return teleportDest;
+    }
+    return applyDirection(coordinate, direction);
+}
 
 export function applyDirection(coordinate: Coordinate, direction: Direction): Coordinate {
     switch (direction) {
@@ -54,6 +75,9 @@ export function mapNameToDisplayName(mapName: string): string {
     }
     if (mapName === 'germany') {
         return "Germany";
+    }
+    if (mapName === 'scotland') {
+        return "Scotland";
     }
     return mapName;
 }

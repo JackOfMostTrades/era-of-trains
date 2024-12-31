@@ -8,10 +8,17 @@ interface BasicCity {
     goodsGrowth: number[];
 }
 
-export interface InterurbanLink {
+export interface TeleportLinkEdge {
+    hex: Coordinate,
+    direction: Direction
+}
+
+export interface TeleportLink {
+    left: TeleportLinkEdge;
+    right: TeleportLinkEdge;
     cost: number;
-    hex: Coordinate;
-    direction: Direction;
+    costLocation: Coordinate;
+    costLocationEdge: Direction|-1;
 }
 
 interface SpecialTrackPricing {
@@ -24,7 +31,7 @@ export const RIVER_COLOR = "#009bb2";
 export class BasicMap implements GameMap {
     protected hexes: HexType[][] = [];
     protected cities: BasicCity[] = [];
-    protected interurbanLinks: InterurbanLink[] = [];
+    protected teleportLinks: TeleportLink[] = [];
     protected specialTrackPricing: SpecialTrackPricing[] = [];
 
     public getWidth(): number {
@@ -74,8 +81,8 @@ export class BasicMap implements GameMap {
         return Color.NONE;
     }
 
-    public getInterurbanLinks(): InterurbanLink[] {
-        return this.interurbanLinks || [];
+    public getTeleportLinks(): TeleportLink[] {
+        return this.teleportLinks || [];
     }
 
     public getSpecialTrackPricing(hex: Coordinate): number|undefined {
@@ -118,7 +125,7 @@ export class BasicMap implements GameMap {
     protected initializeFromJson(src: any) {
         this.hexes = src.hexes;
         this.cities = src.cities;
-        this.interurbanLinks = src.interurbanLinks;
+        this.teleportLinks = src.teleportLinks;
         this.specialTrackPricing = src.specialTrackPricing;
     }
 

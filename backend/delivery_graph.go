@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/JackOfMostTrades/eot/backend/common"
+	"github.com/JackOfMostTrades/eot/backend/maps"
 )
 
 type DeliveryGraphLink struct {
@@ -48,7 +49,7 @@ func applyDirection(coord common.Coordinate, direction common.Direction) common.
 	panic(fmt.Errorf("unhandled direction: %v", direction))
 }
 
-func computeDeliveryGraph(gameState *common.GameState) *DeliveryGraph {
+func computeDeliveryGraph(gameState *common.GameState, gameMap maps.GameMap) *DeliveryGraph {
 	hexToDirectionToLink := make(map[common.Coordinate]map[common.Direction]DeliveryGraphLink)
 	for _, link := range gameState.Links {
 		if !link.Complete {
@@ -58,7 +59,11 @@ func computeDeliveryGraph(gameState *common.GameState) *DeliveryGraph {
 		src := link.SourceHex
 		dest := src
 		for _, step := range link.Steps {
-			dest = applyDirection(dest, step)
+			if teleportDest, _ := gameMap.GetTeleportLink(dest, step); teleportDest != nil {
+				dest = *teleportDest
+			} else {
+				dest = applyDirection(dest, step)
+			}
 		}
 		if _, ok := hexToDirectionToLink[src]; !ok {
 			hexToDirectionToLink[src] = make(map[common.Direction]DeliveryGraphLink)

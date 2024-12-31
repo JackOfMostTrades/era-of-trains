@@ -2,7 +2,7 @@ import {ALL_DIRECTIONS, BuildAction, Color, Coordinate, Direction, PlayerColor, 
 import {ReactNode, useEffect, useState} from "react";
 import {CityProperties, GameMap, HexType} from "../maps";
 import {HexRenderer, urbCityProperties} from "../actions/renderer/HexRenderer.tsx";
-import {applyDirection, oppositeDirection} from "../util.ts";
+import {applyDirection, applyMapDirection, oppositeDirection} from "../util.ts";
 import {Step as MoveGoodsStep} from "../actions/MoveGoodsActionSelector.tsx";
 
 function getCityProperties(game: ViewGameResponse, map: GameMap, coordinate: Coordinate): CityProperties|undefined {
@@ -45,12 +45,12 @@ class RenderMapBuilder {
         this.hexRenderer.renderLayer(node);
     }
 
-    public renderEmptyInterurbanLink(hex: Coordinate, direction: Direction, cost: number) {
-        this.hexRenderer.renderInterurbanLink(hex, direction, undefined, cost);
+    public renderEmptyTeleportLink(hex: Coordinate, offset: Direction|-1, cost: number) {
+        this.hexRenderer.renderTeleportLink(hex, offset, undefined, cost);
     }
 
-    public renderOccupiedInterurbanLink(hex: Coordinate, direction: Direction, playerColor: PlayerColor) {
-        this.hexRenderer.renderInterurbanLink(hex, direction, playerColor, undefined);
+    public renderOccupiedTeleportLink(hex: Coordinate, offset: Direction|-1, playerColor: PlayerColor) {
+        this.hexRenderer.renderTeleportLink(hex, offset, playerColor, undefined);
     }
 
     public renderSpecialCost(hex: Coordinate, cost: number) {
@@ -120,7 +120,7 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
             for (let link of game.gameState.links) {
                 let hex = link.sourceHex;
                 for (let i = 1; i < link.steps.length; i++) {
-                    hex = applyDirection(hex, link.steps[i - 1]);
+                    hex = applyMapDirection(map, hex, link.steps[i - 1]);
                     hexesWithTrack[hex.x + "," + hex.y] = true;
                 }
             }
@@ -134,33 +134,39 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
     }
     renderer.renderLayer(map.getRiverLayer());
 
-    for (let interurbanLink of map.getInterurbanLinks()) {
+    for (let teleportLink of map.getTeleportLinks()) {
         let owner: string|undefined;
         if (game.gameState && game.gameState.links) {
             for (let playerLink of game.gameState.links) {
-                if (playerLink.sourceHex.x === interurbanLink.hex.x && playerLink.sourceHex.y === interurbanLink.hex.y
-                    && playerLink.steps[0] === interurbanLink.direction) {
-                    owner = playerLink.owner;
+                let hex = playerLink.sourceHex;
+                for (let step of playerLink.steps) {
+                    if ((hex.x === teleportLink.left.hex.x && hex.y === teleportLink.left.hex.y && step === teleportLink.left.direction) ||
+                            (hex.x === teleportLink.right.hex.x && hex.y === teleportLink.right.hex.y && step === teleportLink.right.direction)) {
+                        owner = playerLink.owner;
+                        break;
+                    }
+                    hex = applyMapDirection(map, hex, step);
+                }
+                if (owner) {
                     break;
                 }
             }
         }
-        if (pendingBuildAction && pendingBuildAction.interurbanLinkPlacements) {
-            for (let playerLink of pendingBuildAction.interurbanLinkPlacements) {
-                let other = applyDirection(playerLink.hex, playerLink.track);
-                if ((playerLink.hex.x === interurbanLink.hex.x && playerLink.hex.y === interurbanLink.hex.y
-                        && playerLink.track === interurbanLink.direction)
-                    || (other.x === interurbanLink.hex.x && other.y === interurbanLink.hex.y
-                        && oppositeDirection(playerLink.track) === interurbanLink.direction)) {
+        if (pendingBuildAction && pendingBuildAction.teleportLinkPlacements) {
+            for (let playerLink of pendingBuildAction.teleportLinkPlacements) {
+                let hex = playerLink.hex;
+                let step = playerLink.track;
+                if ((hex.x === teleportLink.left.hex.x && hex.y === teleportLink.left.hex.y && step === teleportLink.left.direction) ||
+                    (hex.x === teleportLink.right.hex.x && hex.y === teleportLink.right.hex.y && step === teleportLink.right.direction)) {
                     owner = game.activePlayer;
                     break;
                 }
             }
         }
         if (owner) {
-            renderer.renderOccupiedInterurbanLink(interurbanLink.hex, interurbanLink.direction, game.gameState?.playerColor[owner] as PlayerColor);
+            renderer.renderOccupiedTeleportLink(teleportLink.costLocation, teleportLink.costLocationEdge, game.gameState?.playerColor[owner] as PlayerColor);
         } else {
-            renderer.renderEmptyInterurbanLink(interurbanLink.hex, interurbanLink.direction, interurbanLink.cost);
+            renderer.renderEmptyTeleportLink(teleportLink.costLocation, teleportLink.costLocationEdge, teleportLink.cost);
         }
     }
 
@@ -180,7 +186,7 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
                 }
 
                 for (let i = 1; i < link.steps.length; i++) {
-                    hex = applyDirection(hex, link.steps[i-1]);
+                    hex = applyMapDirection(map, hex, link.steps[i-1]);
                     let cityProperties = getCityProperties(game, map, hex);
                     if (!cityProperties) {
                         let left = oppositeDirection(link.steps[i-1]);
@@ -205,7 +211,7 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
                 }
 
                 // Render the last step in a completed link to a town
-                hex = applyDirection(hex, link.steps[link.steps.length-1]);
+                hex = applyMapDirection(map, hex, link.steps[link.steps.length-1]);
                 if (link.complete && map.getHexType(hex) === HexType.TOWN) {
                     let cityProperties = getCityProperties(game, map, hex);
                     if (!cityProperties) {
@@ -288,13 +294,13 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
 
         if (buildingTrackHex) {
             for (let direction of ALL_DIRECTIONS) {
-                let stepHex = applyDirection(buildingTrackHex, direction);
+                let stepHex = applyMapDirection(map, buildingTrackHex, direction);
                 let hexType = map.getHexType(stepHex);
                 if (stepHex.x >= 0 && stepHex.y >= 0
                         && stepHex.x < map.getWidth() && stepHex.y < map.getHeight()
                         && hexType !== HexType.OFFBOARD
                         && hexType !== HexType.WATER) {
-                    renderer.renderArrow(stepHex, direction, undefined);
+                    renderer.renderArrow(applyDirection(buildingTrackHex, direction), direction, undefined);
                 }
             }
         }

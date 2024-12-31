@@ -1,6 +1,6 @@
 import {Coordinate, GameState, User, ViewGameResponse} from "../api/api.ts";
 import {GameMap, HexType, maps} from "../maps";
-import {applyDirection} from "../util.ts";
+import {applyDirection, applyTeleport} from "../util.ts";
 import {Header, List, ListItem} from "semantic-ui-react";
 
 function isCity(gameState: GameState, map: GameMap, hex: Coordinate): boolean {
@@ -42,22 +42,21 @@ function FinalScore({game}: {game: ViewGameResponse}) {
             }
 
             let hex = link.sourceHex;
-            // If it's an interurban link, add 1
-            if (link.steps.length === 1
-                && isCity(game.gameState, map, hex)
-                && isCity(game.gameState, map, applyDirection(hex, link.steps[0]))) {
-                trackCount += 1;
-            } else {
-                // Otherwise count steps that aren't part of a city
-                for (let i = 0; i < link.steps.length; i++) {
-                    if (!isCity(game.gameState, map, hex)) {
-                        trackCount += 1;
-                    }
-                    hex = applyDirection(hex, link.steps[i]);
-                }
+            // Count steps that aren't part of a city (always adding one for teleport links)
+            for (let i = 0; i < link.steps.length; i++) {
                 if (!isCity(game.gameState, map, hex)) {
                     trackCount += 1;
                 }
+                let nextHex = applyTeleport(map, hex, link.steps[i]);
+                if (nextHex !== undefined) {
+                    trackCount += 1;
+                } else {
+                    nextHex = applyDirection(hex, link.steps[i]);
+                }
+                hex = nextHex;
+            }
+            if (!isCity(game.gameState, map, hex)) {
+                trackCount += 1;
             }
         }
 

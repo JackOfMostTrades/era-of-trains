@@ -1,12 +1,14 @@
 import * as rustBeltRaw from "../../../backend/maps/rust_belt.json"
 import * as southernUsRaw from "../../../backend/maps/southern_us.json"
 import * as germanyRaw from "../../../backend/maps/germany.json"
+import * as scotlandRaw from "../../../backend/maps/scotland.json"
 import {Color, Coordinate, GameState} from "../api/api.ts";
-import {BasicMap, InterurbanLink} from "./basic_map.tsx";
+import {BasicMap, TeleportLink} from "./basic_map.tsx";
 import Germany from "./germany.tsx";
 import {ReactNode} from "react";
 import SouthernUS from "./southern_us.tsx";
 import RustBelt from "./rust_belt.tsx";
+import Scotland from "./scotland.tsx";
 
 export enum HexType {
     OFFBOARD  = 0,
@@ -31,7 +33,7 @@ export interface GameMap {
     getHexType(hex: Coordinate): HexType;
     getCityProperties(gameState: GameState|undefined, hex: Coordinate): CityProperties|undefined;
     getCityColor(goodsGrowthNumber: number): Color;
-    getInterurbanLinks(): InterurbanLink[];
+    getTeleportLinks(): TeleportLink[];
     getSpecialTrackPricing(hex: Coordinate): number|undefined;
     getTurnLimit(playerCount: number): number
     getBuildLimit(gameState: GameState|undefined, player: string): number;
@@ -42,9 +44,11 @@ export interface GameMap {
 const rustBelt = RustBelt.fromJson(rustBeltRaw);
 const southernUs = SouthernUS.fromJson(southernUsRaw);
 const germany = Germany.fromJson(germanyRaw);
+const scotland = Scotland.fromJson(scotlandRaw);
 
 export const maps: { [mapName: string]: BasicMap } = {
     "rust_belt": rustBelt,
     "southern_us": southernUs,
     "germany": germany,
+    "scotland": scotland,
 }
