@@ -335,7 +335,7 @@ export class HexRenderer {
                         (ref as SVGAnimateMotionElement).beginElement();
                     }
                 }}
-                begin="indefinite" dur={(150*moveAlong.length+1) + "ms"} path={path} />
+                begin="indefinite" dur={(100*(moveAlong.length+1)) + "ms"} path={path} />
         }
         let points = `${cubeCoord.x-1.25},${cubeCoord.y-1.25} ${cubeCoord.x+1.25},${cubeCoord.y-1.25} ${cubeCoord.x+1.25},${cubeCoord.y+1.25} ${cubeCoord.x-1.25},${cubeCoord.y+1.25}`
         this.paths.push(<polygon stroke='#FFFF00' strokeWidth={0.5} fill={colorToHtml(cube)} points={points} filter={`url(#${this.filterId})`}>{animate}</polygon>);
