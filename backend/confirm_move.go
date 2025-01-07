@@ -304,11 +304,35 @@ func (handler *confirmMoveHandler) handleSharesAction(sharesAction *SharesAction
 
 	handler.Log("%s takes %d shares.", handler.ActivePlayerNick(), sharesAction.Amount)
 
+	currentPlayerPos := slices.Index(gameState.PlayerOrder, currentPlayer)
+	if currentPlayerPos == -1 {
+		return fmt.Errorf("failed to determine current player turn position")
+	}
+
+	err := handler.advanceCurrentPlayerForSharesPhase(currentPlayerPos)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (handler *confirmMoveHandler) advanceCurrentPlayerForSharesPhase(currentPlayerPos int) error {
+	gameState := handler.gameState
+	if gameState.GamePhase != common.SHARES_GAME_PHASE {
+		return fmt.Errorf("cannot call getNextPlayerSharesPhase() during this game phase: %d", gameState.GamePhase)
+	}
+
+	sharesLimit := handler.gameMap.GetSharesLimit()
 	nextPlayerId := ""
-	for i := 0; i < len(gameState.PlayerOrder)-1; i++ {
-		if gameState.PlayerOrder[i] == currentPlayer {
-			nextPlayerId = gameState.PlayerOrder[i+1]
+	for i := currentPlayerPos + 1; i < len(gameState.PlayerOrder); i++ {
+		playerId := gameState.PlayerOrder[i]
+		if gameState.PlayerShares[playerId] < sharesLimit {
+			nextPlayerId = playerId
 			break
+		} else {
+			handler.Log("Skipping %s because they are at the share limit (%d) and implicitly take 0 shares",
+				handler.PlayerNick(playerId), sharesLimit)
 		}
 	}
 	if nextPlayerId == "" {
@@ -1041,7 +1065,10 @@ func (handler *confirmMoveHandler) executeGoodsGrowthPhase(gameMap maps.GameMap)
 	// Advance to next phase
 	gameState.TurnNumber += 1
 	gameState.GamePhase = common.SHARES_GAME_PHASE
-	handler.activePlayer = gameState.PlayerOrder[0]
+	err = handler.advanceCurrentPlayerForSharesPhase(-1)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
