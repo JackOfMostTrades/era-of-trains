@@ -295,8 +295,9 @@ func (handler *confirmMoveHandler) handleSharesAction(sharesAction *SharesAction
 
 	currentPlayer := handler.activePlayer
 	newSharesCount := gameState.PlayerShares[currentPlayer] + sharesAction.Amount
-	if newSharesCount > 15 {
-		return &HttpError{"cannot take more than 15 shares", http.StatusBadRequest}
+	sharesLimit := handler.gameMap.GetSharesLimit()
+	if newSharesCount > sharesLimit {
+		return &HttpError{fmt.Sprintf("cannot take more than %d shares", sharesLimit), http.StatusBadRequest}
 	}
 	gameState.PlayerShares[currentPlayer] = newSharesCount
 	gameState.PlayerCash[currentPlayer] += 5 * sharesAction.Amount

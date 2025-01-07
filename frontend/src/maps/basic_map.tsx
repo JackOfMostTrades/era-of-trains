@@ -107,6 +107,10 @@ export class BasicMap implements GameMap {
         return 10
     }
 
+    public getSharesLimit(): number {
+        return 15;
+    }
+
     public getBuildLimit(gameState: GameState | undefined, player: string): number {
         if (gameState && gameState.playerActions[player] === 'engineer') {
             return 4;

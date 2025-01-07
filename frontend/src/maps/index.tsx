@@ -36,6 +36,7 @@ export interface GameMap {
     getTeleportLinks(gameState: GameState|undefined, pendingBuildAction: BuildAction|undefined): TeleportLink[];
     getSpecialTrackPricing(hex: Coordinate): number|undefined;
     getTurnLimit(playerCount: number): number
+    getSharesLimit(): number
     getBuildLimit(gameState: GameState|undefined, player: string): number;
     getMapInfo(): ReactNode;
     getRiverLayer(): ReactNode;

@@ -3,8 +3,9 @@ import {Button, Dropdown, DropdownItemProps} from "semantic-ui-react";
 import {useContext, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
 import ErrorContext from "../ErrorContext.tsx";
+import {GameMap} from "../maps";
 
-function ChooseShares({game, onDone}: {game: ViewGameResponse, onDone: () => Promise<void>}) {
+function ChooseShares({game, map, onDone}: {game: ViewGameResponse, map: GameMap, onDone: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
     let {setError} = useContext(ErrorContext);
     let [amount, setAmount] = useState<number>(0);
@@ -27,8 +28,9 @@ function ChooseShares({game, onDone}: {game: ViewGameResponse, onDone: () => Pro
     }
 
     let currentShares = game.gameState.playerShares[game.activePlayer];
+    let sharesLimit = map.getSharesLimit();
     let options: DropdownItemProps[] = [];
-    for (let i = 0; i <= 15-currentShares; i++) {
+    for (let i = 0; i <= sharesLimit-currentShares; i++) {
         options.push({
             key: i,
             text: i,

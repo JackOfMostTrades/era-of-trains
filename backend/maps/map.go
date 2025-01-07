@@ -15,6 +15,7 @@ type GameMap interface {
 	GetCityHexForGoodsGrowth(goodsGrowth int) common.Coordinate
 	PopulateStartingCubes(gameState *common.GameState, randProvider common.RandProvider) error
 	GetTurnLimit(playerCount int) int
+	GetSharesLimit() int
 	GetGoodsGrowthDiceCount(playerCount int) int
 	GetTeleportLink(gameState *common.GameState, src common.Coordinate, direction common.Direction) (*common.Coordinate, common.Direction)
 
@@ -70,6 +71,10 @@ func (*AbstractGameMapImpl) GetTurnLimit(playerCount int) int {
 		return 8
 	}
 	return 10
+}
+
+func (*AbstractGameMapImpl) GetSharesLimit() int {
+	return 15
 }
 
 func (*AbstractGameMapImpl) GetGoodsGrowthDiceCount(playerCount int) int {

@@ -137,7 +137,7 @@ function PlayerStatus({game, map, onConfirmMove}: { game: ViewGameResponse, map:
     } else {
         switch (game.gameState.gamePhase) {
             case GamePhase.SHARES:
-                actionHolder = <ChooseShares game={game} onDone={onConfirmMove}/>
+                actionHolder = <ChooseShares game={game} map={map} onDone={onConfirmMove}/>
                 break;
             case GamePhase.AUCTION:
                 actionHolder = <AuctionAction game={game} onDone={onConfirmMove}/>
