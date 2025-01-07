@@ -3,8 +3,10 @@ CREATE TABLE IF NOT EXISTS users (
     nickname text,
     email text,
     google_user_id text,
+    discord_user_id text,
     color_preferences text,
-    email_notifications_enabled int
+    email_notifications_enabled int,
+    webhooks text
 );
 
 CREATE TABLE IF NOT EXISTS games (

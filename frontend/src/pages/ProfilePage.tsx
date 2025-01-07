@@ -1,4 +1,5 @@
 import {
+    Button,
     Checkbox,
     Form,
     FormButton,
@@ -6,7 +7,10 @@ import {
     FormInput,
     Header,
     Icon,
+    Input,
     Label,
+    List,
+    ListItem,
     Loader,
     Segment
 } from "semantic-ui-react";
@@ -40,7 +44,8 @@ function ProfilePage() {
             setProfile(res);
             setNewProfile({
                 emailNotificationsEnabled: res.emailNotificationsEnabled,
-                colorPreferences: res.colorPreferences
+                colorPreferences: res.colorPreferences,
+                webhooks: res.webhooks,
             })
         }).catch(err => {
             setError(err);
@@ -114,6 +119,40 @@ function ProfilePage() {
                                 <Icon name='add'/> <PlayerColorDot color={c} />
                             </Label>)}
                     </div>
+                </div>
+            </FormField>
+            <Header as='h2'>Webhooks</Header>
+            <FormField>
+                <p>You can add webhook URLs here to receive messages when it is your turn. At the moment, only Discord webhooks are supported.</p>
+                <div>
+                    <List>
+                        {newProfile?.webhooks?.map((webhook, idx) => {
+                            return <ListItem><Input value={webhook}
+                                                    onChange={(_, data) => {
+                                                        let newNewProfile = Object.assign({}, newProfile);
+                                                        let webhooks = newNewProfile.webhooks?.slice() || [];
+                                                        webhooks[idx] = data.value;
+                                                        newNewProfile.webhooks = webhooks;
+                                                        setNewProfile(newNewProfile);
+                                                    }}
+                                                    icon={<Icon name='delete' circular link onClick={() => {
+                                                        let newNewProfile = Object.assign({}, newProfile);
+                                                        let webhooks = newNewProfile.webhooks?.slice() || [];
+                                                        webhooks.splice(idx, 1);
+                                                        newNewProfile.webhooks = webhooks;
+                                                        setNewProfile(newNewProfile);
+                                                    }} />}
+
+                            /></ListItem>
+                        })}
+                    </List>
+                    <Button secondary icon="plus" onClick={() => {
+                        let newNewProfile = Object.assign({}, newProfile);
+                        let webhooks = newNewProfile.webhooks?.slice() || [];
+                        webhooks.push("");
+                        newNewProfile.webhooks = webhooks;
+                        setNewProfile(newNewProfile);
+                    }}/>
                 </div>
             </FormField>
             <FormButton primary loading={saving} onClick={() => {

@@ -823,15 +823,16 @@ func (server *GameServer) getMyGames(ctx *RequestContext, req *GetMyGamesRequest
 type GetMyProfileRequest struct {
 }
 type GetMyProfileResponse struct {
-	Id                        string `json:"id"`
-	Nickname                  string `json:"nickname"`
-	Email                     string `json:"email"`
-	EmailNotificationsEnabled bool   `json:"emailNotificationsEnabled"`
-	ColorPreferences          []int  `json:"colorPreferences"`
+	Id                        string   `json:"id"`
+	Nickname                  string   `json:"nickname"`
+	Email                     string   `json:"email"`
+	EmailNotificationsEnabled bool     `json:"emailNotificationsEnabled"`
+	ColorPreferences          []int    `json:"colorPreferences"`
+	Webhooks                  []string `json:"webhooks"`
 }
 
 func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesRequest) (resp *GetMyProfileResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT nickname,email,users.email_notifications_enabled,color_preferences FROM users WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT nickname,email,users.email_notifications_enabled,color_preferences,webhooks FROM users WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -842,7 +843,8 @@ func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesReque
 	var email string
 	var emailNotificationsEnabled int
 	var colorPreferencesStr sql.NullString
-	err = row.Scan(&nickname, &email, &emailNotificationsEnabled, &colorPreferencesStr)
+	var webhooksStr sql.NullString
+	err = row.Scan(&nickname, &email, &emailNotificationsEnabled, &colorPreferencesStr, &webhooksStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan row: %v", err)
 	}
@@ -854,6 +856,13 @@ func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesReque
 			return nil, fmt.Errorf("failed to unmarshal color preferences: %v", err)
 		}
 	}
+	var webhooks []string
+	if webhooksStr.Valid {
+		err = json.Unmarshal([]byte(webhooksStr.String), &webhooks)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal webhooks: %v", err)
+		}
+	}
 
 	return &GetMyProfileResponse{
 		Id:                        ctx.User.Id,
@@ -861,18 +870,20 @@ func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesReque
 		Email:                     email,
 		EmailNotificationsEnabled: emailNotificationsEnabled != 0,
 		ColorPreferences:          colorPreferences,
+		Webhooks:                  webhooks,
 	}, nil
 }
 
 type SetMyProfileRequest struct {
-	EmailNotificationsEnabled bool  `json:"emailNotificationsEnabled"`
-	ColorPreferences          []int `json:"colorPreferences"`
+	EmailNotificationsEnabled bool     `json:"emailNotificationsEnabled"`
+	ColorPreferences          []int    `json:"colorPreferences"`
+	Webhooks                  []string `json:"webhooks"`
 }
 type SetMyProfileResponse struct {
 }
 
 func (server *GameServer) setMyProfile(ctx *RequestContext, req *SetMyProfileRequest) (resp *SetMyProfileResponse, err error) {
-	stmt, err := server.db.Prepare("UPDATE users SET users.email_notifications_enabled=?,color_preferences=? WHERE id=?")
+	stmt, err := server.db.Prepare("UPDATE users SET email_notifications_enabled=?,color_preferences=?,webhooks=? WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -892,7 +903,18 @@ func (server *GameServer) setMyProfile(ctx *RequestContext, req *SetMyProfileReq
 	if req.EmailNotificationsEnabled {
 		emailNotificationsEnabled = 1
 	}
-	_, err = stmt.Exec(emailNotificationsEnabled, colorPreferencesStr, ctx.User.Id)
+
+	var webhooksStr sql.NullString
+	if len(req.Webhooks) != 0 {
+		jsonBytes, err := json.Marshal(req.Webhooks)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal webhooks: %v", err)
+		}
+		webhooksStr.Valid = true
+		webhooksStr.String = string(jsonBytes)
+	}
+
+	_, err = stmt.Exec(emailNotificationsEnabled, colorPreferencesStr, webhooksStr, ctx.User.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}

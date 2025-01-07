@@ -338,6 +338,7 @@ export interface GetMyProfileResponse {
     email: string;
     emailNotificationsEnabled: boolean;
     colorPreferences?: PlayerColor[];
+    webhooks: string[];
 }
 export function GetMyProfile(req: GetMyProfileRequest): Promise<GetMyProfileResponse> {
     return doApiCall('/api/getMyProfile', req);
@@ -346,6 +347,7 @@ export function GetMyProfile(req: GetMyProfileRequest): Promise<GetMyProfileResp
 export interface SetMyProfileRequest {
     emailNotificationsEnabled?: boolean;
     colorPreferences?: PlayerColor[];
+    webhooks?: string[];
 }
 export interface SetMyProfileResponse {
 }
