@@ -482,7 +482,8 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	totalCost := handler.gameMap.GetTotalBuildCost(gameState, handler.activePlayer,
 		redirectCosts, townCosts, trackCosts, teleportCosts)
 	if totalCost > gameState.PlayerCash[performer.activePlayer] {
-		return ErrInvalidPlacement
+		return &HttpError{description: fmt.Sprintf("invalid build: cost %d exceeds player's funds: %d",
+			totalCost, gameState.PlayerCash[performer.activePlayer]), code: http.StatusBadRequest}
 	}
 	gameState.PlayerCash[performer.activePlayer] -= totalCost
 
