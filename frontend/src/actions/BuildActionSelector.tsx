@@ -109,6 +109,19 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
         const handler = (e:CustomEventInit<Coordinate>) => {
             if (e.detail) {
                 if (showUrbanize) {
+                    // Only urbanize on towns
+                    if (map.getHexType(e.detail) != HexType.TOWN) {
+                        return;
+                    }
+                    // Do not allow urbanization on top of existing urbanization
+                    if (game.gameState && game.gameState.urbanizations) {
+                        for (let urb of game.gameState.urbanizations) {
+                            if (urb.hex.x === e.detail.x && urb.hex.y === e.detail.y) {
+                                return;
+                            }
+                        }
+                    }
+
                     let newAction = Object.assign({}, action);
                     newAction.urbanization = {
                         city: urbanizeSelection,
