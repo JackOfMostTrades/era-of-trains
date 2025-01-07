@@ -168,8 +168,24 @@ func (performer *buildActionPerformer) attemptTrackRedirect(trackRedirect *Track
 			Link:  danglingRoute.Link,
 		}
 	}
-	// And update the last step of the link to match the new direction
+	// Update the last step of the link to match the new direction
 	danglingRoute.Link.Steps[len(danglingRoute.Link.Steps)-1] = direction
+
+	// If there is an existing link that this redirect now joins to, connect the two links, removing this one.
+	nextHex := applyDirection(hex, direction)
+	for _, route := range performer.mapState[nextHex.Y][nextHex.X].Routes {
+		if route.Left == direction.Opposite() || route.Right == direction.Opposite() {
+			// Delete the dangling link since that will be consumed onto the joined link
+			performer.gameState.Links = DeleteFromSliceUnordered(
+				slices.Index(performer.gameState.Links, danglingRoute.Link), performer.gameState.Links)
+			// Add the dangling link to the end of the discovered link
+			for idx := len(danglingRoute.Link.Steps) - 2; idx >= 0; idx-- {
+				route.Link.Steps = append(route.Link.Steps, danglingRoute.Link.Steps[idx].Opposite())
+			}
+			route.Link.Complete = true
+		}
+	}
+
 	return nil
 }
 
