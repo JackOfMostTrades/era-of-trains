@@ -56,6 +56,7 @@ export function WhoAmI(req: WhoAmIRequest): Promise<WhoAmIResponse> {
 }
 
 export interface LoginRequest {
+    provider?: string
     accessToken?: string
     devNickname?: string
 }
@@ -68,6 +69,7 @@ export function Login(req: LoginRequest): Promise<LoginResponse> {
 }
 
 export interface RegisterRequest {
+    provider: string
     accessToken: string
     nickname: string
 }
@@ -76,6 +78,16 @@ export interface RegisterResponse {
 
 export function Register(req: RegisterRequest): Promise<RegisterResponse> {
     return doApiCall('/api/register', req);
+}
+
+export interface LinkProfileRequest {
+    provider: string
+    accessToken: string
+}
+export interface LinkProfileResponse {
+}
+export function LinkProfile(req: LinkProfileRequest): Promise<LinkProfileResponse> {
+    return doApiCall('/api/linkProfile', req);
 }
 
 export interface LogoutRequest {}
@@ -336,6 +348,7 @@ export interface GetMyProfileResponse {
     id: string;
     nickname: string;
     email: string;
+    discordId?: string;
     emailNotificationsEnabled: boolean;
     colorPreferences?: PlayerColor[];
     webhooks: string[];

@@ -18,6 +18,7 @@ import {CSSProperties, useContext, useEffect, useState} from "react";
 import {GetMyProfile, GetMyProfileResponse, PlayerColor, SetMyProfile, SetMyProfileRequest} from "../api/api.ts";
 import ErrorContext from "../ErrorContext.tsx";
 import {playerColorToHtml} from "../actions/renderer/HexRenderer.tsx";
+import {discordOauthSignin} from "../UserSessionContext.tsx";
 
 function PlayerColorDot({color, onClick}: {color: PlayerColor, onClick?: () => void}) {
     let style: CSSProperties = {
@@ -79,6 +80,14 @@ function ProfilePage() {
                 <label>Email</label>
                 <p>This is automatically determined from your linked Google account.</p>
                 <FormInput disabled value={profile.email}/>
+            </FormField>
+            <FormField>
+                <label>Discord User ID</label>
+                <p>If you link your discord account to your profile, you can sign in with Discord and webhook notifications will mention you by your Discord handle.</p>
+                <FormInput disabled value={profile.discordId}/>
+                <Button secondary disabled={!!profile.discordId} onClick={() => {
+                    discordOauthSignin('/linkProfile/discord');
+                }}>Link My Discord Account</Button>
             </FormField>
             <FormField>
                 <label>Email Notifications</label>

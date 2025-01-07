@@ -1,6 +1,5 @@
-import {createContext, ReactNode, useContext, useEffect, useState} from "react";
-import {GetMyGames, Login, Logout, WhoAmI, WhoAmIResponse} from "./api/api.ts";
-import ErrorContext from "./ErrorContext.tsx";
+import {createContext, ReactNode, useEffect, useState} from "react";
+import {GetMyGames, Logout, WhoAmI, WhoAmIResponse} from "./api/api.ts";
 
 interface UserSession {
     userInfo?: WhoAmIResponse
@@ -11,7 +10,7 @@ interface UserSession {
 
 const UserSessionContext = createContext<UserSession>({waitingForMeCount: 0, reload: () => Promise.resolve()});
 
-export function oauthSignIn() {
+export function googleOauthSignin() {
     // Google's OAuth 2.0 endpoint for requesting an access token
     let oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
 
@@ -29,10 +28,45 @@ export function oauthSignIn() {
     // Parameters to pass to OAuth 2.0 endpoint.
     let params: {[key: string]: string} = {
         'client_id': clientId,
-        'redirect_uri': window.location.origin + '/',
+        'redirect_uri': window.location.origin + '/login/google',
         'response_type': 'token',
         'scope': 'https://www.googleapis.com/auth/userinfo.email',
         'include_granted_scopes': 'true'};
+
+    // Add form parameters as hidden input values.
+    for (let p in params) {
+        let input = document.createElement('input');
+        input.setAttribute('type', 'hidden');
+        input.setAttribute('name', p);
+        input.setAttribute('value', params[p]);
+        form.appendChild(input);
+    }
+
+    // Add form to page and submit it to open the OAuth 2.0 endpoint.
+    document.body.appendChild(form);
+    form.submit();
+}
+
+export function discordOauthSignin(redirectPath: string) {
+    let oauth2Endpoint = 'https://discord.com/oauth2/authorize';
+
+    // Create <form> element to submit parameters to OAuth 2.0 endpoint.
+    let form = document.createElement('form');
+    form.setAttribute('method', 'GET'); // Send as a GET request.
+    form.setAttribute('action', oauth2Endpoint);
+
+    // eot-prod
+    let clientId = '1326250803341692979';
+    if (window.location.hostname === 'localhost') {
+        clientId = '1326251048695894026';
+    }
+
+    // Parameters to pass to OAuth 2.0 endpoint.
+    let params: {[key: string]: string} = {
+        'client_id': clientId,
+        'redirect_uri': window.location.origin + redirectPath,
+        'response_type': 'token',
+        'scope': 'identify email'};
 
     // Add form parameters as hidden input values.
     for (let p in params) {
@@ -73,30 +107,9 @@ export function UserSessionProvider({ children }: {children: ReactNode}) {
     }
 
     let [userSession, setUserSession] = useState<UserSession>({loading: true, waitingForMeCount: 0, reload: reload});
-    let {setError} = useContext(ErrorContext);
 
     useEffect(() => {
-        (async () => {
-            if (window.location.hash) {
-                let params = new URLSearchParams(window.location.hash.substring(1));
-                let accessToken = params.get("access_token");
-                if (accessToken) {
-                    try {
-                        let res = await Login({accessToken: accessToken});
-                        if (res.registrationRequired) {
-                            window.location.href = '/register#access_token=' + accessToken;
-                        } else {
-                            window.location.hash = '';
-                        }
-                    } catch (e) {
-                        setError(e);
-                        return;
-                    }
-                }
-            }
-
-            await reload();
-        })();
+        reload();
     }, []);
 
     return <UserSessionContext.Provider value={userSession}>

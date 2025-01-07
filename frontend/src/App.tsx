@@ -27,6 +27,8 @@ import RegisterPage from "./pages/RegisterPage.tsx";
 import MyGames from "./pages/MyGames.tsx";
 import {createMedia} from '@artsy/fresnel'
 import ProfilePage from "./pages/ProfilePage.tsx";
+import LoginPage from "./pages/LoginPage.tsx";
+import LinkProfilePage from "./pages/LinkProfilePage.tsx";
 
 const { MediaContextProvider, Media } = createMedia({
     breakpoints: {
@@ -167,6 +169,8 @@ function App() {
                                 <Route path="/about" element={<About />}/>
                                 <Route path="/dev/login/:nickname" element={<DevLogin />}/>
                                 <Route path="/signin" element={<SignInPage />}/>
+                                <Route path="/login/:provider" element={<LoginPage />}/>
+                                <Route path="/linkProfile/:provider" element={<LinkProfilePage />}/>
                                 <Route path="/register" element={<RegisterPage />}/>
                                 <Route path="/profile" element={<ProfilePage />}/>
                                 <Route path="/" element={<Home />}/>

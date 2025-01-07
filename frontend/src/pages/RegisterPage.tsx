@@ -22,9 +22,11 @@ function SignInPage() {
             </FormField>
             <Button primary onClick={() => {
                 let params = new URLSearchParams(window.location.hash.substring(1));
+                let provider = params.get("provider");
                 let accessToken = params.get("access_token");
-                if (accessToken) {
+                if (provider && accessToken) {
                     Register({
+                        provider: provider,
                         accessToken: accessToken,
                         nickname: nickname,
                     }).then(() => {
