@@ -18,7 +18,7 @@ import {CSSProperties, useContext, useEffect, useState} from "react";
 import {GetMyProfile, GetMyProfileResponse, PlayerColor, SetMyProfile, SetMyProfileRequest} from "../api/api.ts";
 import ErrorContext from "../ErrorContext.tsx";
 import {playerColorToHtml} from "../actions/renderer/HexRenderer.tsx";
-import {discordOauthSignin} from "../UserSessionContext.tsx";
+import {discordOauthSignin, googleOauthSignin} from "../UserSessionContext.tsx";
 
 function PlayerColorDot({color, onClick}: {color: PlayerColor, onClick?: () => void}) {
     let style: CSSProperties = {
@@ -78,26 +78,33 @@ function ProfilePage() {
             </FormField>
             <FormField>
                 <label>Email</label>
-                <p>This is automatically determined from your linked Google account.</p>
+                <p>This is automatically determined from your linked account that you use to sign in.</p>
                 <FormInput disabled value={profile.email}/>
-            </FormField>
-            <FormField>
-                <label>Discord User ID</label>
-                <p>If you link your discord account to your profile, you can sign in with Discord and webhook notifications will mention you by your Discord handle.</p>
-                <FormInput disabled value={profile.discordId}/>
-                <Button secondary disabled={!!profile.discordId} onClick={() => {
-                    discordOauthSignin('/linkProfile/discord');
-                }}>Link My Discord Account</Button>
             </FormField>
             <FormField>
                 <label>Email Notifications</label>
                 <p>When enabled, you will receive an email to the above address whenever it becomes your turn on any game.
-                If it is not enabled, you will only receive a summary email once a day if there are any games where it's your turn.</p>
+                    If it is not enabled, you will only receive a summary email once a day if there are any games where it's your turn.</p>
                 <Checkbox toggle checked={newProfile?.emailNotificationsEnabled} onChange={(_, val) => {
                     let newNewProfile = Object.assign({}, newProfile);
                     newNewProfile.emailNotificationsEnabled = val.checked;
                     setNewProfile(newNewProfile);
                 }} />
+            </FormField>
+            <Header as='h2'>Linked Accounts</Header>
+            <FormField>
+                <label>Google User ID</label>
+                <p>If you link your Google account to your profile, you can sign in with Google..</p>
+                <Button secondary disabled={!!profile.googleId} onClick={() => {
+                    googleOauthSignin('/linkProfile/google');
+                }}>{profile.googleId ? 'Linked' : 'Link My Google Account'}</Button>
+            </FormField>
+            <FormField>
+                <label>Discord User ID</label>
+                <p>If you link your Discord account to your profile, you can sign in with Discord and webhook notifications will mention you by your Discord handle.</p>
+                <Button secondary disabled={!!profile.discordId} onClick={() => {
+                    discordOauthSignin('/linkProfile/discord');
+                }}>{profile.discordId ? 'Linked' : 'Link My Discord Account'}</Button>
             </FormField>
             <Header as='h2'>Color Preferences</Header>
             <FormField>

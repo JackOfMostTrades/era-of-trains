@@ -28,7 +28,7 @@ func (server *GameServer) getJoinedUsers(gameId string) (map[string]bool, error)
 }
 
 func (server *GameServer) getUserById(userId string) (*User, error) {
-	stmt, err := server.db.Prepare("SELECT nickname,email FROM users WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT nickname FROM users WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare statement: %v", err)
 	}
@@ -40,8 +40,7 @@ func (server *GameServer) getUserById(userId string) (*User, error) {
 	}
 
 	var nickname string
-	var email string
-	err = row.Scan(&nickname, &email)
+	err = row.Scan(&nickname)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -51,7 +50,6 @@ func (server *GameServer) getUserById(userId string) (*User, error) {
 
 	return &User{
 		Nickname: nickname,
-		Email:    email,
 		Id:       userId,
 	}, nil
 }

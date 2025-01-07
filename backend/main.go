@@ -45,7 +45,7 @@ func (server *GameServer) assertAuthentication(ctx *RequestContext) error {
 		return &HttpError{description: fmt.Sprintf("Failed to parse session: %v", err), code: http.StatusBadRequest}
 	}
 
-	stmt, err := server.db.Prepare("SELECT id,nickname,email FROM users WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT id,nickname FROM users WHERE id=?")
 	if err != nil {
 		return fmt.Errorf("failed to prepare statement: %v", err)
 	}
@@ -53,7 +53,7 @@ func (server *GameServer) assertAuthentication(ctx *RequestContext) error {
 
 	row := stmt.QueryRow(sessionData.UserId)
 	user := new(User)
-	err = row.Scan(&user.Id, &user.Nickname, &user.Email)
+	err = row.Scan(&user.Id, &user.Nickname)
 	if err != nil {
 		return fmt.Errorf("failed to resolve user %s: %v", sessionData.UserId, err)
 	}

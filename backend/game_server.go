@@ -22,7 +22,6 @@ type GameServer struct {
 
 type User struct {
 	Nickname string `json:"nickname"`
-	Email    string `json:"email"`
 	Id       string `json:"id"`
 }
 
@@ -53,7 +52,9 @@ type GoogleUserInfo struct {
 }
 
 type DiscordUserInfo struct {
-	Id string `json:"id"`
+	Id       string `json:"id"`
+	Email    string `json:"email"`
+	Verified bool   `json:"verified"`
 }
 
 func getGoogleUserInfo(accessToken string) (*GoogleUserInfo, error) {
@@ -220,17 +221,36 @@ func (server *GameServer) register(ctx *RequestContext, req *RegisterRequest) (r
 		return nil, &HttpError{fmt.Sprintf("user with nickname %s already exists", req.Nickname), http.StatusBadRequest}
 	}
 
-	var userInfoResponse *GoogleUserInfo
+	var email sql.NullString
+	var googleUserId sql.NullString
+	var discordUserId sql.NullString
 	if req.Provider == "google" {
-		userInfoResponse, err = getGoogleUserInfo(req.AccessToken)
+		userInfoResponse, err := getGoogleUserInfo(req.AccessToken)
 		if err != nil {
 			return nil, fmt.Errorf("failed to verify access token: %v", err)
+		}
+		googleUserId.Valid = true
+		googleUserId.String = userInfoResponse.Id
+		if userInfoResponse.VerifiedEmail && userInfoResponse.Email != "" {
+			email.Valid = true
+			email.String = userInfoResponse.Email
+		}
+	} else if req.Provider == "discord" {
+		userInfoResponse, err := getDiscordUserInfo(req.AccessToken)
+		if err != nil {
+			return nil, fmt.Errorf("failed to verify access token: %v", err)
+		}
+		discordUserId.Valid = true
+		discordUserId.String = userInfoResponse.Id
+		if userInfoResponse.Verified && userInfoResponse.Email != "" {
+			email.Valid = true
+			email.String = userInfoResponse.Email
 		}
 	} else {
 		return nil, &HttpError{fmt.Sprintf("unsupported provider parameter: %s", req.Provider), http.StatusBadRequest}
 	}
 
-	stmt, err = server.db.Prepare("INSERT INTO users (id,nickname,email,email_notifications_enabled,google_user_id) VALUES(?,?,?,1,?)")
+	stmt, err = server.db.Prepare("INSERT INTO users (id,nickname,email,email_notifications_enabled,google_user_id,discord_user_id) VALUES(?,?,?,1,?,?)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare statement: %v", err)
 	}
@@ -240,7 +260,7 @@ func (server *GameServer) register(ctx *RequestContext, req *RegisterRequest) (r
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate id: %v", err)
 	}
-	_, err = stmt.Exec(userId.String(), req.Nickname, userInfoResponse.Email, userInfoResponse.Id)
+	_, err = stmt.Exec(userId.String(), req.Nickname, email, googleUserId, discordUserId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %v", err)
 	}
@@ -279,7 +299,23 @@ func (server *GameServer) linkProfile(ctx *RequestContext, req *LinkProfileReque
 	if req.Provider == "" {
 		return nil, &HttpError{"Missing provider parameter", http.StatusBadRequest}
 	}
-	if req.Provider == "discord" {
+	if req.Provider == "google" {
+		userInfo, err := getGoogleUserInfo(req.AccessToken)
+		if err != nil {
+			return nil, &HttpError{fmt.Sprintf("Failed to verify access token: %v", err), http.StatusBadRequest}
+		}
+		if userInfo.Id != "" {
+			stmt, err := server.db.Prepare("UPDATE users SET google_user_id=? WHERE id=?")
+			if err != nil {
+				return nil, fmt.Errorf("failed to prepare statement: %v", err)
+			}
+			defer stmt.Close()
+			_, err = stmt.Exec(userInfo.Id, ctx.User.Id)
+			if err != nil {
+				return nil, fmt.Errorf("failed to execute stament: %v", err)
+			}
+		}
+	} else if req.Provider == "discord" {
 		userInfo, err := getDiscordUserInfo(req.AccessToken)
 		if err != nil {
 			return nil, &HttpError{fmt.Sprintf("Failed to verify access token: %v", err), http.StatusBadRequest}
@@ -915,6 +951,7 @@ type GetMyProfileResponse struct {
 	Id                        string   `json:"id"`
 	Nickname                  string   `json:"nickname"`
 	Email                     string   `json:"email"`
+	GoogleId                  string   `json:"googleId"`
 	DiscordId                 string   `json:"discordId"`
 	EmailNotificationsEnabled bool     `json:"emailNotificationsEnabled"`
 	ColorPreferences          []int    `json:"colorPreferences"`
@@ -922,7 +959,7 @@ type GetMyProfileResponse struct {
 }
 
 func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesRequest) (resp *GetMyProfileResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT nickname,email,discord_user_id,email_notifications_enabled,color_preferences,webhooks FROM users WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT nickname,email,discord_user_id,google_user_id,email_notifications_enabled,color_preferences,webhooks FROM users WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -930,12 +967,13 @@ func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesReque
 
 	row := stmt.QueryRow(ctx.User.Id)
 	var nickname string
-	var email string
+	var email sql.NullString
 	var discordId sql.NullString
+	var googleId sql.NullString
 	var emailNotificationsEnabled int
 	var colorPreferencesStr sql.NullString
 	var webhooksStr sql.NullString
-	err = row.Scan(&nickname, &email, &discordId, &emailNotificationsEnabled, &colorPreferencesStr, &webhooksStr)
+	err = row.Scan(&nickname, &email, &discordId, &googleId, &emailNotificationsEnabled, &colorPreferencesStr, &webhooksStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan row: %v", err)
 	}
@@ -958,8 +996,9 @@ func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesReque
 	return &GetMyProfileResponse{
 		Id:                        ctx.User.Id,
 		Nickname:                  nickname,
-		Email:                     email,
+		Email:                     email.String,
 		DiscordId:                 discordId.String,
+		GoogleId:                  googleId.String,
 		EmailNotificationsEnabled: emailNotificationsEnabled != 0,
 		ColorPreferences:          colorPreferences,
 		Webhooks:                  webhooks,

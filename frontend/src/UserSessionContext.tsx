@@ -10,7 +10,7 @@ interface UserSession {
 
 const UserSessionContext = createContext<UserSession>({waitingForMeCount: 0, reload: () => Promise.resolve()});
 
-export function googleOauthSignin() {
+export function googleOauthSignin(redirectPath: string) {
     // Google's OAuth 2.0 endpoint for requesting an access token
     let oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
 
@@ -28,7 +28,7 @@ export function googleOauthSignin() {
     // Parameters to pass to OAuth 2.0 endpoint.
     let params: {[key: string]: string} = {
         'client_id': clientId,
-        'redirect_uri': window.location.origin + '/login/google',
+        'redirect_uri': window.location.origin + redirectPath,
         'response_type': 'token',
         'scope': 'https://www.googleapis.com/auth/userinfo.email',
         'include_granted_scopes': 'true'};

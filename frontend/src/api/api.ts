@@ -114,7 +114,6 @@ export type SpecialAction = 'first_move' | 'first_build' | 'engineer' | 'loco' |
 
 export interface User {
     nickname: string;
-    email: string;
     id: string;
 }
 export interface Coordinate {
@@ -348,6 +347,7 @@ export interface GetMyProfileResponse {
     id: string;
     nickname: string;
     email: string;
+    googleId?: string;
     discordId?: string;
     emailNotificationsEnabled: boolean;
     colorPreferences?: PlayerColor[];

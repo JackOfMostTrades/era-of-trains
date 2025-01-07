@@ -19,7 +19,7 @@ func (server *GameServer) notifyPlayer(gameId string, userId string) error {
 	row := stmt.QueryRow(userId)
 	var nickname string
 	var discordUserId sql.NullString
-	var email string
+	var email sql.NullString
 	var emailNotificationsEnabled int
 	var webhooksStr sql.NullString
 	err = row.Scan(&nickname, &discordUserId, &email, &emailNotificationsEnabled, &webhooksStr)
@@ -48,17 +48,19 @@ func (server *GameServer) notifyPlayer(gameId string, userId string) error {
 	}
 
 	if finishedFlag != 0 {
-		err = server.sendGameFinishedEmail(gameId, gameName, email)
-		if err != nil {
-			return err
+		if email.Valid {
+			err = server.sendGameFinishedEmail(gameId, gameName, email.String)
+			if err != nil {
+				return err
+			}
 		}
 		err = server.sendGameFinishedWebhooks(gameId, gameName, webhooks)
 		if err != nil {
 			return err
 		}
 	} else {
-		if emailNotificationsEnabled != 0 {
-			err = server.sendGameTurnEmail(gameId, gameName, email)
+		if emailNotificationsEnabled != 0 && email.Valid {
+			err = server.sendGameTurnEmail(gameId, gameName, email.String)
 			if err != nil {
 				return err
 			}
@@ -230,12 +232,14 @@ func (server *GameServer) runDailyNotify() error {
 	userIdToEmail := make(map[string]string)
 	for rows.Next() {
 		var id string
-		var email string
+		var email sql.NullString
 		err = rows.Scan(&id, &email)
 		if err != nil {
 			return fmt.Errorf("failed to scan row: %v", err)
 		}
-		userIdToEmail[id] = email
+		if email.Valid {
+			userIdToEmail[id] = email.String
+		}
 	}
 
 	stmt, err = server.db.Prepare("SELECT id,active_player_id FROM games WHERE finished=0")
