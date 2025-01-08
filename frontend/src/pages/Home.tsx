@@ -15,14 +15,14 @@ function Home() {
             <ListItem>Various minor bugfixes and UI improvements.</ListItem>
             <ListItem>Text changes to indicate movement to public beta.</ListItem>
         </List>
-        <Header as='h3'>Dec 30, 2025</Header>
+        <Header as='h3'>Dec 30, 2024</Header>
         <List>
             <ListItem>Initial release of the Scotland map is available.</ListItem>
             <ListItem>Maps have rivers now!</ListItem>
             <ListItem>Users with pending turns will now receive a daily summary email as a reminder.</ListItem>
             <ListItem>Cubes glide over the map during move goods action. So fancy!</ListItem>
         </List>
-        <Header as='h3'>Dec 26, 2025</Header>
+        <Header as='h3'>Dec 26, 2024</Header>
         <List>
             <ListItem>Initial release of the Germany map is available.</ListItem>
             <ListItem>Bankrupt players are now eliminated.</ListItem>
@@ -31,7 +31,7 @@ function Home() {
             <ListItem>Component limits (track tiles and town markers) are now enforced during builds.</ListItem>
             <ListItem>Map-specific info is now displayed on game pages.</ListItem>
         </List>
-        <Header as='h3'>Dec 24, 2025</Header>
+        <Header as='h3'>Dec 24, 2024</Header>
         <List>
             <ListItem>Initial release of the Southern U.S. map is available.</ListItem>
             <ListItem>You can now redirect incomplete tracks during builds.</ListItem>
