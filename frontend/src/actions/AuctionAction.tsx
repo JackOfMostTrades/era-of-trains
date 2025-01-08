@@ -78,7 +78,7 @@ function AuctionAction({game, onDone}: {game: ViewGameResponse, onDone: () => Pr
         }
         if (bid < 0) {
             let position = game.gameState.playerOrder.length + bid + 1;
-            currentBids.push(<ListItem>{player.nickname}: <span style={{fontStyle: "italic"}}>passed: {position}</span></ListItem>)
+            currentBids.push(<ListItem>{player.nickname}: <span style={{fontStyle: "italic"}}>passed: (player {position})</span></ListItem>)
         } else {
             currentBids.push(<ListItem>{player.nickname}: {bid}</ListItem>)
         }
