@@ -1,0 +1,10 @@
+# IntelliJ
+*.iml
+.idea/
+
+# Prod deployment config
+deployment/config-prod.json
+
+# Development files
+backend/backend
+backend/eot.db
