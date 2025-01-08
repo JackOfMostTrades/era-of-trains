@@ -14,6 +14,8 @@ const (
 	WHITE
 )
 
+var ALL_COLORS = []Color{NONE_COLOR, BLACK, RED, YELLOW, BLUE, PURPLE, WHITE}
+
 func (c Color) String() string {
 	switch c {
 	case NONE_COLOR:

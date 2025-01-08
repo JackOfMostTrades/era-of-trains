@@ -83,8 +83,11 @@ type GameState struct {
 
 func (gameState *GameState) DrawCube(randProvider RandProvider) (Color, error) {
 	var total int = 0
-	for _, count := range gameState.CubeBag {
-		total += count
+	for _, color := range ALL_COLORS {
+		if color == NONE_COLOR {
+			continue
+		}
+		total += gameState.CubeBag[color]
 	}
 	if total == 0 {
 		return NONE_COLOR, nil
@@ -95,7 +98,11 @@ func (gameState *GameState) DrawCube(randProvider RandProvider) (Color, error) {
 	}
 	result := NONE_COLOR
 	total = 0
-	for color, count := range gameState.CubeBag {
+	for _, color := range ALL_COLORS {
+		if color == NONE_COLOR {
+			continue
+		}
+		count := gameState.CubeBag[color]
 		total += count
 		if val < total {
 			result = color
