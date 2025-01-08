@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS users (
-    id text,
+    id text PRIMARY KEY,
     nickname text,
     email text,
     google_user_id text,
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS games (
-    id text,
+    id text PRIMARY KEY,
     created_at int,
     name text,
     num_players int,
@@ -34,5 +34,6 @@ CREATE TABLE IF NOT EXISTS game_log (
     action text,
     description text,
     new_active_player text,
-    new_game_state text
+    new_game_state text,
+    PRIMARY KEY (game_id, timestamp)
 );
