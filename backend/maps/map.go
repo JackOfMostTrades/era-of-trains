@@ -173,7 +173,8 @@ func (*AbstractGameMapImpl) GetIncomeReduction(gameState *common.GameState, play
 		reduction = 4
 	} else if income <= 40 {
 		reduction = 6
-	} else if income <= 50 {
+	} else if income <= 49 {
+		// Yes, this is meant to be 49 and not 50; the ledge for 10 income reduction is 49, per the latest rulebook.
 		reduction = 8
 	} else {
 		reduction = 10

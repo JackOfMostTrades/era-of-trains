@@ -909,3 +909,87 @@ func TestIssue26Regression(t *testing.T) {
 	assert.Equal(t, common.Coordinate{X: 0, Y: 0}, link.SourceHex)
 	assert.Equal(t, []common.Direction{common.SOUTH_EAST, common.NORTH_EAST, common.SOUTH_EAST, common.NORTH_EAST}, link.Steps)
 }
+
+func TestTownToNowhere(t *testing.T) {
+	t.Skip("this check hasn't been implemented yet")
+
+	playerId := "player1"
+	gameMap := &testMap{
+		hexes: [][]maps.HexType{
+			{maps.TOWN_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+		},
+	}
+	gameState := &common.GameState{
+		GamePhase:  common.BUILDING_GAME_PHASE,
+		PlayerCash: map[string]int{playerId: 10},
+	}
+
+	handler := &confirmMoveHandler{
+		gameMap:      gameMap,
+		gameState:    gameState,
+		activePlayer: playerId,
+	}
+	err := handler.performBuildAction(&BuildAction{
+		TownPlacements: []*TownPlacement{
+			{
+				Track: common.SOUTH_EAST,
+				Hex:   common.Coordinate{X: 0, Y: 0},
+			},
+		},
+		TrackPlacements: []*TrackPlacement{
+			{
+				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
+				Hex:   common.Coordinate{X: 0, Y: 1},
+			},
+		},
+	})
+	var invalidMove *invalidMoveError
+	require.ErrorAs(t, err, &invalidMove)
+	assert.Equal(t, invalidMove.Error(), "xyz")
+	assert.Equal(t, 0, len(gameState.Links))
+}
+
+func TestTownToTown(t *testing.T) {
+	t.Skip("this check hasn't been implemented yet")
+
+	playerId := "player1"
+	gameMap := &testMap{
+		hexes: [][]maps.HexType{
+			{maps.TOWN_HEX_TYPE, maps.TOWN_HEX_TYPE},
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+		},
+	}
+	gameState := &common.GameState{
+		GamePhase:  common.BUILDING_GAME_PHASE,
+		PlayerCash: map[string]int{playerId: 10},
+	}
+
+	handler := &confirmMoveHandler{
+		gameMap:      gameMap,
+		gameState:    gameState,
+		activePlayer: playerId,
+	}
+	err := handler.performBuildAction(&BuildAction{
+		TownPlacements: []*TownPlacement{
+			{
+				Track: common.SOUTH_EAST,
+				Hex:   common.Coordinate{X: 0, Y: 0},
+			},
+			{
+				Track: common.SOUTH_WEST,
+				Hex:   common.Coordinate{X: 1, Y: 0},
+			},
+		},
+		TrackPlacements: []*TrackPlacement{
+			{
+				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
+				Hex:   common.Coordinate{X: 0, Y: 1},
+			},
+		},
+	})
+	var invalidMove *invalidMoveError
+	require.ErrorAs(t, err, &invalidMove)
+	assert.Equal(t, invalidMove.Error(), "xyz")
+	assert.Equal(t, 0, len(gameState.Links))
+}
