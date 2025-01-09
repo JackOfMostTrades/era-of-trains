@@ -49,6 +49,14 @@ func applyDirection(coord common.Coordinate, direction common.Direction) common.
 	panic(fmt.Errorf("unhandled direction: %v", direction))
 }
 
+func applyMapDirection(gameMap maps.GameMap, gameState *common.GameState, hex common.Coordinate, direction common.Direction) common.Coordinate {
+	if teleportDest, _ := gameMap.GetTeleportLink(gameState, hex, direction); teleportDest != nil {
+		return *teleportDest
+	} else {
+		return applyDirection(hex, direction)
+	}
+}
+
 func computeDeliveryGraph(gameState *common.GameState, gameMap maps.GameMap) *DeliveryGraph {
 	hexToDirectionToLink := make(map[common.Coordinate]map[common.Direction]DeliveryGraphLink)
 	for _, link := range gameState.Links {
@@ -59,11 +67,7 @@ func computeDeliveryGraph(gameState *common.GameState, gameMap maps.GameMap) *De
 		src := link.SourceHex
 		dest := src
 		for _, step := range link.Steps {
-			if teleportDest, _ := gameMap.GetTeleportLink(gameState, dest, step); teleportDest != nil {
-				dest = *teleportDest
-			} else {
-				dest = applyDirection(dest, step)
-			}
+			dest = applyMapDirection(gameMap, gameState, dest, step)
 		}
 		if _, ok := hexToDirectionToLink[src]; !ok {
 			hexToDirectionToLink[src] = make(map[common.Direction]DeliveryGraphLink)

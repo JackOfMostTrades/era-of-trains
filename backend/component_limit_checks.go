@@ -128,7 +128,7 @@ func checkTrackTileLimit(mapState [][]*TileState) error {
 				return fmt.Errorf("failed to identify track tile type for hex (%d,%d)", x, y)
 			}
 			if componentCount[tile] == 0 {
-				return fmt.Errorf("ran out of track tiles for tile type %d", tile)
+				return invalidMoveErr("ran out of track tiles for tile type %d", tile)
 			}
 			componentCount[tile] -= 1
 		}

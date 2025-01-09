@@ -99,6 +99,18 @@ type confirmMoveHandler struct {
 	randProvider   common.RandProvider
 }
 
+type invalidMoveError struct {
+	description string
+}
+
+func (err *invalidMoveError) Error() string {
+	return err.description
+}
+
+func invalidMoveErr(format string, a ...any) error {
+	return &invalidMoveError{fmt.Sprintf(format, a...)}
+}
+
 func newConfirmMoveHandler(server *GameServer, gameId string, gameMap maps.GameMap, gameState *common.GameState, activePlayer string) (*confirmMoveHandler, error) {
 	handler := &confirmMoveHandler{
 		gameMap:        gameMap,
@@ -279,6 +291,10 @@ func (handler *confirmMoveHandler) handleAction(req *ConfirmMoveRequest) error {
 		err = &HttpError{fmt.Sprintf("invalid action: %s", req.ActionName), http.StatusBadRequest}
 	}
 	if err != nil {
+		var invalidMove *invalidMoveError
+		if errors.As(err, &invalidMove) {
+			return &HttpError{invalidMove.Error(), http.StatusBadRequest}
+		}
 		return err
 	}
 	return nil

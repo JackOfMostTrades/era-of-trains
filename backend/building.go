@@ -1,11 +1,9 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"github.com/JackOfMostTrades/eot/backend/common"
 	"github.com/JackOfMostTrades/eot/backend/maps"
-	"net/http"
 	"slices"
 )
 
@@ -24,20 +22,21 @@ type TileState struct {
 	Routes  []Route
 }
 
-var ErrInvalidPlacement = errors.New("invalid placement")
-
 func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownPlacement) error {
 	hex := townPlacement.Hex
 	direction := townPlacement.Track
 	ts := performer.mapState[hex.Y][hex.X]
 
-	if !ts.HasTown || len(ts.Routes)+1 > 4 {
-		return ErrInvalidPlacement
+	if !ts.HasTown {
+		return invalidMoveErr("cannot build town track on a non-town hex")
+	}
+	if len(ts.Routes)+1 > 4 {
+		return invalidMoveErr("cannot build more than four tracks on a town hex")
 	}
 	// Verify that none of the new routes overlap with existing routes
 	for _, existingRoute := range ts.Routes {
 		if existingRoute.Right == townPlacement.Track {
-			return ErrInvalidPlacement
+			return invalidMoveErr("cannot build over existing track")
 		}
 	}
 
@@ -62,7 +61,7 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 			if route.Left == direction.Opposite() || route.Right == direction.Opposite() {
 				// Check that we are not joining into a different player's track
 				if route.Link.Owner != "" && route.Link.Owner != performer.activePlayer {
-					return ErrInvalidPlacement
+					return invalidMoveErr("cannot build track that connects to another player's track")
 				}
 
 				link = route.Link
@@ -99,7 +98,8 @@ func (performer *buildActionPerformer) attemptTeleportLinkPlacement(teleportLink
 
 	otherHex, otherDirection := performer.gameMap.GetTeleportLink(performer.gameState, hex, direction)
 	if otherHex == nil {
-		return ErrInvalidPlacement
+		return invalidMoveErr("cannot place teleport link at hex (%d,%d) in direction %d",
+			hex.X, hex.Y, direction)
 	}
 
 	// Check all steps of all links and validate both sides of the teleport
@@ -107,10 +107,10 @@ func (performer *buildActionPerformer) attemptTeleportLinkPlacement(teleportLink
 		linkHex := playerLink.SourceHex
 		for _, step := range playerLink.Steps {
 			if linkHex == hex && step == direction {
-				return ErrInvalidPlacement
+				return invalidMoveErr("another player has already built on this link")
 			}
 			if linkHex == *otherHex && step == otherDirection {
-				return ErrInvalidPlacement
+				return invalidMoveErr("another player has already built on this link")
 			}
 			linkHex = applyDirection(linkHex, step)
 		}
@@ -132,7 +132,7 @@ func (performer *buildActionPerformer) attemptTrackRedirect(trackRedirect *Track
 	ts := performer.mapState[hex.Y][hex.X]
 
 	if ts.HasTown || ts.IsCity || len(ts.Routes) == 0 {
-		return ErrInvalidPlacement
+		return invalidMoveErr("attempted to redirect track on a hex with no incomplete links")
 	}
 	// Find the dangling route on this hex
 	var danglingRoute Route
@@ -147,10 +147,10 @@ func (performer *buildActionPerformer) attemptTrackRedirect(trackRedirect *Track
 	}
 	// If we didn't find the route
 	if danglingRoute.Link == nil {
-		return ErrInvalidPlacement
+		return invalidMoveErr("attempted to redirect track on a hex with no incomplete links")
 	}
 	if danglingRoute.Link.Owner != "" && danglingRoute.Link.Owner != performer.activePlayer {
-		return ErrInvalidPlacement
+		return invalidMoveErr("attempted to redirect track that is owned by another player")
 	}
 
 	// Figure out if it's left or right that's being redirected
@@ -202,7 +202,7 @@ func (performer *buildActionPerformer) determineTrackBuildCost(hex common.Coordi
 
 	// Max number of routes on a tile is 2
 	if len(ts.Routes)+len(tracks) > 2 {
-		return 0, ErrInvalidPlacement
+		return 0, invalidMoveErr("cannot place more than two routes on a hex")
 	}
 
 	allRoutes := make([][2]common.Direction, 0, len(ts.Routes)+len(tracks))
@@ -218,7 +218,7 @@ func (performer *buildActionPerformer) determineTrackBuildCost(hex common.Coordi
 	cost, err := performer.gameMap.GetTrackBuildCost(performer.gameState, performer.activePlayer,
 		hexType, hex, trackType, len(ts.Routes) != 0)
 	if err != nil {
-		return 0, &HttpError{fmt.Sprintf("failed to determine cost for placing track tile: %v", err), http.StatusBadRequest}
+		return 0, fmt.Errorf("failed to determine cost for placing track tile: %v", err)
 	}
 
 	return cost, nil
@@ -229,13 +229,16 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 	newRoute := trackPlacement.Track
 	ts := performer.mapState[hex.Y][hex.X]
 
-	if ts.HasTown || len(ts.Routes)+1 > 2 {
-		return ErrInvalidPlacement
+	if ts.HasTown {
+		return invalidMoveErr("cannot perform track placements on a town hex")
+	}
+	if len(ts.Routes)+1 > 2 {
+		return invalidMoveErr("cannot place more than two routes on a single hex")
 	}
 	// Verify that none of the new routes overlap with existing routes
 	for _, existingRoute := range ts.Routes {
 		if existingRoute.Left == newRoute[0] || existingRoute.Left == newRoute[1] || existingRoute.Right == newRoute[0] || existingRoute.Right == newRoute[1] {
-			return ErrInvalidPlacement
+			return invalidMoveErr("cannot build over existing tracks")
 		}
 	}
 
@@ -265,7 +268,7 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 		for _, existingRoute := range leftTileState.Routes {
 			if existingRoute.Left.Opposite() == newRoute[0] || existingRoute.Right.Opposite() == newRoute[0] {
 				if existingRoute.Link.Owner != "" && existingRoute.Link.Owner != performer.activePlayer {
-					return ErrInvalidPlacement
+					return invalidMoveErr("cannot connect to another player's track")
 				}
 				link = existingRoute.Link
 				link.Owner = performer.activePlayer
@@ -292,7 +295,7 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 		for _, existingRoute := range rightTileState.Routes {
 			if existingRoute.Left.Opposite() == newRoute[1] || existingRoute.Right.Opposite() == newRoute[1] {
 				if existingRoute.Link.Owner != "" && existingRoute.Link.Owner != performer.activePlayer {
-					return ErrInvalidPlacement
+					return invalidMoveErr("cannot connect to another player's track")
 				}
 				if link == nil {
 					link = existingRoute.Link
@@ -314,7 +317,7 @@ func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *Tra
 		}
 		if link == nil {
 			// No link from left side, no link from right side: invalid placement
-			return ErrInvalidPlacement
+			return invalidMoveErr("cannot place track that is incomplete on both sides")
 		}
 	}
 
@@ -402,22 +405,22 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	// First handle urbanization
 	if buildAction.Urbanization != nil {
 		if gameState.PlayerActions[handler.activePlayer] != common.URBANIZATION_SPECIAL_ACTION {
-			return &HttpError{"cannot urbanize without special action", http.StatusBadRequest}
+			return invalidMoveErr("cannot urbanize without special action")
 		}
 		if buildAction.Urbanization.City < 0 || buildAction.Urbanization.City >= 8 {
-			return &HttpError{fmt.Sprintf("invalid city: %d", buildAction.Urbanization.City), http.StatusBadRequest}
+			return invalidMoveErr("invalid city: %d", buildAction.Urbanization.City)
 		}
 
 		for _, existingUrb := range gameState.Urbanizations {
 			if existingUrb.Hex == buildAction.Urbanization.Hex {
-				return &HttpError{"cannot urbanize on top of existing urbanization", http.StatusBadRequest}
+				return invalidMoveErr("cannot urbanize on top of existing urbanization")
 			}
 			if existingUrb.City == buildAction.Urbanization.City {
-				return &HttpError{"requested city has already been urbanized", http.StatusBadRequest}
+				return invalidMoveErr("requested city has already been urbanized")
 			}
 		}
 		if handler.gameMap.GetHexType(buildAction.Urbanization.Hex) != maps.TOWN_HEX_TYPE {
-			return &HttpError{"must urbanize on town hex", http.StatusBadRequest}
+			return invalidMoveErr("must urbanize on town hex")
 		}
 
 		gameState.Urbanizations = append(gameState.Urbanizations, buildAction.Urbanization)
@@ -461,7 +464,7 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 		placementLimit = 4
 	}
 	if len(buildAction.TrackRedirects)+len(townPlacements)+len(trackPlacements)+len(buildAction.TeleportLinkPlacements) > placementLimit {
-		return &HttpError{fmt.Sprintf("cannot exceed track placement limit (%d)", placementLimit), http.StatusBadRequest}
+		return invalidMoveErr("cannot exceed track placement limit (%d)", placementLimit)
 	}
 
 	// Now apply cost
@@ -474,7 +477,7 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 		cost := handler.gameMap.GetTeleportLinkBuildCost(gameState, handler.activePlayer,
 			teleportLinkPlacement.Hex, teleportLinkPlacement.Track)
 		if cost == 0 {
-			return ErrInvalidPlacement
+			return invalidMoveErr("invalid teleport link placement (no teleport link exists in the target hex/direction)")
 		}
 
 		teleportCosts = append(teleportCosts, cost)
@@ -498,8 +501,8 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	totalCost := handler.gameMap.GetTotalBuildCost(gameState, handler.activePlayer,
 		redirectCosts, townCosts, trackCosts, teleportCosts)
 	if totalCost > gameState.PlayerCash[performer.activePlayer] {
-		return &HttpError{description: fmt.Sprintf("invalid build: cost %d exceeds player's funds: %d",
-			totalCost, gameState.PlayerCash[performer.activePlayer]), code: http.StatusBadRequest}
+		return invalidMoveErr("invalid build: cost %d exceeds player's funds: %d",
+			totalCost, gameState.PlayerCash[performer.activePlayer])
 	}
 	gameState.PlayerCash[performer.activePlayer] -= totalCost
 
@@ -522,9 +525,6 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	for _, townPlacement := range buildAction.TownPlacements {
 		err := performer.attemptTownPlacement(townPlacement)
 		if err != nil {
-			if errors.Is(err, ErrInvalidPlacement) {
-				return &HttpError{"invalid tile placement", http.StatusBadRequest}
-			}
 			return err
 		}
 		handler.Log("%s added track on town hex (%d,%d)",
@@ -533,9 +533,6 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	for _, trackRedirect := range buildAction.TrackRedirects {
 		err := performer.attemptTrackRedirect(trackRedirect)
 		if err != nil {
-			if errors.Is(err, ErrInvalidPlacement) {
-				return &HttpError{"invalid track redirect", http.StatusBadRequest}
-			}
 			return err
 		}
 		handler.Log("%s redirected track on hex (%d,%d)",
@@ -544,9 +541,6 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	for _, trackPlacement := range buildAction.TrackPlacements {
 		err := performer.attemptTrackPlacement(trackPlacement)
 		if err != nil {
-			if errors.Is(err, ErrInvalidPlacement) {
-				return &HttpError{"invalid tile placement", http.StatusBadRequest}
-			}
 			return err
 		}
 		handler.Log("%s added track on hex (%d,%d)",
@@ -555,9 +549,6 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	for _, teleportLinkPlacement := range buildAction.TeleportLinkPlacements {
 		err := performer.attemptTeleportLinkPlacement(teleportLinkPlacement)
 		if err != nil {
-			if errors.Is(err, ErrInvalidPlacement) {
-				return &HttpError{"invalid tile placement", http.StatusBadRequest}
-			}
 			return err
 		}
 		handler.Log("%s added teleport link on hex (%d,%d)",
