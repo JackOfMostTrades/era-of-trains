@@ -911,8 +911,6 @@ func TestIssue26Regression(t *testing.T) {
 }
 
 func TestTownToNowhere(t *testing.T) {
-	t.Skip("this check hasn't been implemented yet")
-
 	playerId := "player1"
 	gameMap := &testMap{
 		hexes: [][]maps.HexType{
@@ -946,13 +944,10 @@ func TestTownToNowhere(t *testing.T) {
 	})
 	var invalidMove *invalidMoveError
 	require.ErrorAs(t, err, &invalidMove)
-	assert.Equal(t, invalidMove.Error(), "xyz")
-	assert.Equal(t, 0, len(gameState.Links))
+	assert.Equal(t, invalidMove.Error(), "all of a player's links must trace back over a player's track to a city")
 }
 
 func TestTownToTown(t *testing.T) {
-	t.Skip("this check hasn't been implemented yet")
-
 	playerId := "player1"
 	gameMap := &testMap{
 		hexes: [][]maps.HexType{
@@ -990,6 +985,5 @@ func TestTownToTown(t *testing.T) {
 	})
 	var invalidMove *invalidMoveError
 	require.ErrorAs(t, err, &invalidMove)
-	assert.Equal(t, invalidMove.Error(), "xyz")
-	assert.Equal(t, 0, len(gameState.Links))
+	assert.Equal(t, invalidMove.Error(), "all of a player's links must trace back over a player's track to a city")
 }

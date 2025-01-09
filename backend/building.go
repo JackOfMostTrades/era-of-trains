@@ -566,6 +566,10 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	if err != nil {
 		return err
 	}
+	err = handler.checkRouteConnections()
+	if err != nil {
+		return err
+	}
 
 	// Remove ownership of any incomplete links not extended
 	for _, link := range gameState.Links {
