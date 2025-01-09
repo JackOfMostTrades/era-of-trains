@@ -113,23 +113,15 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
 
     let renderer = new RenderMapBuilder(game, map);
 
-    let hexesWithTrack: { [ hexId: string]: boolean } = {};
-    if (game.gameState) {
-        // Render links
-        if (game.gameState.links) {
-            for (let link of game.gameState.links) {
-                let hex = link.sourceHex;
-                for (let i = 1; i < link.steps.length; i++) {
-                    hex = applyMapDirection(map, game.gameState, pendingBuildAction, hex, link.steps[i - 1]);
-                    hexesWithTrack[hex.x + "," + hex.y] = true;
-                }
-            }
-        }
-    }
-
     for (let y = 0; y < map.getHeight(); y++) {
         for (let x = 0; x < map.getWidth(); x++) {
-            renderer.renderHex({x: x, y: y});
+            let hex: Coordinate = {x: x, y: y};
+            renderer.renderHex(hex);
+
+            let specialCost = map.getSpecialTrackPricing(hex);
+            if (specialCost !== undefined) {
+                renderer.renderSpecialCost(hex, specialCost);
+            }
         }
     }
     renderer.renderLayer(map.getRiverLayer());
@@ -171,8 +163,6 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
     }
 
     if (game.gameState) {
-        let hexesWithTrack: { [ hexId: string]: boolean } = {};
-
         // Render links
         if (game.gameState.links) {
             for (let link of game.gameState.links) {
@@ -204,7 +194,6 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
                         if (map.getHexType(hex) === HexType.TOWN) {
                             renderer.renderTownTrack(hex, left, link.owner);
                         } else {
-                            hexesWithTrack[hex.x + "," + hex.y] = true;
                             renderer.renderTrack(hex, left, right, link.owner);
                         }
                     }
@@ -230,18 +219,7 @@ function ViewMapComponent({game, map}: {game: ViewGameResponse, map: GameMap}) {
                 renderer.renderTownTrack(townPlacement.hex, townPlacement.track, game.activePlayer);
             }
             for (let trackPlacement of pendingBuildAction.trackPlacements) {
-                hexesWithTrack[trackPlacement.hex.x + "," + trackPlacement.hex.y] = true;
                 renderer.renderTrack(trackPlacement.hex, trackPlacement.track[0], trackPlacement.track[1], game.activePlayer);
-            }
-        }
-
-        for (let y = 0; y < map.getHeight(); y++) {
-            for (let x = 0; x < map.getWidth(); x++) {
-                let hex: Coordinate = {x: x, y: y};
-                let specialCost = map.getSpecialTrackPricing(hex);
-                if (specialCost !== undefined && !hexesWithTrack[hex.x + "," + hex.y]) {
-                    renderer.renderSpecialCost(hex, specialCost);
-                }
             }
         }
 
