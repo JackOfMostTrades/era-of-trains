@@ -49,20 +49,26 @@ func TestAttemptTrackPlacement(t *testing.T) {
 	gameState := &common.GameState{
 		PlayerCash: map[string]int{playerId: 10},
 	}
-	performer := newBuildActionPerformer(gameMap, gameState, playerId)
-	err := performer.attemptTrackPlacement(&TrackPlacement{
-		Hex:   common.Coordinate{X: 0, Y: 1},
-		Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
-	})
-	require.NoError(t, err)
-	err = performer.attemptTrackPlacement(&TrackPlacement{
-		Hex:   common.Coordinate{X: 1, Y: 0},
-		Track: [2]common.Direction{common.SOUTH_WEST, common.SOUTH_EAST},
-	})
-	require.NoError(t, err)
-	err = performer.attemptTrackPlacement(&TrackPlacement{
-		Hex:   common.Coordinate{X: 1, Y: 1},
-		Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
+	handler := &confirmMoveHandler{
+		gameMap:      gameMap,
+		gameState:    gameState,
+		activePlayer: playerId,
+	}
+	err := handler.performBuildAction(&BuildAction{
+		TrackPlacements: []*TrackPlacement{
+			{
+				Hex:   common.Coordinate{X: 0, Y: 1},
+				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
+			},
+			{
+				Hex:   common.Coordinate{X: 1, Y: 0},
+				Track: [2]common.Direction{common.SOUTH_WEST, common.SOUTH_EAST},
+			},
+			{
+				Hex:   common.Coordinate{X: 1, Y: 1},
+				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
+			},
+		},
 	})
 	require.NoError(t, err)
 
@@ -87,25 +93,27 @@ func TestAttemptTrackPlacementEngineer(t *testing.T) {
 		PlayerCash:    map[string]int{playerId: 10},
 		PlayerActions: map[string]common.SpecialAction{playerId: common.ENGINEER_SPECIAL_ACTION},
 	}
-	performer := newBuildActionPerformer(gameMap, gameState, playerId)
-	err := performer.attemptTrackPlacement(&TrackPlacement{
-		Hex:   common.Coordinate{X: 0, Y: 1},
-		Track: [2]common.Direction{common.NORTH_EAST, common.SOUTH_WEST},
-	})
-	require.NoError(t, err)
-	err = performer.attemptTrackPlacement(&TrackPlacement{
-		Hex:   common.Coordinate{X: 1, Y: 0},
-		Track: [2]common.Direction{common.SOUTH_EAST, common.SOUTH_WEST},
-	})
-	require.NoError(t, err)
-	err = performer.attemptTrackPlacement(&TrackPlacement{
-		Hex:   common.Coordinate{X: 1, Y: 1},
-		Track: [2]common.Direction{common.SOUTH_EAST, common.NORTH_WEST},
-	})
-	require.NoError(t, err)
-	err = performer.attemptTrackPlacement(&TrackPlacement{
-		Hex:   common.Coordinate{X: 2, Y: 2},
-		Track: [2]common.Direction{common.NORTH_EAST, common.NORTH_WEST},
+	handler := &confirmMoveHandler{
+		gameMap:      gameMap,
+		gameState:    gameState,
+		activePlayer: playerId,
+	}
+	err := handler.performBuildAction(&BuildAction{
+		TrackPlacements: []*TrackPlacement{
+			{
+				Hex:   common.Coordinate{X: 0, Y: 1},
+				Track: [2]common.Direction{common.NORTH_EAST, common.SOUTH_WEST},
+			}, {
+				Hex:   common.Coordinate{X: 1, Y: 0},
+				Track: [2]common.Direction{common.SOUTH_EAST, common.SOUTH_WEST},
+			}, {
+				Hex:   common.Coordinate{X: 1, Y: 1},
+				Track: [2]common.Direction{common.SOUTH_EAST, common.NORTH_WEST},
+			}, {
+				Hex:   common.Coordinate{X: 2, Y: 2},
+				Track: [2]common.Direction{common.NORTH_EAST, common.NORTH_WEST},
+			},
+		},
 	})
 	require.NoError(t, err)
 
@@ -128,15 +136,24 @@ func TestTrackFromCityToTown(t *testing.T) {
 	gameState := &common.GameState{
 		PlayerCash: map[string]int{playerId: 10},
 	}
-	performer := newBuildActionPerformer(gameMap, gameState, playerId)
-	err := performer.attemptTownPlacement(&TownPlacement{
-		Hex:   common.Coordinate{X: 0, Y: 0},
-		Track: common.SOUTH_EAST,
-	})
-	require.NoError(t, err)
-	err = performer.attemptTrackPlacement(&TrackPlacement{
-		Hex:   common.Coordinate{X: 0, Y: 1},
-		Track: [2]common.Direction{common.NORTH_EAST, common.NORTH_WEST},
+	handler := &confirmMoveHandler{
+		gameMap:      gameMap,
+		gameState:    gameState,
+		activePlayer: playerId,
+	}
+	err := handler.performBuildAction(&BuildAction{
+		TownPlacements: []*TownPlacement{
+			{
+				Hex:   common.Coordinate{X: 0, Y: 0},
+				Track: common.SOUTH_EAST,
+			},
+		},
+		TrackPlacements: []*TrackPlacement{
+			{
+				Hex:   common.Coordinate{X: 0, Y: 1},
+				Track: [2]common.Direction{common.NORTH_EAST, common.NORTH_WEST},
+			},
+		},
 	})
 	require.NoError(t, err)
 
@@ -159,15 +176,24 @@ func TestTrackFromTownToCity(t *testing.T) {
 	gameState := &common.GameState{
 		PlayerCash: map[string]int{playerId: 10},
 	}
-	performer := newBuildActionPerformer(gameMap, gameState, playerId)
-	err := performer.attemptTownPlacement(&TownPlacement{
-		Hex:   common.Coordinate{X: 0, Y: 0},
-		Track: common.SOUTH_EAST,
-	})
-	require.NoError(t, err)
-	err = performer.attemptTrackPlacement(&TrackPlacement{
-		Hex:   common.Coordinate{X: 0, Y: 1},
-		Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
+	handler := &confirmMoveHandler{
+		gameMap:      gameMap,
+		gameState:    gameState,
+		activePlayer: playerId,
+	}
+	err := handler.performBuildAction(&BuildAction{
+		TownPlacements: []*TownPlacement{
+			{
+				Hex:   common.Coordinate{X: 0, Y: 0},
+				Track: common.SOUTH_EAST,
+			},
+		},
+		TrackPlacements: []*TrackPlacement{
+			{
+				Hex:   common.Coordinate{X: 0, Y: 1},
+				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
+			},
+		},
 	})
 	require.NoError(t, err)
 
@@ -190,10 +216,18 @@ func TestAdjacentTownAndCity(t *testing.T) {
 	gameState := &common.GameState{
 		PlayerCash: map[string]int{playerId: 10},
 	}
-	performer := newBuildActionPerformer(gameMap, gameState, playerId)
-	err := performer.attemptTownPlacement(&TownPlacement{
-		Hex:   common.Coordinate{X: 0, Y: 0},
-		Track: common.SOUTH_EAST,
+	handler := &confirmMoveHandler{
+		gameMap:      gameMap,
+		gameState:    gameState,
+		activePlayer: playerId,
+	}
+	err := handler.performBuildAction(&BuildAction{
+		TownPlacements: []*TownPlacement{
+			{
+				Hex:   common.Coordinate{X: 0, Y: 0},
+				Track: common.SOUTH_EAST,
+			},
+		},
 	})
 	require.NoError(t, err)
 
