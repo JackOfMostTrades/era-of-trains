@@ -250,7 +250,7 @@ func (server *GameServer) register(ctx *RequestContext, req *RegisterRequest) (r
 		return nil, &HttpError{fmt.Sprintf("unsupported provider parameter: %s", req.Provider), http.StatusBadRequest}
 	}
 
-	stmt, err = server.db.Prepare("INSERT INTO users (id,nickname,email,email_notifications_enabled,google_user_id,discord_user_id) VALUES(?,?,?,1,?,?)")
+	stmt, err = server.db.Prepare("INSERT INTO users (id,nickname,email,email_notifications_enabled,google_user_id,discord_user_id,discord_turn_alerts_enabled) VALUES(?,?,?,1,?,?,0)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare statement: %v", err)
 	}
@@ -954,12 +954,13 @@ type GetMyProfileResponse struct {
 	GoogleId                  string   `json:"googleId"`
 	DiscordId                 string   `json:"discordId"`
 	EmailNotificationsEnabled bool     `json:"emailNotificationsEnabled"`
+	DiscordTurnAlertsEnabled  bool     `json:"discordTurnAlertsEnabled"`
 	ColorPreferences          []int    `json:"colorPreferences"`
 	Webhooks                  []string `json:"webhooks"`
 }
 
 func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesRequest) (resp *GetMyProfileResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT nickname,email,discord_user_id,google_user_id,email_notifications_enabled,color_preferences,webhooks FROM users WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT nickname,email,discord_user_id,google_user_id,email_notifications_enabled,discord_turn_alerts_enabled,color_preferences,webhooks FROM users WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -971,9 +972,10 @@ func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesReque
 	var discordId sql.NullString
 	var googleId sql.NullString
 	var emailNotificationsEnabled int
+	var discordTurnAlertsEnabled int
 	var colorPreferencesStr sql.NullString
 	var webhooksStr sql.NullString
-	err = row.Scan(&nickname, &email, &discordId, &googleId, &emailNotificationsEnabled, &colorPreferencesStr, &webhooksStr)
+	err = row.Scan(&nickname, &email, &discordId, &googleId, &emailNotificationsEnabled, &discordTurnAlertsEnabled, &colorPreferencesStr, &webhooksStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan row: %v", err)
 	}
@@ -1000,6 +1002,7 @@ func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesReque
 		DiscordId:                 discordId.String,
 		GoogleId:                  googleId.String,
 		EmailNotificationsEnabled: emailNotificationsEnabled != 0,
+		DiscordTurnAlertsEnabled:  discordTurnAlertsEnabled != 0,
 		ColorPreferences:          colorPreferences,
 		Webhooks:                  webhooks,
 	}, nil
@@ -1007,6 +1010,7 @@ func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesReque
 
 type SetMyProfileRequest struct {
 	EmailNotificationsEnabled bool     `json:"emailNotificationsEnabled"`
+	DiscordTurnAlertsEnabled  bool     `json:"discordTurnAlertsEnabled"`
 	ColorPreferences          []int    `json:"colorPreferences"`
 	Webhooks                  []string `json:"webhooks"`
 }
@@ -1014,7 +1018,7 @@ type SetMyProfileResponse struct {
 }
 
 func (server *GameServer) setMyProfile(ctx *RequestContext, req *SetMyProfileRequest) (resp *SetMyProfileResponse, err error) {
-	stmt, err := server.db.Prepare("UPDATE users SET email_notifications_enabled=?,color_preferences=?,webhooks=? WHERE id=?")
+	stmt, err := server.db.Prepare("UPDATE users SET email_notifications_enabled=?,color_preferences=?,webhooks=?,discord_turn_alerts_enabled=? WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -1034,6 +1038,10 @@ func (server *GameServer) setMyProfile(ctx *RequestContext, req *SetMyProfileReq
 	if req.EmailNotificationsEnabled {
 		emailNotificationsEnabled = 1
 	}
+	var discordTurnAlertsEnabled int
+	if req.DiscordTurnAlertsEnabled {
+		discordTurnAlertsEnabled = 1
+	}
 
 	var webhooksStr sql.NullString
 	if len(req.Webhooks) != 0 {
@@ -1045,7 +1053,7 @@ func (server *GameServer) setMyProfile(ctx *RequestContext, req *SetMyProfileReq
 		webhooksStr.String = string(jsonBytes)
 	}
 
-	_, err = stmt.Exec(emailNotificationsEnabled, colorPreferencesStr, webhooksStr, ctx.User.Id)
+	_, err = stmt.Exec(emailNotificationsEnabled, colorPreferencesStr, webhooksStr, discordTurnAlertsEnabled, ctx.User.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}

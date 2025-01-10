@@ -23,10 +23,11 @@ type AuthenticationConfig struct {
 }
 
 type Config struct {
-	Authentication   *AuthenticationConfig `json:"authentication"`
-	MacKey           string                `json:"macKey"`
-	WorkingDirectory string                `json:"workingDirectory"`
-	CgiMode          bool                  `json:"cgiMode"`
-	Email            *EmailConfig          `json:"email"`
-	Database         *DatabaseConfig       `json:"database"`
+	Authentication           *AuthenticationConfig `json:"authentication"`
+	MacKey                   string                `json:"macKey"`
+	WorkingDirectory         string                `json:"workingDirectory"`
+	CgiMode                  bool                  `json:"cgiMode"`
+	Email                    *EmailConfig          `json:"email"`
+	Database                 *DatabaseConfig       `json:"database"`
+	DiscordTurnAlertsWebhook string                `json:"discordTurnAlertsWebhook"`
 }

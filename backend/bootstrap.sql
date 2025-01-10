@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     discord_user_id text,
     color_preferences text,
     email_notifications_enabled int,
+    discord_turn_alerts_enabled int,
     webhooks text
 );
 

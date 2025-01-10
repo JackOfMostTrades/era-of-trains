@@ -45,6 +45,7 @@ function ProfilePage() {
             setProfile(res);
             setNewProfile({
                 emailNotificationsEnabled: res.emailNotificationsEnabled,
+                discordTurnAlertsEnabled: res.discordTurnAlertsEnabled,
                 colorPreferences: res.colorPreferences,
                 webhooks: res.webhooks,
             })
@@ -88,6 +89,15 @@ function ProfilePage() {
                 <Checkbox toggle checked={newProfile?.emailNotificationsEnabled} onChange={(_, val) => {
                     let newNewProfile = Object.assign({}, newProfile);
                     newNewProfile.emailNotificationsEnabled = val.checked;
+                    setNewProfile(newNewProfile);
+                }} />
+            </FormField>
+            <FormField>
+                <label>Discord Notifications</label>
+                <p>When enabled, a message will be sent to the shared #turn-alerts channel whenever it is your turn. Link your Discord account to get an @-mention!</p>
+                <Checkbox toggle checked={newProfile?.discordTurnAlertsEnabled} onChange={(_, val) => {
+                    let newNewProfile = Object.assign({}, newProfile);
+                    newNewProfile.discordTurnAlertsEnabled = val.checked;
                     setNewProfile(newNewProfile);
                 }} />
             </FormField>

@@ -350,6 +350,7 @@ export interface GetMyProfileResponse {
     googleId?: string;
     discordId?: string;
     emailNotificationsEnabled: boolean;
+    discordTurnAlertsEnabled: boolean;
     colorPreferences?: PlayerColor[];
     webhooks: string[];
 }
@@ -359,6 +360,7 @@ export function GetMyProfile(req: GetMyProfileRequest): Promise<GetMyProfileResp
 
 export interface SetMyProfileRequest {
     emailNotificationsEnabled?: boolean;
+    discordTurnAlertsEnabled?: boolean;
     colorPreferences?: PlayerColor[];
     webhooks?: string[];
 }

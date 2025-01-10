@@ -11,7 +11,7 @@ import (
 )
 
 func (server *GameServer) notifyPlayer(gameId string, userId string) error {
-	stmt, err := server.db.Prepare("SELECT nickname,discord_user_id,email,email_notifications_enabled,webhooks FROM users WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT nickname,discord_user_id,email,email_notifications_enabled,discord_turn_alerts_enabled,webhooks FROM users WHERE id=?")
 	if err != nil {
 		return fmt.Errorf("failed to get email for user: %v", err)
 	}
@@ -21,8 +21,9 @@ func (server *GameServer) notifyPlayer(gameId string, userId string) error {
 	var discordUserId sql.NullString
 	var email sql.NullString
 	var emailNotificationsEnabled int
+	var discordTurnAlertsEnabled int
 	var webhooksStr sql.NullString
-	err = row.Scan(&nickname, &discordUserId, &email, &emailNotificationsEnabled, &webhooksStr)
+	err = row.Scan(&nickname, &discordUserId, &email, &emailNotificationsEnabled, &discordTurnAlertsEnabled, &webhooksStr)
 	if err != nil {
 		return fmt.Errorf("failed to get email for user: %v", err)
 	}
@@ -32,6 +33,9 @@ func (server *GameServer) notifyPlayer(gameId string, userId string) error {
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal webhooks: %v", err)
 		}
+	}
+	if discordTurnAlertsEnabled != 0 && server.config.DiscordTurnAlertsWebhook != "" {
+		webhooks = append(webhooks, server.config.DiscordTurnAlertsWebhook)
 	}
 
 	stmt, err = server.db.Prepare("SELECT finished,name FROM games WHERE id=?")
