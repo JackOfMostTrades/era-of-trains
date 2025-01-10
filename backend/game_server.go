@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/JackOfMostTrades/eot/backend/common"
 	"github.com/JackOfMostTrades/eot/backend/maps"
@@ -1059,4 +1060,138 @@ func (server *GameServer) setMyProfile(ctx *RequestContext, req *SetMyProfileReq
 	}
 
 	return &SetMyProfileResponse{}, nil
+}
+
+type GetGameChatRequest struct {
+	GameId string `json:"gameId"`
+	// Get all messages sent strictly after this time, in unix epoch seconds
+	After int `json:"after"`
+}
+
+type GameChatMessage struct {
+	UserId    string `json:"userId"`
+	Timestamp int    `json:"timestamp"`
+	Message   string `json:"message"`
+}
+
+type GetGameChatResponse struct {
+	Messages []*GameChatMessage `json:"messages"`
+}
+
+func (server *GameServer) getGameChat(ctx *RequestContext, req *GetGameChatRequest) (resp *GetGameChatResponse, err error) {
+	if req.GameId == "" {
+		return nil, &HttpError{"missing gameId parameter", http.StatusBadRequest}
+	}
+
+	stmt, err := server.db.Prepare("SELECT timestamp,user_id,message FROM game_chat WHERE game_id=? AND timestamp > ? ORDER BY timestamp ASC")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare statement: %v", err)
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query(req.GameId, req.After)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+	defer rows.Close()
+
+	var messages []*GameChatMessage
+	for rows.Next() {
+		var timestamp int
+		var userId string
+		var message string
+		err = rows.Scan(&timestamp, &userId, &message)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan row: %v", err)
+		}
+		messages = append(messages, &GameChatMessage{
+			Timestamp: timestamp,
+			UserId:    userId,
+			Message:   message,
+		})
+	}
+
+	return &GetGameChatResponse{
+		Messages: messages,
+	}, nil
+}
+
+type SendGameChatRequest struct {
+	GameId  string `json:"gameId"`
+	Message string `json:"message"`
+}
+type SendGameChatResponse struct {
+}
+
+func (server *GameServer) sendGameChat(ctx *RequestContext, req *SendGameChatRequest) (resp *SendGameChatResponse, err error) {
+	if req.GameId == "" {
+		return nil, &HttpError{"missing gameId parameter", http.StatusBadRequest}
+	}
+	if req.Message == "" {
+		return nil, &HttpError{"missing message parameter", http.StatusBadRequest}
+	}
+	users, err := server.getJoinedUsers(req.GameId)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, ok := users[ctx.User.Id]; !ok {
+		return nil, &HttpError{"can only send messages in games you are in", http.StatusBadRequest}
+	}
+
+	stmt, err := server.db.Prepare("INSERT INTO game_chat (game_id, timestamp, user_id, message) VALUES(?, ?, ?, ?)")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare statement: %v", err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(req.GameId, time.Now().Unix(), ctx.User.Id, req.Message)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add row: %v", err)
+	}
+
+	return &SendGameChatResponse{}, nil
+}
+
+type PollGameStatusRequest struct {
+	GameId string `json:"gameId"`
+}
+type PollGameStatusResponse struct {
+	LastMove int `json:"lastMove"`
+	LastChat int `json:"lastChat"`
+}
+
+func (server *GameServer) pollGameStatus(ctx *RequestContext, req *PollGameStatusRequest) (resp *PollGameStatusResponse, err error) {
+	if req.GameId == "" {
+		return nil, &HttpError{"missing gameId parameter", http.StatusBadRequest}
+	}
+
+	stmt, err := server.db.Prepare("SELECT MAX(timestamp) FROM game_log WHERE game_id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare statement: %v", err)
+	}
+	defer stmt.Close()
+	row := stmt.QueryRow(req.GameId)
+
+	var lastMove int
+	err = row.Scan(&lastMove)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+
+	stmt, err = server.db.Prepare("SELECT MAX(timestamp) FROM game_chat WHERE game_id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare statement: %v", err)
+	}
+	defer stmt.Close()
+	row = stmt.QueryRow(req.GameId)
+
+	var lastChat int
+	err = row.Scan(&lastChat)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+
+	return &PollGameStatusResponse{
+		LastMove: lastMove,
+		LastChat: lastChat,
+	}, nil
 }

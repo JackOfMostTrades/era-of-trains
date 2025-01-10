@@ -38,3 +38,11 @@ CREATE TABLE IF NOT EXISTS game_log (
     new_game_state text,
     PRIMARY KEY (game_id, timestamp)
 );
+
+CREATE TABLE IF NOT EXISTS game_chat (
+    game_id text,
+    timestamp int, --Epoch seconds
+    user_id text,
+    message text,
+    PRIMARY KEY (game_id, timestamp)
+);

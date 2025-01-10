@@ -233,6 +233,9 @@ func runHttpServer(server *GameServer) error {
 	mux.HandleFunc("/api/getMyGames", jsonHandler(server, server.getMyGames))
 	mux.HandleFunc("/api/getMyProfile", jsonHandler(server, server.getMyProfile))
 	mux.HandleFunc("/api/setMyProfile", jsonHandler(server, server.setMyProfile))
+	mux.HandleFunc("/api/getGameChat", jsonHandler(server, server.getGameChat))
+	mux.HandleFunc("/api/sendGameChat", jsonHandler(server, server.sendGameChat))
+	mux.HandleFunc("/api/pollGameStatus", jsonHandler(server, server.pollGameStatus))
 
 	var err error
 	if server.config.CgiMode {
