@@ -1171,7 +1171,7 @@ func (server *GameServer) pollGameStatus(ctx *RequestContext, req *PollGameStatu
 	defer stmt.Close()
 	row := stmt.QueryRow(req.GameId)
 
-	var lastMove int
+	var lastMove sql.NullInt64
 	err = row.Scan(&lastMove)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("failed to execute query: %v", err)
@@ -1184,14 +1184,14 @@ func (server *GameServer) pollGameStatus(ctx *RequestContext, req *PollGameStatu
 	defer stmt.Close()
 	row = stmt.QueryRow(req.GameId)
 
-	var lastChat int
+	var lastChat sql.NullInt64
 	err = row.Scan(&lastChat)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
 
 	return &PollGameStatusResponse{
-		LastMove: lastMove,
-		LastChat: lastChat,
+		LastMove: int(lastMove.Int64),
+		LastChat: int(lastChat.Int64),
 	}, nil
 }
