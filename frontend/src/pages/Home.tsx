@@ -9,22 +9,27 @@ function Home() {
         <p>The volume of users on this site is low, so organizing players for a game on other social channels is recommended. We've started a dedicated Discord server, which you can join with <a target="_blank" href="https://discord.gg/f9rtBrhW2j">this link</a>! This is a good place to find other players, get notifications if it's your turn, or report issues.</p>
         <p>The functionality of this site should be considered "beta" as a number of minor issues have been discovered (and fixed) during initial tests. Please proceed with modest expectations.</p>
         <Header as='h2'>Announcements</Header>
+        <Header as='h3'>Jan 9, 2025</Header>
+        <List bulleted>
+            <ListItem>Add a common Discord turn notifications option so you don't need to run your own server.</ListItem>
+            <ListItem>Add a link to the Discord channel.</ListItem>
+        </List>
         <Header as='h3'>Jan 7, 2025</Header>
-        <List>
+        <List bulleted>
             <ListItem>Added support for signing in with Discord.</ListItem>
             <ListItem>Added support for receiving a Discord webhook when it's your turn.</ListItem>
             <ListItem>Various minor bugfixes and UI improvements.</ListItem>
             <ListItem>Text changes to indicate movement to public beta.</ListItem>
         </List>
         <Header as='h3'>Dec 30, 2024</Header>
-        <List>
+        <List bulleted>
             <ListItem>Initial release of the Scotland map is available.</ListItem>
             <ListItem>Maps have rivers now!</ListItem>
             <ListItem>Users with pending turns will now receive a daily summary email as a reminder.</ListItem>
             <ListItem>Cubes glide over the map during move goods action. So fancy!</ListItem>
         </List>
         <Header as='h3'>Dec 26, 2024</Header>
-        <List>
+        <List bulleted>
             <ListItem>Initial release of the Germany map is available.</ListItem>
             <ListItem>Bankrupt players are now eliminated.</ListItem>
             <ListItem>Users can now set player color preferences that get applied when starting a new game.</ListItem>
@@ -33,7 +38,7 @@ function Home() {
             <ListItem>Map-specific info is now displayed on game pages.</ListItem>
         </List>
         <Header as='h3'>Dec 24, 2024</Header>
-        <List>
+        <List bulleted>
             <ListItem>Initial release of the Southern U.S. map is available.</ListItem>
             <ListItem>You can now redirect incomplete tracks during builds.</ListItem>
             <ListItem>Fixed a bug allowing deliveries to repeat cities.</ListItem>
