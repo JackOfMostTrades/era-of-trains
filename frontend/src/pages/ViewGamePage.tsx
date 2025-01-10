@@ -207,34 +207,34 @@ function ViewGamePage() {
         return <Loader active />
     }
 
-    let content: ReactNode
     if (!game.started) {
+        let content: ReactNode
         if (game.joinedUsers.length < game.numPlayers) {
             content = <WaitingForPlayersPage game={game} onJoin={() => reload()} />
         } else {
             content = <WaitingForStartPage game={game} onStart={() => reload()}/>
         }
-    } else {
-        let map = maps[game.mapName];
-        let mapInfo = map.getMapInfo();
-        content = <>
-            <PlayerStatus game={game} map={map} onConfirmMove={() => reload()}/>
-            <ViewMapComponent game={game} map={map} />
-            <GoodsGrowthTable game={game} map={map} />
-            {!mapInfo ? null : <Segment><Header as='h2'>Map Info</Header>{mapInfo}</Segment>}
-            <GameLogsComponent gameId={game.id} game={game} reloadTime={reloadTime} />
+        return <>
+            <Header as='h1'>Game: {game.name}</Header>
+            <Segment>
+                <Header as='h2'>Table Info</Header>
+                Map: {mapNameToDisplayName(game.mapName)}<br/>
+                Player Count: {game.numPlayers}<br/>
+                Table Owner: {game.ownerUser.nickname}<br/>
+            </Segment>
+            {content}
         </>
     }
 
+    let map = maps[game.mapName];
+    let mapInfo = map.getMapInfo();
     return <>
-        <Header as='h1'>Game: {game.name}</Header>
-        <Segment>
-            <Header as='h2'>Table Info</Header>
-            Map: {mapNameToDisplayName(game.mapName)}<br/>
-            Player Count: {game.numPlayers}<br/>
-            Table Owner: {game.ownerUser.nickname}<br/>
-        </Segment>
-        {content}
+        <Header as='h1'>{game.name} <span style={{fontStyle: "italic"}}>({mapNameToDisplayName(game.mapName)})</span></Header>
+        <PlayerStatus game={game} map={map} onConfirmMove={() => reload()}/>
+        <ViewMapComponent game={game} map={map} />
+        <GoodsGrowthTable game={game} map={map} />
+        {!mapInfo ? null : <Segment><Header as='h2'>Map Info</Header>{mapInfo}</Segment>}
+        <GameLogsComponent gameId={game.id} game={game} reloadTime={reloadTime} />
     </>
 }
 
