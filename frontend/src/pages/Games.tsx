@@ -12,6 +12,7 @@ import {
 import {ReactNode, useEffect, useState} from "react";
 import {Link} from "react-router";
 import {ListGames, ListGamesResponse} from "../api/api.ts";
+import {mapNameToDisplayName} from "../util.ts";
 
 function Games() {
     let [games, setGames] = useState<ListGamesResponse|undefined>(undefined);
@@ -46,7 +47,7 @@ function Games() {
                 rows.push(<TableRow>
                     <TableCell><Link to={`/games/${game.id}`}>{game.name}</Link></TableCell>
                     <TableCell>{game.numPlayers}</TableCell>
-                    <TableCell>{game.mapName}</TableCell>
+                    <TableCell>{mapNameToDisplayName(game.mapName)}</TableCell>
                     <TableCell>{status}</TableCell>
                 </TableRow>)
             }

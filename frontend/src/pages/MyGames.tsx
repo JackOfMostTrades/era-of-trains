@@ -15,6 +15,7 @@ import {Link} from "react-router";
 import {GameSummary, GetMyGames, GetMyGamesResponse} from "../api/api.ts";
 import UserSessionContext from "../UserSessionContext.tsx";
 import ErrorContext from "../ErrorContext.tsx";
+import {mapNameToDisplayName} from "../util.ts";
 
 function GameSummaryTable({games, title}: {games: GameSummary[], title: string}) {
     if (games.length === 0) {
@@ -39,7 +40,7 @@ function GameSummaryTable({games, title}: {games: GameSummary[], title: string})
         rows.push(<TableRow>
             <TableCell><Link to={`/games/${game.id}`}>{game.name}</Link></TableCell>
             <TableCell>{game.numPlayers}</TableCell>
-            <TableCell>{game.mapName}</TableCell>
+            <TableCell>{mapNameToDisplayName(game.mapName)}</TableCell>
             <TableCell>{status}</TableCell>
         </TableRow>)
     }
