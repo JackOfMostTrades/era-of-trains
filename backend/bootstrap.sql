@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS games (
     started int,
     finished int,
     game_state text,
-    active_player_id text
+    active_player_id text,
+    invite_only int
 );
 
 CREATE TABLE IF NOT EXISTS game_player_map (

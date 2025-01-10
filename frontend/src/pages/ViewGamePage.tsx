@@ -256,6 +256,7 @@ function ViewGamePage() {
                 Map: {mapNameToDisplayName(game.mapName)}<br/>
                 Player Count: {game.numPlayers}<br/>
                 Table Owner: {game.ownerUser.nickname}<br/>
+                {game.inviteOnly ? <><span style={{fontStyle: "italic"}}>Invite Only</span><br/></> : null}
             </Segment>
             <Segment>
                 <Header as='h2'>Chat</Header>

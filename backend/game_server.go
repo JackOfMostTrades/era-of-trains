@@ -360,6 +360,7 @@ type CreateGameRequest struct {
 	Name       string `json:"name"`
 	NumPlayers int    `json:"numPlayers"`
 	MapName    string `json:"mapName"`
+	InviteOnly bool   `json:"inviteOnly"`
 }
 
 type CreateGameResponse struct {
@@ -371,7 +372,7 @@ func (server *GameServer) createGame(ctx *RequestContext, req *CreateGameRequest
 		return nil, &HttpError{"missing name parameter", http.StatusBadRequest}
 	}
 
-	stmt, err := server.db.Prepare("INSERT INTO games (id,created_at,name,num_players,map_name,owner_user_id,started,finished) VALUES (?,?,?,?,?,?,0,0)")
+	stmt, err := server.db.Prepare("INSERT INTO games (id,created_at,name,num_players,map_name,owner_user_id,started,finished,invite_only) VALUES (?,?,?,?,?,?,0,0,?)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -381,7 +382,7 @@ func (server *GameServer) createGame(ctx *RequestContext, req *CreateGameRequest
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate id: %v", err)
 	}
-	_, err = stmt.Exec(id.String(), time.Now().Unix(), req.Name, req.NumPlayers, req.MapName, ctx.User.Id)
+	_, err = stmt.Exec(id.String(), time.Now().Unix(), req.Name, req.NumPlayers, req.MapName, ctx.User.Id, boolToInt(req.InviteOnly))
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert game row: %v", err)
 	}
@@ -712,10 +713,11 @@ type ViewGameResponse struct {
 	ActivePlayer string            `json:"activePlayer"`
 	JoinedUsers  []*User           `json:"joinedUsers"`
 	GameState    *common.GameState `json:"gameState"`
+	InviteOnly   bool              `json:"inviteOnly"`
 }
 
 func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (resp *ViewGameResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT name,owner_user_id,num_players,map_name,started,finished,game_state,active_player_id FROM games WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT name,owner_user_id,num_players,map_name,started,finished,game_state,active_player_id,invite_only FROM games WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -729,7 +731,8 @@ func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (r
 	var finishedFlag int
 	var gameStateStr sql.NullString
 	var activePlayerStr sql.NullString
-	err = row.Scan(&name, &ownerUserId, &numPlayers, &mapName, &startedFlag, &finishedFlag, &gameStateStr, &activePlayerStr)
+	var inviteOnlyFlag int
+	err = row.Scan(&name, &ownerUserId, &numPlayers, &mapName, &startedFlag, &finishedFlag, &gameStateStr, &activePlayerStr, &inviteOnlyFlag)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
@@ -775,6 +778,7 @@ func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (r
 		ActivePlayer: activePlayerStr.String,
 		JoinedUsers:  joinedUsers,
 		GameState:    gameState,
+		InviteOnly:   inviteOnlyFlag != 0,
 	}
 
 	return res, nil
@@ -799,7 +803,7 @@ type ListGamesResponse struct {
 }
 
 func (server *GameServer) listGames(ctx *RequestContext, req *ListGamesRequest) (resp *ListGamesResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT id,name,owner_user_id,num_players,map_name,started,finished,active_player_id FROM games ORDER by created_at DESC")
+	stmt, err := server.db.Prepare("SELECT id,name,owner_user_id,num_players,map_name,started,finished,active_player_id FROM games WHERE invite_only=0 ORDER by created_at DESC")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}

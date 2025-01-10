@@ -13,3 +13,11 @@ func DeleteFromSliceOrdered[T any](idx int, slice []T) []T {
 	slice = slice[:len(slice)-1]
 	return slice
 }
+
+// Convenience method since SQL bools are stored as ints
+func boolToInt(val bool) int {
+	if val {
+		return 1
+	}
+	return 0
+}

@@ -101,6 +101,7 @@ export interface CreateGameRequest {
     name: string;
     numPlayers: number;
     mapName: string;
+    inviteOnly: boolean;
 }
 export interface CreateGameResponse {
     id: string;
@@ -218,6 +219,7 @@ export interface ViewGameResponse {
     activePlayer: string;
     joinedUsers: User[];
     gameState?: GameState;
+    inviteOnly: boolean;
 }
 
 export function ViewGame(req: ViewGameRequest): Promise<ViewGameResponse> {

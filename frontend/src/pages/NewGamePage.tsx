@@ -1,4 +1,4 @@
-import {Button, Dropdown, Form, FormField, Header, Input} from "semantic-ui-react";
+import {Button, Checkbox, Dropdown, Form, FormField, Header, Input} from "semantic-ui-react";
 import {useNavigate} from "react-router";
 import {CreateGame, CreateGameRequest} from "../api/api.ts";
 import {useState} from "react";
@@ -10,6 +10,7 @@ function NewGamePage() {
         name: "",
         numPlayers: 2,
         mapName: "rust_belt",
+        inviteOnly: false,
     });
     let [loading, setLoading] = useState<boolean>(false);
 
@@ -79,6 +80,15 @@ function NewGamePage() {
                         text: mapNameToDisplayName(mapName)
                     }))}
                 />
+            </FormField>
+            <FormField>
+                <label>Invite-Only</label>
+                <p>Games marked as invite-only will not be listed on the "All Games" page (but it will show up on your "My Games" page). You will need to send a link to the game to whomever you want to have join.</p>
+                <Checkbox toggle checked={req.inviteOnly} onChange={(_, val) => {
+                    let newReq = Object.assign({}, req);
+                    newReq.inviteOnly = !!val.checked;
+                    setReq(newReq);
+                }} />
             </FormField>
             <Button primary loading={loading} type='submit' onClick={() => {
                 setLoading(true);
