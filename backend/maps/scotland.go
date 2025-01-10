@@ -92,7 +92,7 @@ func (m *scotlandMap) GetTeleportLinkBuildCost(gameState *common.GameState, play
 			}
 		}
 	}
-	return m.GetTeleportLinkBuildCost(gameState, player, hex, direction)
+	return m.basicMap.GetTeleportLinkBuildCost(gameState, player, hex, direction)
 }
 
 func loadScotlandMap() (GameMap, error) {
