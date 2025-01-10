@@ -1,4 +1,4 @@
-import {Button, Grid, Header, List, ListItem, Loader, Segment} from "semantic-ui-react";
+import {Button, Grid, Header, Label, LabelDetail, List, ListItem, Loader, Segment} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import {useParams} from "react-router";
 import {GamePhase, JoinGame, LeaveGame, PlayerColor, StartGame, User, ViewGame, ViewGameResponse} from "../api/api.ts";
@@ -159,16 +159,25 @@ function PlayerStatus({game, map, onConfirmMove}: { game: ViewGameResponse, map:
 
     return <>
         <Segment>
-            <Header as='h2'>Player Info</Header>
+            <Header as='h2'>Game Status</Header>
             <Grid columns={4} doubling stackable>
                 {playerColumns}
             </Grid>
-        </Segment>
-        <Segment>
-            <Header as='h2'>Game Status</Header>
-            Player order: {game.gameState.playerOrder.map((playerId, idx) =>
-                <>{idx===0?null:', '}<PlayerColorAndName nickname={playerById[playerId].nickname} color={game.gameState?.playerColor[playerId]} /></>)}<br/>
-            Active player: <PlayerColorAndName nickname={playerById[game.activePlayer].nickname} color={game.gameState?.playerColor[game.activePlayer]} /><br/>
+            <br/>
+            Player order: {game.gameState.playerOrder.map(playerId => {
+                let isActive = game.activePlayer === playerId;
+                return <>
+                        <Label basic color={isActive ? 'black' : undefined}>
+                            <div style={{
+                                height: '1em',
+                                width: '1em',
+                                borderRadius: '50%',
+                                display: 'inline-block',
+                                backgroundColor: playerColorToHtml(game.gameState?.playerColor[playerId])
+                            }}/>
+                            <LabelDetail>{playerById[playerId].nickname}</LabelDetail>
+                        </Label>
+                    </>})}<br/>
             Turn: {game.gameState.turnNumber} / {map.getTurnLimit(game.numPlayers)} <br/>
         </Segment>
         <Segment className={"action-holder " + (game.activePlayer === userSessionContext.userInfo?.user.id ? "my-turn" : "other-player-turn") }>
