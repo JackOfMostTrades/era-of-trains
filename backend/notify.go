@@ -55,23 +55,23 @@ func (server *GameServer) notifyPlayer(gameId string, userId string) error {
 		if email.Valid {
 			err = server.sendGameFinishedEmail(gameId, gameName, email.String)
 			if err != nil {
-				return err
+				slog.Error("failed to send game finished email", "error", err, "gameId", gameId, "userId", userId)
 			}
 		}
 		err = server.sendGameFinishedWebhooks(gameId, gameName, webhooks)
 		if err != nil {
-			return err
+			slog.Error("failed to send game finished webhook", "error", err, "gameId", gameId, "userId", userId)
 		}
 	} else {
 		if emailNotificationsEnabled != 0 && email.Valid {
 			err = server.sendGameTurnEmail(gameId, gameName, email.String)
 			if err != nil {
-				return err
+				slog.Error("failed to send game turn email", "error", err, "gameId", gameId, "userId", userId)
 			}
 		}
 		err = server.sendGameTurnWebhooks(discordUserId.String, nickname, gameId, gameName, webhooks)
 		if err != nil {
-			return err
+			slog.Error("failed to send game turn webhook", "error", err, "gameId", gameId, "userId", userId)
 		}
 	}
 
