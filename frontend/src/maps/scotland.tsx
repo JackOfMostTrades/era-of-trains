@@ -6,11 +6,16 @@ class Scotland extends BasicMap {
 
     public getMapInfo(): ReactNode {
         return <>
+            <p>With two players, the first player in the auction pays full price, and the second (aka last) player pays nothing.</p>
             <p>In a two-player game, if a player takes Turn Order Pass then the next auction is skipped and that player
                 automatically becomes first player.</p>
             <p>Both towns on either side of the ferry links need to be urbanized before the ferry link can be built.</p>
             <p>Four dice are rolled for each of the light and dark goods growth phases.</p>
             <p>The game lasts 8 turns.</p>
+            <p>If the town next to the light 2 city is urbanized, an existing link between the town and the city is
+                preserved (that player gets a disk between the two cities, representing a single link). If a link has
+                not already been built, then it will become an option to build the special link between the two cities
+                for $2 as one of your usual track lays.</p>
         </>;
     }
 
