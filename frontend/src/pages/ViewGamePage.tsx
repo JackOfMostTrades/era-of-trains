@@ -1,7 +1,17 @@
 import {Button, Grid, Header, Label, LabelDetail, List, ListItem, Loader, Segment} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import {useParams} from "react-router";
-import {GamePhase, JoinGame, LeaveGame, PlayerColor, StartGame, User, ViewGame, ViewGameResponse} from "../api/api.ts";
+import {
+    GamePhase,
+    JoinGame,
+    LeaveGame,
+    PlayerColor,
+    PollGameStatus,
+    StartGame,
+    User,
+    ViewGame,
+    ViewGameResponse
+} from "../api/api.ts";
 import UserSessionContext from "../UserSessionContext.tsx";
 import ChooseShares from "../actions/ChooseShares.tsx";
 import AuctionAction from "../actions/AuctionAction.tsx";
@@ -194,6 +204,7 @@ function ViewGamePage() {
 
     let [game, setGame] = useState<ViewGameResponse|undefined>(undefined);
     let [reloadTime, setReloadTime] = useState<number>(0);
+    let [lastChat, setLastChat] = useState<number>(0);
 
     const reload: () => Promise<void> = () => {
         userSession.reload();
@@ -210,6 +221,21 @@ function ViewGamePage() {
 
     useEffect(() => {
         reload();
+
+        let lastMove = 0;
+        let pollInterval = setInterval(() => {
+            if (gameId) {
+                PollGameStatus({gameId: gameId}).then(res => {
+                    setLastChat(res.lastChat);
+                    if (res.lastMove !== lastMove) {
+                        lastMove = res.lastMove;
+                        reload();
+                    }
+                });
+            }
+        }, 5000);
+
+        return () => clearInterval(pollInterval);
     }, [gameId]);
 
     if (!game) {
@@ -233,7 +259,7 @@ function ViewGamePage() {
             </Segment>
             <Segment>
                 <Header as='h2'>Chat</Header>
-                <GameChat gameId={game.id} lastChat={0} gameUsers={game.joinedUsers} />
+                <GameChat gameId={game.id} lastChat={lastChat} gameUsers={game.joinedUsers} />
             </Segment>
             {content}
         </>
@@ -245,7 +271,7 @@ function ViewGamePage() {
         <Header as='h1'>{game.name} <span style={{fontStyle: "italic"}}>({mapNameToDisplayName(game.mapName)})</span></Header>
         <Segment>
             <Header as='h2'>Chat</Header>
-            <GameChat gameId={game.id} lastChat={0} gameUsers={game.joinedUsers} />
+            <GameChat gameId={game.id} lastChat={lastChat} gameUsers={game.joinedUsers} />
         </Segment>
         <PlayerStatus game={game} map={map} onConfirmMove={() => reload()}/>
         <ViewMapComponent game={game} map={map} />
