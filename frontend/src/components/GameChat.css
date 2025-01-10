@@ -1,0 +1,26 @@
+div.chat {
+    background: #f0f0f0;
+    padding: 1em;
+    border-radius: 1em;
+}
+div.chat .chatlog {
+    max-height: 20em;
+    overflow-y: scroll;
+}
+div.chat .chatline {
+    width: 100%;
+    padding-left: 11.2rem;
+    text-indent: -10.9rem;
+}
+div.chat .chatline .timestamp {
+    padding-right: 0.5em;
+}
+div.chat .chatline .nickname {
+    font-weight: bold;
+    padding-right: 0.25em;
+}
+div.chat .chatline .message {
+}
+div.chat .chatbar {
+    margin-top: 1em;
+}

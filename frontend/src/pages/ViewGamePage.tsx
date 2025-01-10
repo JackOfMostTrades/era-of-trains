@@ -17,6 +17,7 @@ import FinalScore from "../actions/FinalScore.tsx";
 import {GameMap, maps} from "../maps";
 import "./ViewGamePage.css";
 import {mapNameToDisplayName, specialActionToDisplayName} from "../util.ts";
+import GameChat from "../components/GameChat.tsx";
 
 function WaitingForPlayersPage({game, onJoin}: {game: ViewGameResponse, onJoin: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
@@ -230,6 +231,10 @@ function ViewGamePage() {
                 Player Count: {game.numPlayers}<br/>
                 Table Owner: {game.ownerUser.nickname}<br/>
             </Segment>
+            <Segment>
+                <Header as='h2'>Chat</Header>
+                <GameChat gameId={game.id} lastChat={0} gameUsers={game.joinedUsers} />
+            </Segment>
             {content}
         </>
     }
@@ -238,6 +243,10 @@ function ViewGamePage() {
     let mapInfo = map.getMapInfo();
     return <>
         <Header as='h1'>{game.name} <span style={{fontStyle: "italic"}}>({mapNameToDisplayName(game.mapName)})</span></Header>
+        <Segment>
+            <Header as='h2'>Chat</Header>
+            <GameChat gameId={game.id} lastChat={0} gameUsers={game.joinedUsers} />
+        </Segment>
         <PlayerStatus game={game} map={map} onConfirmMove={() => reload()}/>
         <ViewMapComponent game={game} map={map} />
         <GoodsGrowthTable game={game} map={map} />

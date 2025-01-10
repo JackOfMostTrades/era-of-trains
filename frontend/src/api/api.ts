@@ -369,3 +369,40 @@ export interface SetMyProfileResponse {
 export function SetMyProfile(req: SetMyProfileRequest): Promise<SetMyProfileResponse> {
     return doApiCall('/api/setMyProfile', req);
 }
+
+export interface GetGameChatRequest {
+    gameId: string;
+    after?: number;
+}
+export interface GameChatMessage {
+    userId: string;
+    timestamp: number;
+    message: string;
+}
+export interface GetGameChatResponse {
+    messages: GameChatMessage[]|undefined;
+}
+export function GetGameChat(req: GetGameChatRequest): Promise<GetGameChatResponse> {
+    return doApiCall('/api/getGameChat', req);
+}
+
+export interface SendGameChatRequest {
+    gameId: string;
+    message: string;
+}
+export interface SendGameChatResponse {
+}
+export function SendGameChat(req: SendGameChatRequest): Promise<SendGameChatResponse> {
+    return doApiCall('/api/sendGameChat', req);
+}
+
+export interface PollGameStatusRequest {
+    gameId: string;
+}
+export interface PollGameStatusResponse {
+    lastMove: number;
+    lastChat: number;
+}
+export function PollGameStatus(req: PollGameStatusRequest): Promise<PollGameStatusResponse> {
+    return doApiCall('/api/pollGameStatus', req);
+}
