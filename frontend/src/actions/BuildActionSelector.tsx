@@ -23,7 +23,7 @@ import UserSessionContext from "../UserSessionContext.tsx";
 import {NewCitySelector,} from "./TrackSelector.tsx";
 import ErrorContext from "../ErrorContext.tsx";
 import {GameMap, HexType, maps} from "../maps";
-import {applyMapDirection, applyTeleport, oppositeDirection} from "../util.ts";
+import {applyDirection, applyMapDirection, applyTeleport, oppositeDirection} from "../util.ts";
 
 function isCityHex(game: ViewGameResponse, map: GameMap, urbanization: Urbanization|undefined, hex: Coordinate): boolean {
     if (map.getHexType(hex) === HexType.CITY) {
@@ -150,9 +150,21 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                 let direction = e.detail.direction;
                 let priorDirection = buildingTrackDirection;
 
-                // If this was a teleport, we need to update the action
                 let newAction = Object.assign({}, action);
-                if (applyTeleport(map, game.gameState, newAction, buildingTrackHex, direction) !== undefined) {
+
+                let newHex: Coordinate;// = applyMapDirection(map, game.gameState, newAction, buildingTrackHex, direction);
+                let newBuildingTrackDirection: Direction;
+                let teleportDest = applyTeleport(map, game.gameState, newAction, buildingTrackHex, direction);
+                if (teleportDest !== undefined) {
+                    newHex = teleportDest.hex;
+                    newBuildingTrackDirection = oppositeDirection(teleportDest.direction);
+                } else {
+                    newHex = applyDirection(buildingTrackHex, direction);
+                    newBuildingTrackDirection = direction;
+                }
+
+                // If this was a teleport and we are not ending at a town, we need to update the action
+                if (teleportDest !== undefined && (priorDirection === undefined || map.getHexType(buildingTrackHex) !== HexType.TOWN)) {
                     newAction.teleportLinkPlacements = newAction.teleportLinkPlacements.slice();
                     newAction.teleportLinkPlacements.push({
                         hex: buildingTrackHex,
@@ -162,7 +174,6 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                     document.dispatchEvent(new CustomEvent('pendingBuildAction', {detail: newAction}));
                 }
 
-                let newHex = applyMapDirection(map, game.gameState, newAction, buildingTrackHex, direction);
                 if (priorDirection !== undefined) {
                     if (map.getHexType(buildingTrackHex) === HexType.TOWN) {
                         // If we've built into a town, just ignore the direction and complete the link
@@ -196,7 +207,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                         } else {
                             // Otherwise keep going
                             setBuildingTrackHex(newHex);
-                            setBuildingTrackDirection(direction);
+                            setBuildingTrackDirection(newBuildingTrackDirection);
                             document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: newHex }));
                         }
                     }
@@ -246,7 +257,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                             document.dispatchEvent(new CustomEvent('pendingBuildAction', {detail: newAction}));
                         }
                     }
-                    setBuildingTrackDirection(direction);
+                    setBuildingTrackDirection(newBuildingTrackDirection);
                     setBuildingTrackHex(newHex);
                     document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: newHex }));
                 }
