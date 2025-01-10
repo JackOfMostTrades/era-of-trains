@@ -169,7 +169,6 @@ function PlayerStatus({game, map, onConfirmMove}: { game: ViewGameResponse, map:
             Player order: {game.gameState.playerOrder.map((playerId, idx) =>
                 <>{idx===0?null:', '}<PlayerColorAndName nickname={playerById[playerId].nickname} color={game.gameState?.playerColor[playerId]} /></>)}<br/>
             Active player: <PlayerColorAndName nickname={playerById[game.activePlayer].nickname} color={game.gameState?.playerColor[game.activePlayer]} /><br/>
-            Game Phase: {game.gameState.gamePhase}<br/>
             Turn: {game.gameState.turnNumber} / {map.getTurnLimit(game.numPlayers)} <br/>
         </Segment>
         <Segment className={"action-holder " + (game.activePlayer === userSessionContext.userInfo?.user.id ? "my-turn" : "other-player-turn") }>
