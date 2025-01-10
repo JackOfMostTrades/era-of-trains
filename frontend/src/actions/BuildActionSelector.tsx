@@ -222,6 +222,15 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                         });
                         setAction(newAction);
                         document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
+
+                        let isNextCity = isCityHex(game, map, action.urbanization, newHex);
+                        if (isNextCity) {
+                            // Clear the selection
+                            setBuildingTrackHex(undefined);
+                            setBuildingTrackDirection(undefined);
+                            document.dispatchEvent(new CustomEvent('buildingTrackHex', {detail: undefined}));
+                            return;
+                        }
                     } else if (isCity) {
                         // If this is a city and the next is a city, check for an interurban link
                         let isNextCity = isCityHex(game, map, action.urbanization, newHex);
