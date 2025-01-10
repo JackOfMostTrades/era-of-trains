@@ -367,6 +367,10 @@ type CreateGameResponse struct {
 }
 
 func (server *GameServer) createGame(ctx *RequestContext, req *CreateGameRequest) (resp *CreateGameResponse, err error) {
+	if req.Name == "" {
+		return nil, &HttpError{"missing name parameter", http.StatusBadRequest}
+	}
+
 	stmt, err := server.db.Prepare("INSERT INTO games (id,created_at,name,num_players,map_name,owner_user_id,started,finished) VALUES (?,?,?,?,?,?,0,0)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
