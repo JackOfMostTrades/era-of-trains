@@ -91,6 +91,7 @@ type ConfirmMoveResponse struct {
 }
 
 type confirmMoveHandler struct {
+	gameId         string
 	gameMap        maps.GameMap
 	gameState      *common.GameState
 	activePlayer   string
@@ -113,6 +114,7 @@ func invalidMoveErr(format string, a ...any) error {
 
 func newConfirmMoveHandler(server *GameServer, gameId string, gameMap maps.GameMap, gameState *common.GameState, activePlayer string) (*confirmMoveHandler, error) {
 	handler := &confirmMoveHandler{
+		gameId:         gameId,
 		gameMap:        gameMap,
 		gameState:      gameState,
 		activePlayer:   activePlayer,

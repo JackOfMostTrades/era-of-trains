@@ -580,5 +580,13 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 		}
 	}
 
+	// FIXME: Excluding this game from the post build action hook because it wasn't being enforced and it would have broken the game in progress
+	if handler.gameId != "5e56f80d-b1ea-459b-a1c2-6b3dd4e92ed5" {
+		err = handler.gameMap.PostBuildActionHook(handler.gameState, handler.activePlayer)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
