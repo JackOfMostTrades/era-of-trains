@@ -11,7 +11,7 @@ import {
 import {Button, Header, Icon} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
-import {applyMapDirection, oppositeDirection} from "../util.ts";
+import {applyDirection, applyTeleport, oppositeDirection} from "../util.ts";
 import ErrorContext from "../ErrorContext.tsx";
 import {GameMap, maps} from "../maps";
 
@@ -34,16 +34,24 @@ function computeNextStop(game: ViewGameResponse, map: GameMap, current: Coordina
             continue;
         }
         let end = link.sourceHex;
+        let lastReverseDirection: Direction = Direction.NORTH;
         let moveAlong = [end];
         for (let dir of link.steps) {
-            end = applyMapDirection(map, game.gameState, undefined, end, dir);
+            let teleportDest = applyTeleport(map, game.gameState, undefined, end, dir);
+            if (teleportDest !== undefined) {
+                end = teleportDest.hex;
+                lastReverseDirection = teleportDest.direction;
+            } else {
+                end = applyDirection(end, dir);
+                lastReverseDirection = oppositeDirection(dir);
+            }
             moveAlong.push(end);
         }
         if (link.sourceHex.x === current.x && link.sourceHex.y === current.y && link.steps[0] === direction) {
             moveAlong = moveAlong.slice(0, moveAlong.length-1);
             return {end: end, moveAlong: moveAlong, linkOwner: link.owner};
         }
-        if (end.x === current.x && end.y === current.y && direction === oppositeDirection(link.steps[link.steps.length-1])) {
+        if (end.x === current.x && end.y === current.y && direction === lastReverseDirection) {
             moveAlong = moveAlong.reverse().slice(0, moveAlong.length-1);
             return {end: link.sourceHex, moveAlong: moveAlong, linkOwner: link.owner};
         }

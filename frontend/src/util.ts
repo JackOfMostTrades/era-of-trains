@@ -1,14 +1,15 @@
 import {BuildAction, Coordinate, Direction, GameState, SpecialAction} from "./api/api.ts";
 import {GameMap} from "./maps";
+import {TeleportLinkEdge} from "./maps/basic_map.tsx";
 
 export function applyTeleport(map: GameMap, gameState: GameState|undefined, pendingBuildAction: BuildAction|undefined,
-                              coordinate: Coordinate, direction: Direction): Coordinate|undefined {
+                              coordinate: Coordinate, direction: Direction): TeleportLinkEdge|undefined {
     for (let teleportLink of map.getTeleportLinks(gameState, pendingBuildAction)) {
         if (teleportLink.left.hex.x === coordinate.x && teleportLink.left.hex.y === coordinate.y && teleportLink.left.direction === direction) {
-            return teleportLink.right.hex;
+            return teleportLink.right;
         }
         if (teleportLink.right.hex.x === coordinate.x && teleportLink.right.hex.y === coordinate.y && teleportLink.right.direction === direction) {
-            return teleportLink.left.hex;
+            return teleportLink.left;
         }
     }
     return undefined;
@@ -17,7 +18,7 @@ export function applyTeleport(map: GameMap, gameState: GameState|undefined, pend
 export function applyMapDirection(map: GameMap, gameState: GameState|undefined, pendingBuildAction: BuildAction|undefined, coordinate: Coordinate, direction: Direction): Coordinate {
     let teleportDest = applyTeleport(map, gameState, pendingBuildAction, coordinate, direction);
     if (teleportDest !== undefined) {
-        return teleportDest;
+        return teleportDest.hex;
     }
     return applyDirection(coordinate, direction);
 }

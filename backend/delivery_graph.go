@@ -66,8 +66,15 @@ func computeDeliveryGraph(gameState *common.GameState, gameMap maps.GameMap) *De
 
 		src := link.SourceHex
 		dest := src
+		var lastReverseDirection common.Direction
 		for _, step := range link.Steps {
-			dest = applyMapDirection(gameMap, gameState, dest, step)
+			if teleportDest, teleportDirection := gameMap.GetTeleportLink(gameState, dest, step); teleportDest != nil {
+				dest = *teleportDest
+				lastReverseDirection = teleportDirection
+			} else {
+				dest = applyDirection(dest, step)
+				lastReverseDirection = step.Opposite()
+			}
 		}
 		if _, ok := hexToDirectionToLink[src]; !ok {
 			hexToDirectionToLink[src] = make(map[common.Direction]DeliveryGraphLink)
@@ -80,7 +87,7 @@ func computeDeliveryGraph(gameState *common.GameState, gameMap maps.GameMap) *De
 			player:      link.Owner,
 			destination: dest,
 		}
-		hexToDirectionToLink[dest][link.Steps[len(link.Steps)-1].Opposite()] = DeliveryGraphLink{
+		hexToDirectionToLink[dest][lastReverseDirection] = DeliveryGraphLink{
 			player:      link.Owner,
 			destination: src,
 		}

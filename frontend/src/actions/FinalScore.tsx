@@ -47,9 +47,11 @@ function FinalScore({game}: {game: ViewGameResponse}) {
                 if (!isCity(game.gameState, map, hex)) {
                     trackCount += 1;
                 }
-                let nextHex = applyTeleport(map, game.gameState, undefined, hex, link.steps[i]);
-                if (nextHex !== undefined) {
+                let teleportEdge = applyTeleport(map, game.gameState, undefined, hex, link.steps[i]);
+                let nextHex: Coordinate;
+                if (teleportEdge !== undefined) {
                     trackCount += 1;
+                    nextHex = teleportEdge.hex;
                 } else {
                     nextHex = applyDirection(hex, link.steps[i]);
                 }
