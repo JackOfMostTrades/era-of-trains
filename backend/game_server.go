@@ -15,10 +15,12 @@ import (
 )
 
 type GameServer struct {
-	config       *Config
-	db           *sql.DB
-	gameMaps     map[string]maps.GameMap
-	randProvider common.RandProvider
+	config         *Config
+	db             *sql.DB
+	gameMaps       map[string]maps.GameMap
+	randProvider   common.RandProvider
+	httpServer     *http.Server
+	httpListenPort int
 }
 
 type User struct {

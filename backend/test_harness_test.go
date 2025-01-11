@@ -1,0 +1,178 @@
+package main
+
+import (
+	"bytes"
+	"crypto/rand"
+	"database/sql"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/common"
+	"github.com/JackOfMostTrades/eot/backend/maps"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
+	"io"
+	"net/http"
+	"os"
+	"testing"
+)
+
+type TestHarness struct {
+	macKey     []byte
+	gameServer *GameServer
+}
+
+func NewTestHarness(t *testing.T) *TestHarness {
+	db, err := sql.Open("sqlite", "file::memory:?cache=shared")
+	require.NoError(t, err)
+	bootstrapSql, err := os.ReadFile("bootstrap.sql")
+	require.NoError(t, err)
+	_, err = db.Exec(string(bootstrapSql))
+	require.NoError(t, err)
+
+	gameMaps, err := maps.LoadMaps()
+	require.NoError(t, err)
+
+	macKey := make([]byte, 32)
+	_, err = rand.Read(macKey)
+	require.NoError(t, err)
+
+	testHarness := &TestHarness{
+		macKey: macKey,
+		gameServer: &GameServer{
+			config: &Config{
+				Authentication: &AuthenticationConfig{},
+				MacKey:         base64.StdEncoding.EncodeToString(macKey),
+				HttpListenPort: -1,
+			},
+			db:           db,
+			gameMaps:     gameMaps,
+			randProvider: &common.CryptoRandProvider{},
+		},
+	}
+	err = testHarness.gameServer.runHttpServer()
+	require.NoError(t, err)
+
+	return testHarness
+}
+
+func (h *TestHarness) Close() error {
+	err := h.gameServer.stopHttpServer()
+	if err != nil {
+		return err
+	}
+	err = h.gameServer.db.Close()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func doApiCall[ReqT any, ResT any](h *TestHarness, t *testing.T, asUserId string, path string, req *ReqT) *ResT {
+	body, err := json.Marshal(req)
+	require.NoError(t, err)
+
+	client := &http.Client{}
+	httpReq, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://localhost:%d%s", h.gameServer.httpListenPort, path), bytes.NewReader(body))
+	require.NoError(t, err)
+	httpReq.Header.Set("Content-Type", "application/json")
+	if asUserId != "" {
+		session, err := h.gameServer.createSession(&Session{UserId: asUserId})
+		require.NoError(t, err)
+		httpReq.AddCookie(&http.Cookie{
+			Name:  "eot-session",
+			Value: session,
+		})
+	}
+
+	res, err := client.Do(httpReq)
+	require.NoError(t, err)
+	if res.StatusCode != http.StatusOK {
+		resBody, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Logf("failed to read error response body: %v", err)
+		}
+		require.Fail(t, "Got non-200 response code on API call: %s", string(resBody))
+	}
+	defer res.Body.Close()
+	resBody := new(ResT)
+	err = json.NewDecoder(res.Body).Decode(resBody)
+	require.NoError(t, err)
+	return resBody
+}
+
+func (h *TestHarness) createUser(t *testing.T) string {
+	nickname, err := uuid.NewUUID()
+	require.NoError(t, err)
+
+	stmt, err := h.gameServer.db.Prepare("INSERT INTO users (id,nickname,email_notifications_enabled,discord_turn_alerts_enabled) VALUES(?,?,0,0)")
+	require.NoError(t, err)
+	defer stmt.Close()
+
+	userId, err := uuid.NewRandom()
+	require.NoError(t, err)
+	_, err = stmt.Exec(userId.String(), nickname.String())
+	require.NoError(t, err)
+	return userId.String()
+}
+
+// All of the API methods
+func (h *TestHarness) whoami(t *testing.T, asUser string, req *WhoAmIRequest) *WhoAmIResponse {
+	return doApiCall[WhoAmIRequest, WhoAmIResponse](h, t, asUser, "/api/whoami", req)
+}
+
+func (h *TestHarness) createGame(t *testing.T, asUser string, req *CreateGameRequest) *CreateGameResponse {
+	return doApiCall[CreateGameRequest, CreateGameResponse](h, t, asUser, "/api/createGame", req)
+}
+
+func (h *TestHarness) joinGame(t *testing.T, asUser string, req *JoinGameRequest) *JoinGameResponse {
+	return doApiCall[JoinGameRequest, JoinGameResponse](h, t, asUser, "/api/joinGame", req)
+}
+
+func (h *TestHarness) leaveGame(t *testing.T, asUser string, req *LeaveGameRequest) *LeaveGameResponse {
+	return doApiCall[LeaveGameRequest, LeaveGameResponse](h, t, asUser, "/api/leaveGame", req)
+}
+
+func (h *TestHarness) startGame(t *testing.T, asUser string, req *StartGameRequest) *StartGameResponse {
+	return doApiCall[StartGameRequest, StartGameResponse](h, t, asUser, "/api/startGame", req)
+}
+
+func (h *TestHarness) listGames(t *testing.T, asUser string, req *ListGamesRequest) *ListGamesResponse {
+	return doApiCall[ListGamesRequest, ListGamesResponse](h, t, asUser, "/api/listGames", req)
+}
+
+func (h *TestHarness) confirmMove(t *testing.T, asUser string, req *ConfirmMoveRequest) *ConfirmMoveResponse {
+	return doApiCall[ConfirmMoveRequest, ConfirmMoveResponse](h, t, asUser, "/api/confirmMove", req)
+}
+
+func (h *TestHarness) viewGame(t *testing.T, asUser string, req *ViewGameRequest) *ViewGameResponse {
+	return doApiCall[ViewGameRequest, ViewGameResponse](h, t, asUser, "/api/viewGame", req)
+}
+
+func (h *TestHarness) getGameLogs(t *testing.T, asUser string, req *GetGameLogsRequest) *GetGameLogsResponse {
+	return doApiCall[GetGameLogsRequest, GetGameLogsResponse](h, t, asUser, "/api/getGameLogs", req)
+}
+
+func (h *TestHarness) getMyGames(t *testing.T, asUser string, req *GetMyGamesRequest) *GetMyGamesResponse {
+	return doApiCall[GetMyGamesRequest, GetMyGamesResponse](h, t, asUser, "/api/getMyGames", req)
+}
+
+func (h *TestHarness) getMyProfile(t *testing.T, asUser string, req *GetMyProfileRequest) *GetMyProfileResponse {
+	return doApiCall[GetMyProfileRequest, GetMyProfileResponse](h, t, asUser, "/api/getMyProfile", req)
+}
+
+func (h *TestHarness) setMyProfile(t *testing.T, asUser string, req *SetMyProfileRequest) *SetMyProfileResponse {
+	return doApiCall[SetMyProfileRequest, SetMyProfileResponse](h, t, asUser, "/api/setMyProfile", req)
+}
+
+func (h *TestHarness) getGameChat(t *testing.T, asUser string, req *GetGameChatRequest) *GetGameChatResponse {
+	return doApiCall[GetGameChatRequest, GetGameChatResponse](h, t, asUser, "/api/getGameChat", req)
+}
+
+func (h *TestHarness) sendGameChat(t *testing.T, asUser string, req *SendGameChatRequest) *SendGameChatResponse {
+	return doApiCall[SendGameChatRequest, SendGameChatResponse](h, t, asUser, "/api/sendGameChat", req)
+}
+
+func (h *TestHarness) pollGameStatus(t *testing.T, asUser string, req *PollGameStatusRequest) *PollGameStatusResponse {
+	return doApiCall[PollGameStatusRequest, PollGameStatusResponse](h, t, asUser, "/api/pollGameStatus", req)
+}

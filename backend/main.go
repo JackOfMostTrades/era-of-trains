@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -10,9 +11,11 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"log/slog"
 	_ "modernc.org/sqlite"
+	"net"
 	"net/http"
 	"net/http/cgi"
 	"os"
+	"os/signal"
 	"sync"
 )
 
@@ -208,14 +211,34 @@ func main() {
 			panic(fmt.Errorf("failed to run task: %v", err))
 		}
 	} else {
-		err = runHttpServer(server)
+		err = server.runHttpServer()
 		if err != nil {
 			panic(fmt.Errorf("failed to run http server: %v", err))
+		}
+		slog.Info("Started HTTP server", "port", server.httpListenPort)
+
+		// Wait for control-c
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		go func() {
+			select {
+			case <-c:
+				wg.Done()
+			}
+		}()
+		wg.Wait()
+
+		slog.Info("Begin graceful shutdown...")
+		err = server.stopHttpServer()
+		if err != nil {
+			slog.Error("Error stopping http server", "error", err)
 		}
 	}
 }
 
-func runHttpServer(server *GameServer) error {
+func (server *GameServer) runHttpServer() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/login", jsonHandlerUnAuthenticated(server.login))
 	mux.HandleFunc("/api/register", jsonHandlerUnAuthenticated(server.register))
@@ -241,18 +264,32 @@ func runHttpServer(server *GameServer) error {
 	if server.config.CgiMode {
 		err = cgi.Serve(mux)
 	} else {
-		wg := &sync.WaitGroup{}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			serveErr := http.ListenAndServe("localhost:8080", mux)
-			if serveErr != http.ErrServerClosed {
-				err = serveErr
-			}
-		}()
+		if server.httpServer != nil {
+			return fmt.Errorf("http server is already running")
+		}
+		listenPort := server.config.HttpListenPort
+		if listenPort == 0 {
+			listenPort = 8080
+		} else if listenPort < 0 {
+			listenPort = 0
+		}
+		listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", listenPort))
+		if err != nil {
+			return err
+		}
+		server.httpListenPort = listener.Addr().(*net.TCPAddr).Port
+		server.httpServer = &http.Server{Addr: "localhost:8080", Handler: mux}
 
-		slog.Info("Listening on port 8080...")
-		wg.Wait()
+		go server.httpServer.Serve(listener)
 	}
 	return err
+}
+
+func (server *GameServer) stopHttpServer() error {
+	if server.httpServer != nil {
+		err := server.httpServer.Shutdown(context.Background())
+		server.httpServer = nil
+		return err
+	}
+	return nil
 }
