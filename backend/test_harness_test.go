@@ -68,7 +68,7 @@ func (h *TestHarness) Close() error {
 	return nil
 }
 
-func doApiCall[ReqT any, ResT any](h *TestHarness, t *testing.T, asUserId string, path string, req *ReqT) *ResT {
+func doApiCall[ReqT any, ResT any](h *TestHarness, t *testing.T, asUserId string, path string, req *ReqT) (*ResT, error) {
 	body, err := json.Marshal(req)
 	require.NoError(t, err)
 
@@ -92,13 +92,13 @@ func doApiCall[ReqT any, ResT any](h *TestHarness, t *testing.T, asUserId string
 		if err != nil {
 			t.Logf("failed to read error response body: %v", err)
 		}
-		require.Fail(t, "Got non-200 response code on API call: %s", string(resBody))
+		return nil, &HttpError{description: string(resBody), code: res.StatusCode}
 	}
 	defer res.Body.Close()
 	resBody := new(ResT)
 	err = json.NewDecoder(res.Body).Decode(resBody)
 	require.NoError(t, err)
-	return resBody
+	return resBody, nil
 }
 
 func (h *TestHarness) createUser(t *testing.T) string {
@@ -117,62 +117,62 @@ func (h *TestHarness) createUser(t *testing.T) string {
 }
 
 // All of the API methods
-func (h *TestHarness) whoami(t *testing.T, asUser string, req *WhoAmIRequest) *WhoAmIResponse {
+func (h *TestHarness) whoami(t *testing.T, asUser string, req *WhoAmIRequest) (*WhoAmIResponse, error) {
 	return doApiCall[WhoAmIRequest, WhoAmIResponse](h, t, asUser, "/api/whoami", req)
 }
 
-func (h *TestHarness) createGame(t *testing.T, asUser string, req *CreateGameRequest) *CreateGameResponse {
+func (h *TestHarness) createGame(t *testing.T, asUser string, req *CreateGameRequest) (*CreateGameResponse, error) {
 	return doApiCall[CreateGameRequest, CreateGameResponse](h, t, asUser, "/api/createGame", req)
 }
 
-func (h *TestHarness) joinGame(t *testing.T, asUser string, req *JoinGameRequest) *JoinGameResponse {
+func (h *TestHarness) joinGame(t *testing.T, asUser string, req *JoinGameRequest) (*JoinGameResponse, error) {
 	return doApiCall[JoinGameRequest, JoinGameResponse](h, t, asUser, "/api/joinGame", req)
 }
 
-func (h *TestHarness) leaveGame(t *testing.T, asUser string, req *LeaveGameRequest) *LeaveGameResponse {
+func (h *TestHarness) leaveGame(t *testing.T, asUser string, req *LeaveGameRequest) (*LeaveGameResponse, error) {
 	return doApiCall[LeaveGameRequest, LeaveGameResponse](h, t, asUser, "/api/leaveGame", req)
 }
 
-func (h *TestHarness) startGame(t *testing.T, asUser string, req *StartGameRequest) *StartGameResponse {
+func (h *TestHarness) startGame(t *testing.T, asUser string, req *StartGameRequest) (*StartGameResponse, error) {
 	return doApiCall[StartGameRequest, StartGameResponse](h, t, asUser, "/api/startGame", req)
 }
 
-func (h *TestHarness) listGames(t *testing.T, asUser string, req *ListGamesRequest) *ListGamesResponse {
+func (h *TestHarness) listGames(t *testing.T, asUser string, req *ListGamesRequest) (*ListGamesResponse, error) {
 	return doApiCall[ListGamesRequest, ListGamesResponse](h, t, asUser, "/api/listGames", req)
 }
 
-func (h *TestHarness) confirmMove(t *testing.T, asUser string, req *ConfirmMoveRequest) *ConfirmMoveResponse {
+func (h *TestHarness) confirmMove(t *testing.T, asUser string, req *ConfirmMoveRequest) (*ConfirmMoveResponse, error) {
 	return doApiCall[ConfirmMoveRequest, ConfirmMoveResponse](h, t, asUser, "/api/confirmMove", req)
 }
 
-func (h *TestHarness) viewGame(t *testing.T, asUser string, req *ViewGameRequest) *ViewGameResponse {
+func (h *TestHarness) viewGame(t *testing.T, asUser string, req *ViewGameRequest) (*ViewGameResponse, error) {
 	return doApiCall[ViewGameRequest, ViewGameResponse](h, t, asUser, "/api/viewGame", req)
 }
 
-func (h *TestHarness) getGameLogs(t *testing.T, asUser string, req *GetGameLogsRequest) *GetGameLogsResponse {
+func (h *TestHarness) getGameLogs(t *testing.T, asUser string, req *GetGameLogsRequest) (*GetGameLogsResponse, error) {
 	return doApiCall[GetGameLogsRequest, GetGameLogsResponse](h, t, asUser, "/api/getGameLogs", req)
 }
 
-func (h *TestHarness) getMyGames(t *testing.T, asUser string, req *GetMyGamesRequest) *GetMyGamesResponse {
+func (h *TestHarness) getMyGames(t *testing.T, asUser string, req *GetMyGamesRequest) (*GetMyGamesResponse, error) {
 	return doApiCall[GetMyGamesRequest, GetMyGamesResponse](h, t, asUser, "/api/getMyGames", req)
 }
 
-func (h *TestHarness) getMyProfile(t *testing.T, asUser string, req *GetMyProfileRequest) *GetMyProfileResponse {
+func (h *TestHarness) getMyProfile(t *testing.T, asUser string, req *GetMyProfileRequest) (*GetMyProfileResponse, error) {
 	return doApiCall[GetMyProfileRequest, GetMyProfileResponse](h, t, asUser, "/api/getMyProfile", req)
 }
 
-func (h *TestHarness) setMyProfile(t *testing.T, asUser string, req *SetMyProfileRequest) *SetMyProfileResponse {
+func (h *TestHarness) setMyProfile(t *testing.T, asUser string, req *SetMyProfileRequest) (*SetMyProfileResponse, error) {
 	return doApiCall[SetMyProfileRequest, SetMyProfileResponse](h, t, asUser, "/api/setMyProfile", req)
 }
 
-func (h *TestHarness) getGameChat(t *testing.T, asUser string, req *GetGameChatRequest) *GetGameChatResponse {
+func (h *TestHarness) getGameChat(t *testing.T, asUser string, req *GetGameChatRequest) (*GetGameChatResponse, error) {
 	return doApiCall[GetGameChatRequest, GetGameChatResponse](h, t, asUser, "/api/getGameChat", req)
 }
 
-func (h *TestHarness) sendGameChat(t *testing.T, asUser string, req *SendGameChatRequest) *SendGameChatResponse {
+func (h *TestHarness) sendGameChat(t *testing.T, asUser string, req *SendGameChatRequest) (*SendGameChatResponse, error) {
 	return doApiCall[SendGameChatRequest, SendGameChatResponse](h, t, asUser, "/api/sendGameChat", req)
 }
 
-func (h *TestHarness) pollGameStatus(t *testing.T, asUser string, req *PollGameStatusRequest) *PollGameStatusResponse {
+func (h *TestHarness) pollGameStatus(t *testing.T, asUser string, req *PollGameStatusRequest) (*PollGameStatusResponse, error) {
 	return doApiCall[PollGameStatusRequest, PollGameStatusResponse](h, t, asUser, "/api/pollGameStatus", req)
 }

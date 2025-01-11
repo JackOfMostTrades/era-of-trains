@@ -444,7 +444,7 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 	} else {
 		// User is increasing their bid
 		playerCash := gameState.PlayerCash[currentPlayer]
-		if bidAction.Amount >= playerCash {
+		if bidAction.Amount > playerCash {
 			return &HttpError{fmt.Sprintf("bid amount [%d] greater than player's cash on hand %d", bidAction.Amount, playerCash), http.StatusBadRequest}
 		}
 
@@ -455,7 +455,7 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 			}
 		}
 		if bidAction.Amount <= currentHighBid {
-			return &HttpError{fmt.Sprintf("bid amount [%d] greater not higher than current high bid %d", bidAction.Amount, currentHighBid), http.StatusBadRequest}
+			return &HttpError{fmt.Sprintf("bid amount [%d] not higher than current high bid %d", bidAction.Amount, currentHighBid), http.StatusBadRequest}
 		}
 
 		// Update this user's bid
