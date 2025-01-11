@@ -211,34 +211,41 @@ func main() {
 			panic(fmt.Errorf("failed to run task: %v", err))
 		}
 	} else {
-		err = server.runHttpServer()
-		if err != nil {
-			panic(fmt.Errorf("failed to run http server: %v", err))
-		}
-		slog.Info("Started HTTP server", "port", server.httpListenPort)
-
-		// Wait for control-c
-		wg := sync.WaitGroup{}
-		wg.Add(1)
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt)
-		go func() {
-			select {
-			case <-c:
-				wg.Done()
+		if server.config.CgiMode {
+			err = cgi.Serve(server.createHttpMux())
+			if err != nil {
+				slog.Error("Error running CGI http server", "error", err)
 			}
-		}()
-		wg.Wait()
+		} else {
+			err = server.runHttpServer()
+			if err != nil {
+				panic(fmt.Errorf("failed to run http server: %v", err))
+			}
+			slog.Info("Started HTTP server", "port", server.httpListenPort)
 
-		slog.Info("Begin graceful shutdown...")
-		err = server.stopHttpServer()
-		if err != nil {
-			slog.Error("Error stopping http server", "error", err)
+			// Wait for control-c
+			wg := sync.WaitGroup{}
+			wg.Add(1)
+			c := make(chan os.Signal, 1)
+			signal.Notify(c, os.Interrupt)
+			go func() {
+				select {
+				case <-c:
+					wg.Done()
+				}
+			}()
+			wg.Wait()
+
+			slog.Info("Begin graceful shutdown...")
+			err = server.stopHttpServer()
+			if err != nil {
+				slog.Error("Error stopping http server", "error", err)
+			}
 		}
 	}
 }
 
-func (server *GameServer) runHttpServer() error {
+func (server *GameServer) createHttpMux() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/login", jsonHandlerUnAuthenticated(server.login))
 	mux.HandleFunc("/api/register", jsonHandlerUnAuthenticated(server.register))
@@ -259,30 +266,30 @@ func (server *GameServer) runHttpServer() error {
 	mux.HandleFunc("/api/getGameChat", jsonHandler(server, server.getGameChat))
 	mux.HandleFunc("/api/sendGameChat", jsonHandler(server, server.sendGameChat))
 	mux.HandleFunc("/api/pollGameStatus", jsonHandler(server, server.pollGameStatus))
+	return mux
+}
 
-	var err error
-	if server.config.CgiMode {
-		err = cgi.Serve(mux)
-	} else {
-		if server.httpServer != nil {
-			return fmt.Errorf("http server is already running")
-		}
-		listenPort := server.config.HttpListenPort
-		if listenPort == 0 {
-			listenPort = 8080
-		} else if listenPort < 0 {
-			listenPort = 0
-		}
-		listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", listenPort))
-		if err != nil {
-			return err
-		}
-		server.httpListenPort = listener.Addr().(*net.TCPAddr).Port
-		server.httpServer = &http.Server{Addr: "localhost:8080", Handler: mux}
+func (server *GameServer) runHttpServer() error {
+	mux := server.createHttpMux()
 
-		go server.httpServer.Serve(listener)
+	if server.httpServer != nil {
+		return fmt.Errorf("http server is already running")
 	}
-	return err
+	listenPort := server.config.HttpListenPort
+	if listenPort == 0 {
+		listenPort = 8080
+	} else if listenPort < 0 {
+		listenPort = 0
+	}
+	listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", listenPort))
+	if err != nil {
+		return err
+	}
+	server.httpListenPort = listener.Addr().(*net.TCPAddr).Port
+	server.httpServer = &http.Server{Addr: "localhost:8080", Handler: mux}
+
+	go server.httpServer.Serve(listener)
+	return nil
 }
 
 func (server *GameServer) stopHttpServer() error {
