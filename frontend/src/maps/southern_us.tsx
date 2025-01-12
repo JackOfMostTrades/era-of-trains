@@ -8,7 +8,7 @@ class SouthernUS extends BasicMap {
             <p>The four "port cities" (light city 4, light city 5, dark city 4, dark city 5) all accept white cubes and white cubes must stop movement at those cities.
             Delivering white cubes to one of those cities provides a bonus of one additional income.</p>
             <p>On turns 1-4 an additional cube from the bag is added to Atlanta (dark city 3) during Goods Growth.</p>
-            <p>Income reduction is doubled on turn 4 (and only turn 4).</p>
+            <p>Income reduction is doubled on turn 4 (<a target="_blank" rel="noreferrer" href="https://boardgamegeek.com/thread/3347316/income-reduction-rule-change-in-new-edition">and only turn 4</a>).</p>
             </>;
     }
 
