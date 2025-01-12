@@ -215,13 +215,29 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                     let isCity = isCityHex(game, map, action.urbanization, buildingTrackHex);
                     // If building from a town (and it's not urbanized), add a town placement
                     if (map.getHexType(buildingTrackHex) === HexType.TOWN && !isCity) {
-                        newAction.townPlacements = newAction.townPlacements.slice();
-                        newAction.townPlacements.push({
-                            hex: buildingTrackHex,
-                            track: direction,
-                        });
-                        setAction(newAction);
-                        document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
+                        // Check if there is an existing (incomplete) link starting from this town in this direction.
+                        // If so, this just continues it. If not, create a new town placement.
+                        let isExistingRoute = false;
+                        if (game.gameState) {
+                            for (let link of game.gameState.links) {
+                                if (link.sourceHex.x === buildingTrackHex.x && link.sourceHex.y === buildingTrackHex.y
+                                    && link.steps[0] === direction) {
+                                    isExistingRoute = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (isExistingRoute) {
+                            // Do nothing
+                        } else {
+                            newAction.townPlacements = newAction.townPlacements.slice();
+                            newAction.townPlacements.push({
+                                hex: buildingTrackHex,
+                                track: direction,
+                            });
+                            setAction(newAction);
+                            document.dispatchEvent(new CustomEvent('pendingBuildAction', {detail: newAction}));
+                        }
 
                         let isNextCity = isCityHex(game, map, action.urbanization, newHex);
                         if (isNextCity) {
