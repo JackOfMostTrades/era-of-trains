@@ -43,7 +43,7 @@ func (b *southernUsMap) GetIncomeReduction(gameState *common.GameState, player s
 	if err != nil {
 		return 0, err
 	}
-	if gameState.TurnNumber >= 4 {
+	if gameState.TurnNumber == 4 {
 		reduction *= 2
 	}
 	return reduction, nil
