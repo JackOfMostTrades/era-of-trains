@@ -460,9 +460,6 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	if err != nil {
 		return err
 	}
-	if gameState.PlayerActions[handler.activePlayer] == common.ENGINEER_SPECIAL_ACTION {
-		placementLimit = 4
-	}
 	if len(buildAction.TrackRedirects)+len(townPlacements)+len(trackPlacements)+len(buildAction.TeleportLinkPlacements) > placementLimit {
 		return invalidMoveErr("cannot exceed track placement limit (%d)", placementLimit)
 	}
