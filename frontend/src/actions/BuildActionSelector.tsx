@@ -218,7 +218,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                         // Check if there is an existing (incomplete) link starting from this town in this direction.
                         // If so, this just continues it. If not, create a new town placement.
                         let isExistingRoute = false;
-                        if (game.gameState) {
+                        if (game.gameState && game.gameState.links) {
                             for (let link of game.gameState.links) {
                                 if (link.sourceHex.x === buildingTrackHex.x && link.sourceHex.y === buildingTrackHex.y
                                     && link.steps[0] === direction) {
