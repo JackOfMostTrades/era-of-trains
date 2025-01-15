@@ -392,6 +392,20 @@ func newBuildActionPerformer(gameMap maps.GameMap, gameState *common.GameState, 
 				})
 			}
 		}
+		// If this is a complete link that ends at a town hex, also add the last step to the town hex
+		if link.Complete {
+			lastStep := link.Steps[len(link.Steps)-1]
+			hex = applyDirection(hex, lastStep)
+			tileState = performer.mapState[hex.Y][hex.X]
+			if tileState.HasTown && !tileState.IsCity {
+				tileState.Routes = append(tileState.Routes, Route{
+					Left:  lastStep.Opposite(),
+					Right: lastStep.Opposite(),
+					Link:  link,
+				})
+			}
+		}
+
 	}
 
 	return performer

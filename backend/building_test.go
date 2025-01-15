@@ -987,3 +987,65 @@ func TestTownToTown(t *testing.T) {
 	require.ErrorAs(t, err, &invalidMove)
 	assert.Equal(t, invalidMove.Error(), "all of a player's links must trace back over a player's track to a city")
 }
+
+func TestTownTrackLimit(t *testing.T) {
+	playerId := "player1"
+	gameMap := &testMap{
+		hexes: [][]maps.HexType{
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+			{maps.TOWN_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+			{maps.CITY_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+		},
+	}
+	gameState := &common.GameState{
+		GamePhase:  common.BUILDING_GAME_PHASE,
+		PlayerCash: map[string]int{playerId: 10},
+		Links: []*common.Link{
+			{
+				SourceHex: common.Coordinate{
+					X: 0,
+					Y: 5,
+				},
+				Steps: []common.Direction{
+					common.NORTH,
+					common.NORTH_EAST,
+					common.NORTH_WEST,
+				},
+				Complete: true,
+				Owner:    playerId,
+			},
+		},
+	}
+
+	handler := &confirmMoveHandler{
+		gameMap:      gameMap,
+		gameState:    gameState,
+		activePlayer: playerId,
+	}
+	err := handler.performBuildAction(&BuildAction{
+		TownPlacements: []*TownPlacement{
+			{
+				Track: common.NORTH_WEST,
+				Hex:   common.Coordinate{X: 0, Y: 1},
+			},
+			{
+				Track: common.SOUTH_WEST,
+				Hex:   common.Coordinate{X: 0, Y: 1},
+			},
+			{
+				Track: common.NORTH_EAST,
+				Hex:   common.Coordinate{X: 0, Y: 1},
+			},
+			{
+				Track: common.SOUTH,
+				Hex:   common.Coordinate{X: 0, Y: 1},
+			},
+		},
+	})
+	var invalidMove *invalidMoveError
+	require.ErrorAs(t, err, &invalidMove)
+	assert.Equal(t, "cannot build more than four tracks on a town hex", invalidMove.Error())
+}
