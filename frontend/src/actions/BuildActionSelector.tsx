@@ -384,7 +384,8 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                             return;
                         }
                         let buildLimit = map.getBuildLimit(game.gameState, game.activePlayer);
-                        if (action.townPlacements.length + action.trackPlacements.length + action.teleportLinkPlacements.length + action.trackRedirects.length < buildLimit) {
+                        let cashOnHand = game.gameState?.playerCash[game.activePlayer];
+                        if (cashOnHand !== undefined && cashOnHand >= 2 && action.townPlacements.length + action.trackPlacements.length + action.teleportLinkPlacements.length + action.trackRedirects.length < buildLimit) {
                             setShowConfirmModal('tracks');
                             return;
                         }
