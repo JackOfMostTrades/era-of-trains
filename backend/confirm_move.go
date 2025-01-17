@@ -360,12 +360,124 @@ func (handler *confirmMoveHandler) advanceCurrentPlayerForSharesPhase(currentPla
 		if err != nil {
 			return err
 		}
-		handler.activePlayer = gameState.PlayerOrder[0]
+		err = handler.advanceCurrentPlayerForBidPhase(-1)
 	} else {
 		handler.activePlayer = nextPlayerId
 	}
 
 	return nil
+}
+
+func (handler *confirmMoveHandler) advanceCurrentPlayerForBidPhase(currentPlayerPos int) error {
+	gameState := handler.gameState
+	if gameState.GamePhase != common.AUCTION_GAME_PHASE {
+		return fmt.Errorf("cannot call advanceCurrentPlayerForBidPhase() during this game phase: %d", gameState.GamePhase)
+	}
+
+	// How many users have already passed
+	passCount := 0
+	for _, bidAmount := range gameState.AuctionState {
+		if bidAmount < 0 {
+			passCount += 1
+		}
+	}
+
+	currentHighBid := -1
+	for _, bidAmount := range gameState.AuctionState {
+		if bidAmount > 0 && bidAmount > currentHighBid {
+			currentHighBid = bidAmount
+		}
+	}
+
+	nextPlayer := ""
+	for i := 1; i < len(gameState.PlayerOrder); i++ {
+		userId := gameState.PlayerOrder[(currentPlayerPos+i)%len(gameState.PlayerOrder)]
+		userBid := gameState.AuctionState[userId]
+		// Users who have passed or have the current high bid do not go
+		if userBid < 0 || userBid == currentHighBid {
+			continue
+		}
+		// If the user does not have enough to outbid and does not have TOP, they auto-pass
+		if gameState.PlayerCash[userId] <= 0 || gameState.PlayerCash[userId] <= currentHighBid {
+			if gameState.PlayerActions[userId] != common.TURN_ORDER_PASS_SPECIAL_ACTION {
+				cashToPay := calculateCashToPayForBid(gameState.AuctionState[userId], passCount, len(gameState.PlayerOrder))
+				gameState.PlayerCash[userId] -= cashToPay
+				gameState.AuctionState[userId] = (-1 * passCount) - 1
+				passCount += 1
+
+				handler.Log("%s automatically passes as they cannot outbid the current bid",
+					handler.PlayerNick(userId))
+
+				continue
+			}
+		}
+
+		nextPlayer = userId
+		break
+	}
+
+	// If all but one player has passed, that player implicitly passes since there's no one else left
+	if passCount == len(gameState.PlayerOrder)-1 {
+		// Implicitly pass the remaining player
+		for _, playerId := range gameState.PlayerOrder {
+			if bidAmount := gameState.AuctionState[playerId]; bidAmount >= 0 {
+				gameState.PlayerCash[playerId] -= calculateCashToPayForBid(bidAmount, passCount, len(gameState.PlayerOrder))
+				gameState.AuctionState[playerId] = (-1 * passCount) - 1
+				passCount += 1
+
+				handler.Log("%s becomes first player as last player to not pass, and pays $%d.",
+					handler.PlayerNick(playerId), bidAmount)
+			}
+		}
+	}
+
+	// All players have passed, so advance to next phase
+	if passCount == len(gameState.PlayerOrder) {
+		// Get the new player order from the auction state
+		gameState.PlayerOrder = gameState.PlayerOrder[:len(gameState.AuctionState)]
+		for userId, bidAmount := range gameState.AuctionState {
+			// bidAmount of -1 should be first from end, bidAmount of -2 next from end, etc
+			gameState.PlayerOrder[len(gameState.AuctionState)+bidAmount] = userId
+		}
+		// Then reset the auction state
+		for userId := range gameState.AuctionState {
+			delete(gameState.AuctionState, userId)
+		}
+		// Set the active player to the new first player
+		handler.activePlayer = gameState.PlayerOrder[0]
+		// Advance the game phase
+		gameState.GamePhase = common.CHOOSE_SPECIAL_ACTIONS_GAME_PHASE
+		// Force-remove any chosen special actions as we advance into that phase
+		for userId := range gameState.PlayerActions {
+			gameState.PlayerActions[userId] = ""
+		}
+	} else {
+		// Otherwise set the active player to the next player determined above.
+		// If nextPlayer is empty, it means we looped already the way back around to currentPlayerPos; this should only
+		// happen when using TOP and there are 2 players left. See #13
+		if nextPlayer == "" {
+			if currentPlayerPos == -1 {
+				return errors.New("unable to pick next player to bid, but no one has bid yet")
+			}
+			nextPlayer = gameState.PlayerOrder[currentPlayerPos]
+		}
+		handler.activePlayer = nextPlayer
+	}
+
+	return nil
+}
+
+func calculateCashToPayForBid(bidAmount int, passCount int, playerCount int) int {
+	if passCount == 0 {
+		// Last player does not pay
+		return 0
+	} else if (playerCount - passCount) > 2 {
+		// In the middle, pay half price (rounded up)
+		return bidAmount/2 + (bidAmount % 2)
+	} else {
+		// Only two players left to pass, pay full price of the last bid
+		return bidAmount
+	}
 }
 
 func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
@@ -379,7 +491,6 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 
 	currentPlayer := handler.activePlayer
 
-	gotoNextPhase := false
 	// If the user is passing
 	if bidAction.Amount < 0 {
 		// How many users have already passed
@@ -391,17 +502,7 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 		}
 
 		lastBid := gameState.AuctionState[currentPlayer]
-		var cashToPay int
-		if passCount == 0 {
-			// Last player does not pay
-			cashToPay = 0
-		} else if (len(gameState.PlayerOrder) - passCount) > 2 {
-			// In the middle, pay half price (rounded up)
-			cashToPay = lastBid/2 + (lastBid % 2)
-		} else {
-			// Only two players left to pass, pay full price of the last bid
-			cashToPay = lastBid
-		}
+		cashToPay := calculateCashToPayForBid(lastBid, passCount, len(gameState.PlayerOrder))
 
 		gameState.PlayerCash[currentPlayer] -= cashToPay
 		// Set auction state to pass order (-1 first to pass, -2 second to pass, etc)
@@ -409,25 +510,6 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 
 		handler.Log("%s passes, becoming player number %d and paying $%d based on their bid of $%d.", handler.ActivePlayerNick(),
 			len(gameState.PlayerOrder)-passCount, cashToPay, lastBid)
-
-		// If all but one other play has passed, that player implicitly passes since there's no one else left
-		if passCount == len(gameState.PlayerOrder)-2 {
-			// Implicitly pass the remaining player
-			for _, playerId := range gameState.PlayerOrder {
-				if bidAmount := gameState.AuctionState[playerId]; bidAmount >= 0 {
-					gameState.PlayerCash[playerId] -= bidAmount
-					gameState.AuctionState[playerId] = (-1 * passCount) - 2
-
-					handler.Log("%s becomes first player as last player to not pass, and pays $%d.",
-						handler.PlayerNick(playerId), bidAmount)
-				}
-			}
-			gotoNextPhase = true
-		}
-		// FIXME: This shouldn't be reachable; it shouldn't be possible that there is only one player left who has to pass? TBD if this can be dropped
-		if passCount == len(gameState.PlayerOrder)-1 {
-			gotoNextPhase = true
-		}
 
 	} else if bidAction.Amount == 0 {
 		// Bid amount of 0 indicates use of turn-order-pass
@@ -437,7 +519,7 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 			return &HttpError{"current player cannot use turn order pass", http.StatusBadRequest}
 		}
 
-		// Do not update this user's bid amount
+		// Do not update this user's bid amount, we just advance the active player
 		// Remove user's turn-order-pass action
 		gameState.PlayerActions[currentPlayer] = ""
 
@@ -464,61 +546,13 @@ func (handler *confirmMoveHandler) handleBidAction(bidAction *BidAction) error {
 		handler.Log("%s bids $%d.", handler.ActivePlayerNick(), bidAction.Amount)
 	}
 
-	if gotoNextPhase {
-		// Get the new player order from the auction state
-		gameState.PlayerOrder = gameState.PlayerOrder[:len(gameState.AuctionState)]
-		for userId, bidAmount := range gameState.AuctionState {
-			// bidAmount of -1 should be first from end, bidAmount of -2 next from end, etc
-			gameState.PlayerOrder[len(gameState.AuctionState)+bidAmount] = userId
-		}
-		// Then reset the auction state
-		for userId := range gameState.AuctionState {
-			delete(gameState.AuctionState, userId)
-		}
-		// Set the active player to the new first player
-		handler.activePlayer = gameState.PlayerOrder[0]
-		// Advance the game phase
-		gameState.GamePhase = common.CHOOSE_SPECIAL_ACTIONS_GAME_PHASE
-		// Force-remove any chosen special actions as we advance into that phase
-		for userId := range gameState.PlayerActions {
-			gameState.PlayerActions[userId] = ""
-		}
-
-	} else {
-		currentPlayerPosition := -1
-		for idx, userId := range gameState.PlayerOrder {
-			if userId == currentPlayer {
-				currentPlayerPosition = idx
-				break
-			}
-		}
-		if currentPlayerPosition == -1 {
-			return &HttpError{"unable to find current player's turn position", http.StatusInternalServerError}
-		}
-
-		currentHighBid := 0
-		for _, bidAmount := range gameState.AuctionState {
-			if bidAmount > 0 && bidAmount > currentHighBid {
-				currentHighBid = bidAmount
-			}
-		}
-
-		nextPlayer := ""
-		for i := 1; i < len(gameState.PlayerOrder); i++ {
-			userId := gameState.PlayerOrder[(currentPlayerPosition+i)%len(gameState.PlayerOrder)]
-			userBid := gameState.AuctionState[userId]
-			// Users who have passed or have the current high bid do not go
-			if userBid < 0 || userBid == currentHighBid {
-				continue
-			}
-			nextPlayer = userId
-			break
-		}
-		if nextPlayer == "" {
-			// Active player returns to the current player; this should only happen when using TOP and there are 2 players left. See #13
-			nextPlayer = currentPlayer
-		}
-		handler.activePlayer = nextPlayer
+	currentPlayerPos := slices.Index(gameState.PlayerOrder, currentPlayer)
+	if currentPlayerPos == -1 {
+		return fmt.Errorf("failed to determine current player turn position")
+	}
+	err := handler.advanceCurrentPlayerForBidPhase(currentPlayerPos)
+	if err != nil {
+		return err
 	}
 
 	return nil
