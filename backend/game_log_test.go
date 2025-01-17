@@ -43,15 +43,20 @@ func gameLogTestCase(definition string) func(t *testing.T) {
 			gameState:    gameState,
 			activePlayer: activePlayer,
 			randProvider: &fixedRandProvider{values: caseDefinition.RandomValues},
+			gameFinished: false,
 		}
 
 		for idx, step := range caseDefinition.Steps[1:] {
+			assert.Equal(t, false, handler.gameFinished)
+
 			err = handler.handleAction(step.Action)
 			require.NoError(t, err)
 
 			assert.Equal(t, step.ExpectedActivePlayer, handler.activePlayer, "Unexpected active player on step %d", idx+1)
 			assert.Equal(t, step.ExpectedGameState, handler.gameState, "Unexpected game state on step %d", idx+1)
 		}
+
+		assert.Equal(t, true, handler.gameFinished)
 	}
 }
 

@@ -98,6 +98,7 @@ type confirmMoveHandler struct {
 	logs           []string
 	playerIdToNick map[string]string
 	randProvider   common.RandProvider
+	gameFinished   bool
 }
 
 type invalidMoveError struct {
@@ -120,6 +121,7 @@ func newConfirmMoveHandler(server *GameServer, gameId string, gameMap maps.GameM
 		activePlayer:   activePlayer,
 		playerIdToNick: make(map[string]string),
 		randProvider:   server.randProvider,
+		gameFinished:   false,
 	}
 
 	stmt, err := server.db.Prepare("SELECT id,nickname FROM users INNER JOIN game_player_map ON users.id=game_player_map.player_user_id WHERE game_player_map.game_id=?")
@@ -216,9 +218,7 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 		return nil, fmt.Errorf("failed to marshal game state: %v", err)
 	}
 
-	// Determine if the game is over
-	turnLimit := handler.gameMap.GetTurnLimit(numPlayers)
-	if gameState.TurnNumber > turnLimit {
+	if handler.gameFinished {
 		finishedFlag = 1
 	}
 
@@ -856,6 +856,11 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 				if err != nil {
 					return err
 				}
+				// If the game was ended, return immediately
+				if handler.gameFinished {
+					return nil
+				}
+
 				gameState.GamePhase = common.GOODS_GROWTH_GAME_PHASE
 				produceGoodsPlayer := ""
 				for userId, action := range gameState.PlayerActions {
@@ -925,11 +930,13 @@ func (handler *confirmMoveHandler) executeIncomeAndExpenses() error {
 		}
 	}
 
+	bankruptcyOccurred := false
 	for i := 0; i < len(gameState.PlayerOrder); i++ {
 		if gameState.PlayerIncome[gameState.PlayerOrder[i]] < 0 {
 			handler.Log("%s goes bankrupt and is eliminated from the game.", handler.PlayerNick(gameState.PlayerOrder[i]))
 			gameState.PlayerOrder = DeleteFromSliceOrdered(i, gameState.PlayerOrder)
 			i -= 1
+			bankruptcyOccurred = true
 		}
 	}
 
@@ -947,6 +954,11 @@ func (handler *confirmMoveHandler) executeIncomeAndExpenses() error {
 			handler.Log("%s has %d income and takes %d income reduction, dropping their income to %d.",
 				handler.PlayerNick(player), income, reduction, income-reduction)
 		}
+	}
+
+	if bankruptcyOccurred && len(gameState.PlayerOrder) <= 1 {
+		handler.Log("Game ends because all but one player has gone bankrupt.")
+		handler.gameFinished = true
 	}
 
 	return nil
@@ -1080,8 +1092,15 @@ func (handler *confirmMoveHandler) executeGoodsGrowthPhase(gameMap maps.GameMap)
 		return fmt.Errorf("failed to execute post-goods growth hook: %v", err)
 	}
 
-	// Advance to next phase
+	// Advance to next turn
 	gameState.TurnNumber += 1
+
+	// Determine if the game is over
+	turnLimit := gameMap.GetTurnLimit(numPlayers)
+	if gameState.TurnNumber > turnLimit {
+		handler.gameFinished = true
+	}
+
 	gameState.GamePhase = common.SHARES_GAME_PHASE
 	err = handler.advanceCurrentPlayerForSharesPhase(-1)
 	if err != nil {
