@@ -31,7 +31,7 @@ func (b *southernUsMap) PopulateStartingCubes(gameState *common.GameState, randP
 	return nil
 }
 
-func (b *southernUsMap) GetDeliveryBonus(color common.Color) int {
+func (b *southernUsMap) GetDeliveryBonus(coordinate common.Coordinate, color common.Color) int {
 	if color == common.WHITE {
 		return 1
 	}

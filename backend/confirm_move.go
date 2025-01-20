@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/JackOfMostTrades/eot/backend/common"
-	"github.com/JackOfMostTrades/eot/backend/maps"
 	"net/http"
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/JackOfMostTrades/eot/backend/common"
+	"github.com/JackOfMostTrades/eot/backend/maps"
 )
 
 type ActionName string
@@ -823,9 +824,9 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 
 		handler.Log("The cube finished its movement in (%d,%d)", loc.X, loc.Y)
 
-		bonus := gameMap.GetDeliveryBonus(moveGoodsAction.Color)
+		bonus := gameMap.GetDeliveryBonus(loc, moveGoodsAction.Color)
 		if bonus > 0 {
-			gameState.PlayerIncome[handler.activePlayer] += 1
+			gameState.PlayerIncome[handler.activePlayer] += bonus
 			handler.Log("%s receives an extra delivery bonus of %d income.", handler.ActivePlayerNick(), bonus)
 		}
 

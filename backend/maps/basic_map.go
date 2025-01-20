@@ -3,9 +3,10 @@ package maps
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/JackOfMostTrades/eot/backend/common"
 	"os"
 	"slices"
+
+	"github.com/JackOfMostTrades/eot/backend/common"
 )
 
 type basicCity struct {
