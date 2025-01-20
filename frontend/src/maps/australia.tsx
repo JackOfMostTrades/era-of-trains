@@ -12,7 +12,7 @@ class Australia extends BasicMap {
   }
 
   public getRiverLayer(): React.ReactNode {
-    return <></>;
+    return null;
   }
 
   public static fromJson(src: any): Australia {
