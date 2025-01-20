@@ -7,7 +7,7 @@ import (
 	"math/rand"
 )
 
-func assignPlayerColors(db *sql.DB, playerIds map[string]bool) (map[string]int, error) {
+func assignPlayerColors(db *sql.DB, playerIds []string) (map[string]int, error) {
 	stmt, err := db.Prepare("SELECT color_preferences FROM users WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
@@ -15,7 +15,7 @@ func assignPlayerColors(db *sql.DB, playerIds map[string]bool) (map[string]int, 
 	defer stmt.Close()
 
 	colorPreferences := make(map[string][]int)
-	for playerId := range playerIds {
+	for _, playerId := range playerIds {
 		row := stmt.QueryRow(playerId)
 
 		var colorPreferencesStr sql.NullString
@@ -40,7 +40,7 @@ func assignPlayerColors(db *sql.DB, playerIds map[string]bool) (map[string]int, 
 
 	// Randomize player order to break ties
 	shuffledPlayers := make([]string, 0, len(playerIds))
-	for playerId := range playerIds {
+	for _, playerId := range playerIds {
 		shuffledPlayers = append(shuffledPlayers, playerId)
 	}
 	rand.Shuffle(len(shuffledPlayers), func(i, j int) {

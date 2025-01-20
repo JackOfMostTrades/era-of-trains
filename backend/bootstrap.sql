@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS games (
     owner_user_id text,
     started int,
     finished int,
+    abandoned int not null default 0,
     game_state text,
     active_player_id text,
     invite_only int
@@ -26,7 +27,8 @@ CREATE TABLE IF NOT EXISTS games (
 
 CREATE TABLE IF NOT EXISTS game_player_map (
     game_id text,
-    player_user_id text
+    player_user_id text,
+    supports_abandon int not null default 0
 );
 
 CREATE TABLE IF NOT EXISTS game_log (

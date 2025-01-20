@@ -2,10 +2,11 @@ package main
 
 import (
 	"database/sql"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAssignPlayerColors(t *testing.T) {
@@ -20,7 +21,7 @@ func TestAssignPlayerColors(t *testing.T) {
 	_, err = db.Exec("INSERT INTO users (id, color_preferences) VALUES ('player1','[4,3,2]'), ('player2','[4,2,3]'), ('player3','[5]'), ('player4',NULL), ('player5',NULL)")
 	require.NoError(t, err)
 
-	playerColors, err := assignPlayerColors(db, map[string]bool{"player1": true, "player2": true, "player3": true, "player4": true})
+	playerColors, err := assignPlayerColors(db, []string{"player1", "player2", "player3", "player4"})
 	require.NoError(t, err)
 	assert.Equal(t, 4, len(playerColors))
 	if playerColors["player1"] == 4 {
