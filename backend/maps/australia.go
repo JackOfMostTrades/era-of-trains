@@ -15,7 +15,8 @@ type australiaMap struct {
 func (b *australiaMap) GetTotalBuildCost(gameState *common.GameState, player string,
 	redirectCosts []int, townCosts []int, trackCosts []int, teleportCosts []int) int {
 
-	baseCost := b.basicMap.GetTotalBuildCost(gameState, player, redirectCosts, townCosts, trackCosts, teleportCosts)
+	baseCost := b.basicMap.GetTotalBuildCost(
+		gameState, player, redirectCosts, townCosts, trackCosts, teleportCosts)
 
 	action := gameState.PlayerActions[player]
 	if action != common.ENGINEER_SPECIAL_ACTION {
@@ -26,6 +27,10 @@ func (b *australiaMap) GetTotalBuildCost(gameState *common.GameState, player str
 	allCosts = append(allCosts, redirectCosts...)
 	allCosts = append(allCosts, townCosts...)
 	allCosts = append(allCosts, trackCosts...)
+	allCosts = append(allCosts, teleportCosts...)
+	if len(allCosts) == 0 {
+		return baseCost
+	}
 	return baseCost - slices.Max(allCosts)
 }
 
