@@ -58,7 +58,7 @@ func (b *australiaMap) PopulateStartingCubes(gameState *common.GameState, randPr
 	}
 
 	if count != 12 {
-		return fmt.Errorf("failed to find 12 blue cubes for Australia")
+		return fmt.Errorf("failed to find 12 blue cubes for Australia, found %d", count)
 	}
 
 	for _, city := range b.Cities {

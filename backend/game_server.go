@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/JackOfMostTrades/eot/backend/common"
-	"github.com/JackOfMostTrades/eot/backend/maps"
-	"github.com/google/uuid"
 	"math/rand"
 	"net/http"
 	"regexp"
 	"time"
+
+	"github.com/JackOfMostTrades/eot/backend/common"
+	"github.com/JackOfMostTrades/eot/backend/maps"
+	"github.com/google/uuid"
 )
 
 type GameServer struct {
@@ -633,6 +634,8 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 		return nil, fmt.Errorf("failed to lookup map: %s", mapName)
 	}
 
+	err = gameMap.PopulateStartingCubes(gameState, server.randProvider)
+
 	// Populate the goods growth table
 	for i := 0; i < 12; i++ {
 		gameState.GoodsGrowth[i] = make([]common.Color, 3)
@@ -656,8 +659,6 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 			gameState.GoodsGrowth[i][j] = cube
 		}
 	}
-
-	err = gameMap.PopulateStartingCubes(gameState, server.randProvider)
 	if err != nil {
 		return nil, fmt.Errorf("failed to populate initial board cubes: %v", err)
 	}
