@@ -26,11 +26,14 @@ func TestGetTotalBuildCost(t *testing.T) {
 
 	emptyArray := []int{}
 
-	t.Run("regular costs for non-engineer", testCase(18, common.FIRST_BUILD_SPECIAL_ACTION, []int{3}, []int{4}, []int{5}, []int{6}))
+	t.Run("regular costs for non-engineer",
+		testCase(18, common.FIRST_BUILD_SPECIAL_ACTION, []int{3}, []int{4}, []int{5}, []int{6}))
 
-	t.Run("handles empty arrays gracefully", testCase(0, common.ENGINEER_SPECIAL_ACTION, emptyArray, emptyArray, emptyArray, emptyArray))
+	t.Run("handles empty arrays gracefully",
+		testCase(0, common.ENGINEER_SPECIAL_ACTION, emptyArray, emptyArray, emptyArray, emptyArray))
 
-	t.Run("ignores the most expensive element", testCase(29, common.ENGINEER_SPECIAL_ACTION, []int{3, 7}, []int{4, 1}, []int{3, 5}, []int{9, 6}))
+	t.Run("ignores the most expensive element",
+		testCase(29, common.ENGINEER_SPECIAL_ACTION, []int{3, 7}, []int{4, 1}, []int{3, 5}, []int{9, 6}))
 }
 
 func TestGetBuildLimit(t *testing.T) {
