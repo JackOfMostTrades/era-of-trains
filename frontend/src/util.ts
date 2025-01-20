@@ -1,6 +1,6 @@
-import {BuildAction, Coordinate, Direction, GameState, SpecialAction} from "./api/api.ts";
-import {GameMap} from "./maps";
-import {TeleportLinkEdge} from "./maps/basic_map.tsx";
+import { BuildAction, Coordinate, Direction, GameState, SpecialAction } from "./api/api.ts";
+import { GameMap } from "./maps";
+import { TeleportLinkEdge } from "./maps/basic_map.tsx";
 
 export function applyTeleport(map: GameMap, gameState: GameState|undefined, pendingBuildAction: BuildAction|undefined,
                               coordinate: Coordinate, direction: Direction): TeleportLinkEdge|undefined {
@@ -71,6 +71,9 @@ export function oppositeDirection(direction: Direction): Direction {
 export function mapNameToDisplayName(mapName: string): string {
     if (mapName === 'rust_belt') {
         return "Rust Belt";
+    }
+    if (mapName === 'australia') {
+        return "Australia";
     }
     if (mapName === 'southern_us') {
         return "Southern U.S.";

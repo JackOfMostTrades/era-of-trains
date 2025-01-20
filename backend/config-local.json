@@ -8,7 +8,6 @@
   },
   "macKey": "IDYuy73hoWR53VVCKqhHb+Lkhour1Phkhtd6BAqoFN0=",
   "database": {
-    "sqlitePath": "file:eot.db",
-    "boostrap": true
+    "sqlitePath": "file:eot.db"
   }
 }

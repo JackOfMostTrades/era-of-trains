@@ -29,7 +29,7 @@ type GameMap interface {
 	PreAuctionHook(gameState *common.GameState, log LogFun) error
 	PostBuildActionHook(gameState *common.GameState, player string) error
 	PostGoodsGrowthHook(gameState *common.GameState, randProvider common.RandProvider, log LogFun) error
-	GetDeliveryBonus(color common.Color) int
+	GetDeliveryBonus(coordinate common.Coordinate, color common.Color) int
 	LocationBlocksCubePassage(cube common.Color, hex common.Coordinate) bool
 	LocationCanAcceptCube(cube common.Color, hex common.Coordinate) bool
 }
@@ -202,7 +202,7 @@ func (*AbstractGameMapImpl) PostGoodsGrowthHook(gameState *common.GameState, ran
 	return nil
 }
 
-func (*AbstractGameMapImpl) GetDeliveryBonus(color common.Color) int {
+func (*AbstractGameMapImpl) GetDeliveryBonus(coordinate common.Coordinate, color common.Color) int {
 	return 0
 }
 
@@ -240,6 +240,12 @@ func LoadMaps() (map[string]GameMap, error) {
 		return nil, err
 	}
 	maps["scotland"] = scotland
+
+	australia, err := loadAustraliaMap()
+	if err != nil {
+		return nil, err
+	}
+	maps["australia"] = australia
 
 	return maps, nil
 }

@@ -1,6 +1,6 @@
-import {Color, Coordinate, Direction, PlayerColor} from "../../api/api.ts";
-import {CityProperties, HexType} from "../../maps";
-import {ReactNode} from "react";
+import { ReactNode } from "react";
+import { Color, Coordinate, Direction, PlayerColor } from "../../api/api.ts";
+import { CityProperties, HexType } from "../../maps";
 
 export function colorToHtml(color: Color): string {
     switch (color) {
@@ -200,7 +200,7 @@ export class HexRenderer {
                 color = '#99c37b';
                 break;
             case HexType.CITY:
-                throw new Error("city hexes must be added with renderCityHex");
+                throw new Error(`city hex (${hex.x}, ${hex.y}) must be added with renderCityHex`);
         }
         let pos = this.getHexXY(hex);
 

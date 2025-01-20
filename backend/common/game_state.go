@@ -81,6 +81,16 @@ type GameState struct {
 	MapState map[string]interface{} `json:"mapState,omitempty"`
 }
 
+func (gameState *GameState) PullCube(color Color, count int) (int, error) {
+	total, ok := gameState.CubeBag[color]
+	if !ok {
+		return 0, fmt.Errorf("color not found: %v", color)
+	}
+	toGrab := min(total, count)
+	gameState.CubeBag[color] = total - toGrab
+	return toGrab, nil
+}
+
 func (gameState *GameState) DrawCube(randProvider RandProvider) (Color, error) {
 	var total int = 0
 	for _, color := range ALL_COLORS {

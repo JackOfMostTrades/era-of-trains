@@ -74,7 +74,7 @@ function NewGamePage() {
                         newReq.mapName = value as string;
                         setReq(newReq);
                     }}
-                    options={["rust_belt", "southern_us", "germany", "scotland"].map(mapName => ({
+                    options={["rust_belt", "southern_us", "germany", "scotland", "australia"].map(mapName => ({
                         key: mapName,
                         value: mapName,
                         text: mapNameToDisplayName(mapName)
