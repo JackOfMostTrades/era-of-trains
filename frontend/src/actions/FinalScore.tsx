@@ -1,7 +1,7 @@
-import {Coordinate, GameState, User, ViewGameResponse} from "../api/api.ts";
-import {GameMap, HexType, maps} from "../maps";
-import {applyDirection, applyTeleport} from "../util.ts";
-import {Header, List, ListItem} from "semantic-ui-react";
+import { Header, List, ListItem } from "semantic-ui-react";
+import { Coordinate, GameState, User, ViewGameResponse } from "../api/api.ts";
+import { GameMap, HexType, maps } from "../maps";
+import { applyDirection, applyTeleport } from "../util.ts";
 
 function isCity(gameState: GameState, map: GameMap, hex: Coordinate): boolean {
     if (map.getHexType(hex) === HexType.CITY) {
@@ -23,6 +23,10 @@ function FinalScore({game}: {game: ViewGameResponse}) {
         return;
     }
 
+    if (game.abandoned) {
+        return <Abandoned />;
+    }
+
     let map = maps[game.mapName];
 
     let scores: { [playerId: string]: number} = {}
@@ -36,7 +40,7 @@ function FinalScore({game}: {game: ViewGameResponse}) {
         let shares = game.gameState.playerShares[player.id];
 
         let trackCount = 0;
-        for (let link of game.gameState.links) {
+        for (let link of (game.gameState.links ?? [])) {
             if (!link.complete || link.owner !== player.id) {
                 continue;
             }
@@ -83,6 +87,13 @@ function FinalScore({game}: {game: ViewGameResponse}) {
                 return <ListItem>{playersById[playerId].nickname}: {score < 0 ? <span style={{fontStyle: "italic"}}>bankrupt</span> : <span>{score}</span>}</ListItem>
             })}
         </List>
+    </>
+}
+
+function Abandoned() {
+    return <>
+        <Header as='h2'>Abandoned</Header>
+        <p>This game has been abandoned</p>
     </>
 }
 

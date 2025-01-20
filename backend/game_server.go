@@ -5,13 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/JackOfMostTrades/eot/backend/common"
-	"github.com/JackOfMostTrades/eot/backend/maps"
-	"github.com/google/uuid"
 	"math/rand"
 	"net/http"
 	"regexp"
 	"time"
+
+	"github.com/JackOfMostTrades/eot/backend/common"
+	"github.com/JackOfMostTrades/eot/backend/maps"
+	"github.com/google/uuid"
+	"github.com/samber/lo"
 )
 
 type GameServer struct {
@@ -26,6 +28,12 @@ type GameServer struct {
 type User struct {
 	Nickname string `json:"nickname"`
 	Id       string `json:"id"`
+}
+
+type GameUser struct {
+	Nickname        string `json:"nickname"`
+	Id              string `json:"id"`
+	SupportsAbandon bool   `json:"supportsAbandon"`
 }
 
 type LoginRequest struct {
@@ -467,6 +475,108 @@ func (server *GameServer) joinGame(ctx *RequestContext, req *JoinGameRequest) (r
 	return &JoinGameResponse{}, nil
 }
 
+type SetGameUserRequest struct {
+	GameId string `json:"gameId"`
+	SupportsAbandon bool `json:"supportsAbandon"`
+}
+type SetGameUserResponse struct {
+}
+
+func (server *GameServer) setGameUser(ctx *RequestContext, req *SetGameUserRequest) (resp *SetGameUserResponse, err error) {
+	stmt, err := server.db.Prepare("SELECT started,finished FROM games WHERE id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	row := stmt.QueryRow(req.GameId)
+	var started int
+	var finished int
+	err = row.Scan(&started, &finished)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
+		}
+		return nil, fmt.Errorf("failed to fetch game row: %v", err)
+	}
+
+	if started == 0 {
+		return nil, &HttpError{"cannot abandon unstarted game", http.StatusBadRequest}
+	}
+
+	if finished != 0 {
+		return nil, &HttpError{"cannot abandon finished game", http.StatusBadRequest}
+	}
+
+	stmt, err = server.db.Prepare("SELECT supports_abandon FROM game_player_map WHERE game_id=? AND player_user_id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	row = stmt.QueryRow(req.GameId, ctx.User.Id)
+	var supportsAbandon int
+	err = row.Scan(&supportsAbandon)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &HttpError{fmt.Sprintf("cannot concede game you're not participating in: %s", req.GameId), http.StatusBadRequest}
+		}
+		return nil, fmt.Errorf("failed to fetch game row: %v", err)
+	}
+
+	if (supportsAbandon != 0) == req.SupportsAbandon {
+		return &SetGameUserResponse{}, nil
+	}
+
+	stmt, err = server.db.Prepare("UPDATE game_player_map SET supports_abandon=? WHERE game_id=? AND player_user_id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+
+	var newSupportsAbandon int
+	if (req.SupportsAbandon) {
+		newSupportsAbandon = 1
+	} else {
+		newSupportsAbandon = 0
+  }
+
+	_, err = stmt.Exec(newSupportsAbandon, req.GameId, ctx.User.Id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+
+	if (!req.SupportsAbandon) {
+		return &SetGameUserResponse{}, nil
+	}
+
+	stmt, err = server.db.Prepare("SELECT COUNT(*) FROM game_player_map WHERE game_id=? AND supports_abandon <> 1")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+
+	row = stmt.QueryRow(req.GameId)
+	var count int
+	err = row.Scan(&count)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+
+	if count == 0 {
+		stmt, err = server.db.Prepare("UPDATE games SET active_player_id=?, finished=?, abandoned=? WHERE id=?")
+		if err != nil {
+			return nil, fmt.Errorf("failed to prepare query: %v", err)
+		}
+		defer stmt.Close()
+
+		_, err = stmt.Exec(nil, 1, 1, req.GameId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to execute query: %v", err)
+		}
+	}
+
+	return &SetGameUserResponse{}, nil
+}
+
 type LeaveGameRequest struct {
 	GameId string `json:"gameId"`
 }
@@ -592,7 +702,7 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 	})
 
 	// Randomize player colors
-	playerColor, err := assignPlayerColors(server.db, joinedUsers)
+	playerColor, err := assignPlayerColors(server.db, lo.Keys(joinedUsers))
 
 	// Setup initial game state
 	gameState := &common.GameState{
@@ -709,17 +819,18 @@ type ViewGameResponse struct {
 	Name         string            `json:"name"`
 	Started      bool              `json:"started"`
 	Finished     bool              `json:"finished"`
+	Abandoned     bool              `json:"abandoned"`
 	NumPlayers   int               `json:"numPlayers"`
 	MapName      string            `json:"mapName"`
 	OwnerUser    *User             `json:"ownerUser"`
 	ActivePlayer string            `json:"activePlayer"`
-	JoinedUsers  []*User           `json:"joinedUsers"`
+	JoinedUsers  []*GameUser       `json:"joinedUsers"`
 	GameState    *common.GameState `json:"gameState"`
 	InviteOnly   bool              `json:"inviteOnly"`
 }
 
 func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (resp *ViewGameResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT name,owner_user_id,num_players,map_name,started,finished,game_state,active_player_id,invite_only FROM games WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT name,owner_user_id,num_players,map_name,started,finished,abandoned,game_state,active_player_id,invite_only FROM games WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -731,10 +842,11 @@ func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (r
 	var mapName string
 	var startedFlag int
 	var finishedFlag int
+	var abandonedFlag int
 	var gameStateStr sql.NullString
 	var activePlayerStr sql.NullString
 	var inviteOnlyFlag int
-	err = row.Scan(&name, &ownerUserId, &numPlayers, &mapName, &startedFlag, &finishedFlag, &gameStateStr, &activePlayerStr, &inviteOnlyFlag)
+	err = row.Scan(&name, &ownerUserId, &numPlayers, &mapName, &startedFlag, &finishedFlag, &abandonedFlag, &gameStateStr, &activePlayerStr, &inviteOnlyFlag)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
@@ -751,13 +863,17 @@ func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (r
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch joined users: %v", err)
 	}
-	joinedUsers := make([]*User, 0, len(joinedUserIds))
-	for userId := range joinedUserIds {
+	joinedUsers := make([]*GameUser, 0, len(joinedUserIds))
+	for userId, joinedUser := range joinedUserIds {
 		user, err := server.getUserById(userId)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user %s: %v", userId, err)
 		}
-		joinedUsers = append(joinedUsers, user)
+		joinedUsers = append(joinedUsers, &GameUser{
+			Nickname: user.Nickname,
+			Id: user.Id,
+			SupportsAbandon: joinedUser.SupportsAbandon,
+		})
 	}
 
 	var gameState *common.GameState
@@ -774,6 +890,7 @@ func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (r
 		Name:         name,
 		Started:      startedFlag != 0,
 		Finished:     finishedFlag != 0,
+		Abandoned:    abandonedFlag != 0,
 		NumPlayers:   numPlayers,
 		MapName:      mapName,
 		OwnerUser:    owner,

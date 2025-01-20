@@ -117,6 +117,11 @@ export interface User {
     nickname: string;
     id: string;
 }
+
+export interface GameUser extends User {
+    supportsAbandon: boolean;
+}
+
 export interface Coordinate {
     x: number
     y: number
@@ -190,7 +195,7 @@ export interface GameState {
     movingGoodsRound: number;
     // Which users did loco during move goods (to ensure they don't double-loco)
     playerHasDoneLoco: { [playerId: string]: boolean }
-    links: Link[];
+    links: Link[] | null;
     urbanizations: Urbanization[]|undefined;
 
     // Map from color to number of cubes of that color in the bag
@@ -213,11 +218,12 @@ export interface ViewGameResponse {
     name: string;
     started: boolean;
     finished: boolean;
+    abandoned: boolean;
     numPlayers: number;
     mapName: string;
     ownerUser: User;
     activePlayer: string;
-    joinedUsers: User[];
+    joinedUsers: GameUser[];
     gameState?: GameState;
     inviteOnly: boolean;
 }
@@ -323,6 +329,17 @@ export interface ConfirmMoveResponse {
 
 export function ConfirmMove(req: ConfirmMoveRequest): Promise<ConfirmMoveResponse> {
     return doApiCall('/api/confirmMove', req);
+}
+
+export interface SetGameUserRequest {
+    gameId: string;
+    supportsAbandon: boolean;
+}
+
+export interface SetGameUserResponse { }
+
+export function SetGameUser(req: SetGameUserRequest): Promise<SetGameUserResponse> {
+    return doApiCall('/api/setGameUser', req);
 }
 
 

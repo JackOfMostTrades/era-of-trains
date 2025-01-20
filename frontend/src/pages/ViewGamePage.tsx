@@ -1,33 +1,36 @@
-import {Button, Grid, Header, Label, LabelDetail, List, ListItem, Loader, Segment} from "semantic-ui-react";
-import {ReactNode, useContext, useEffect, useState} from "react";
-import {useParams} from "react-router";
+import { ReactNode, useContext, useEffect, useState } from "react";
+import { useParams } from "react-router";
+import { Button, Grid, Header, Label, LabelDetail, List, ListItem, Loader, Segment } from "semantic-ui-react";
+import AuctionAction from "../actions/AuctionAction.tsx";
+import BuildActionSelector from "../actions/BuildActionSelector.tsx";
+import ChooseShares from "../actions/ChooseShares.tsx";
+import FinalScore from "../actions/FinalScore.tsx";
+import MoveGoodsActionSelector from "../actions/MoveGoodsActionSelector.tsx";
+import ProductionAction from "../actions/ProductionAction.tsx";
+import { playerColorToHtml } from "../actions/renderer/HexRenderer.tsx";
+import SpecialActionChooser from "../actions/SpecialActionChooser.tsx";
 import {
     GamePhase,
+    GameUser,
     JoinGame,
     LeaveGame,
     PlayerColor,
     PollGameStatus,
+    SetGameUser,
     StartGame,
     User,
     ViewGame,
     ViewGameResponse
 } from "../api/api.ts";
-import UserSessionContext from "../UserSessionContext.tsx";
-import ChooseShares from "../actions/ChooseShares.tsx";
-import AuctionAction from "../actions/AuctionAction.tsx";
-import SpecialActionChooser from "../actions/SpecialActionChooser.tsx";
-import BuildActionSelector from "../actions/BuildActionSelector.tsx";
-import ViewMapComponent from "./ViewMapComponent.tsx";
-import MoveGoodsActionSelector from "../actions/MoveGoodsActionSelector.tsx";
-import GoodsGrowthTable from "./GoodsGrowthTable.tsx";
-import ProductionAction from "../actions/ProductionAction.tsx";
-import {playerColorToHtml} from "../actions/renderer/HexRenderer.tsx";
-import GameLogsComponent from "./GameLogsComponent.tsx";
-import FinalScore from "../actions/FinalScore.tsx";
-import {GameMap, maps} from "../maps";
-import "./ViewGamePage.css";
-import {mapNameToDisplayName, specialActionToDisplayName} from "../util.ts";
 import GameChat from "../components/GameChat.tsx";
+import ErrorContext from "../ErrorContext.tsx";
+import { GameMap, maps } from "../maps";
+import UserSessionContext from "../UserSessionContext.tsx";
+import { mapNameToDisplayName, specialActionToDisplayName } from "../util.ts";
+import GameLogsComponent from "./GameLogsComponent.tsx";
+import GoodsGrowthTable from "./GoodsGrowthTable.tsx";
+import "./ViewGamePage.css";
+import ViewMapComponent from "./ViewMapComponent.tsx";
 
 function WaitingForPlayersPage({game, onJoin}: {game: ViewGameResponse, onJoin: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
@@ -109,6 +112,55 @@ function PlayerColorAndName({nickname, color}: {nickname: string, color: PlayerC
     }}/> {nickname}</>
 }
 
+function ConcessionStatus({ game }: { game: ViewGameResponse }) {
+    const user = useContext(UserSessionContext).userInfo?.user;
+
+    if (user == null || game.finished) return <></>;
+
+    return <ConcessionStatusInternal game={game} me={user} />;
+}
+
+function ConcessionStatusInternal({ game, me }: { game: ViewGameResponse, me: User }) {
+    const [loading, setLoading] = useState(false);
+    const { setError } = useContext(ErrorContext);
+
+    const supportiveUsers = game.joinedUsers.filter(({ supportsAbandon }) => supportsAbandon);
+
+    const isJoined = game.joinedUsers.some(({ id }) => id === me.id);
+    const initialIsSupportive = supportiveUsers.some(({ id }) => id === me.id);
+
+    const [isSupportive, setIsSupportive] = useState(initialIsSupportive);
+
+    const supportiveUsersWithoutMe = supportiveUsers.filter(({ id }) => id !== me.id);
+    const supportiveUsersMaybeWithMe: Array<{ nickname: string }> =
+        [...supportiveUsersWithoutMe, ...(isSupportive ? [{ nickname: me.nickname }] : [])];
+
+    if (!isJoined) return <></>;
+
+    return <>
+        <Segment>
+            <Header as='h2'>Abandon Game?</Header>
+            The following players want to abandon the game: {supportiveUsersMaybeWithMe.map(({ nickname }) => nickname).join(', ')}
+            <br />
+            {supportiveUsersMaybeWithMe.length === game.joinedUsers.length ?
+                'Everyone agreed to abandon game... Abandoning...' : `Once everyone agrees to abandon the game, it'll end.`}
+            {isJoined && <Button primary loading={loading} onClick={() => {
+                setLoading(true);
+                SetGameUser({
+                    gameId: game.id,
+                    supportsAbandon: !isSupportive
+                }).then(() => {
+                    setIsSupportive(!isSupportive);
+                }).catch(err => {
+                    setError(err);
+                }).finally(() => {
+                    setLoading(false);
+                })
+            }}>{isSupportive ? 'Remove support for abandoning' : 'Indicate support for abandoning'}</Button>}
+        </Segment>
+    </>
+}
+
 function PlayerStatus({game, map, onConfirmMove}: { game: ViewGameResponse, map: GameMap, onConfirmMove: () => Promise<void> }) {
     let userSessionContext = useContext(UserSessionContext);
 
@@ -116,7 +168,7 @@ function PlayerStatus({game, map, onConfirmMove}: { game: ViewGameResponse, map:
         return null;
     }
 
-    let playerById: { [id: string]: User } = {};
+    let playerById: { [id: string]: GameUser } = {};
     for (let player of game.joinedUsers) {
         playerById[player.id] = player;
     }
@@ -274,6 +326,7 @@ function ViewGamePage() {
             <Header as='h2'>Chat</Header>
             <GameChat gameId={game.id} lastChat={lastChat} gameUsers={game.joinedUsers} />
         </Segment>
+        <ConcessionStatus game={game} />
         <PlayerStatus game={game} map={map} onConfirmMove={() => reload()}/>
         <ViewMapComponent game={game} map={map} />
         <GoodsGrowthTable game={game} map={map} />

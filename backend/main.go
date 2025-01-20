@@ -6,17 +6,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/JackOfMostTrades/eot/backend/common"
-	"github.com/JackOfMostTrades/eot/backend/maps"
-	_ "github.com/go-sql-driver/mysql"
 	"log/slog"
-	_ "modernc.org/sqlite"
 	"net"
 	"net/http"
 	"net/http/cgi"
 	"os"
 	"os/signal"
 	"sync"
+
+	"github.com/JackOfMostTrades/eot/backend/common"
+	"github.com/JackOfMostTrades/eot/backend/maps"
+	_ "github.com/go-sql-driver/mysql"
+	_ "modernc.org/sqlite"
 )
 
 type RequestContext struct {
@@ -254,6 +255,7 @@ func (server *GameServer) createHttpMux() http.Handler {
 	mux.HandleFunc("/api/whoami", jsonHandler(server, whoami))
 	mux.HandleFunc("/api/createGame", jsonHandler(server, server.createGame))
 	mux.HandleFunc("/api/joinGame", jsonHandler(server, server.joinGame))
+	mux.HandleFunc("/api/setGameUser", jsonHandler(server, server.setGameUser))
 	mux.HandleFunc("/api/leaveGame", jsonHandler(server, server.leaveGame))
 	mux.HandleFunc("/api/startGame", jsonHandler(server, server.startGame))
 	mux.HandleFunc("/api/listGames", jsonHandler(server, server.listGames))

@@ -5,9 +5,13 @@ import (
 	"fmt"
 )
 
-func (server *GameServer) getJoinedUsers(gameId string) (map[string]bool, error) {
-	joinedUsers := make(map[string]bool)
-	stmt, err := server.db.Prepare("SELECT (player_user_id) FROM game_player_map WHERE game_id=?")
+type JoinedUser struct {
+	SupportsAbandon bool
+}
+
+func (server *GameServer) getJoinedUsers(gameId string) (map[string]*JoinedUser, error) {
+	joinedUsers := make(map[string]*JoinedUser)
+	stmt, err := server.db.Prepare("SELECT player_user_id, supports_abandon FROM game_player_map WHERE game_id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -18,11 +22,12 @@ func (server *GameServer) getJoinedUsers(gameId string) (map[string]bool, error)
 	}
 	for rows.Next() {
 		var userId string
-		err = rows.Scan(&userId)
+		var supportsAbandon int
+		err = rows.Scan(&userId, &supportsAbandon)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan row: %v", err)
 		}
-		joinedUsers[userId] = true
+		joinedUsers[userId] = &JoinedUser{SupportsAbandon: supportsAbandon == 1}
 	}
 	return joinedUsers, nil
 }
