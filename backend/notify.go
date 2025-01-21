@@ -246,7 +246,7 @@ func (server *GameServer) runDailyNotify() error {
 		}
 	}
 
-	stmt, err = server.db.Prepare("SELECT id,active_player_id FROM games WHERE finished=0")
+	stmt, err = server.db.Prepare("SELECT id,active_player_id FROM games WHERE started <> 0 AND finished=0")
 	if err != nil {
 		return fmt.Errorf("failed to get games: %v", err)
 	}
