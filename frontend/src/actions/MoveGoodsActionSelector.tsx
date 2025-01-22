@@ -233,7 +233,7 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
     }
 
     return <>
-        <Header as='h2'>Move Goods</Header>
+        <Header as='h2'>Move Goods (Round {game.gameState.movingGoodsRound+1})</Header>
         {content}
     </>
 }
