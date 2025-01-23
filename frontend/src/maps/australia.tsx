@@ -1,5 +1,6 @@
 import {ReactNode} from "react";
 import {BasicMap} from "./basic_map.tsx";
+import {GameState} from "../api/api.ts";
 
 class Australia extends BasicMap {
 
@@ -10,6 +11,13 @@ class Australia extends BasicMap {
       <p>Urbanization limits you to only 2 builds.</p>
       <p>Delivering to Perth (the Blue white #1 city) earns a bonus 3 income per delivery.</p>
     </>;
+  }
+
+  public getBuildLimit(gameState: GameState | undefined, player: string): number {
+    if (gameState && gameState.playerActions[player] === 'urbanization') {
+      return 2;
+    }
+    return 3;
   }
 
   public getRiverLayer(): React.ReactNode {
