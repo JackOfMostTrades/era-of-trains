@@ -61,8 +61,11 @@ class Germany extends BasicMap {
 
     public getMapInfo(): ReactNode {
         return <>
-            <p>The color of the six unnumbered border cities is randomly determined during setup. Cubes can never pass through these cities (only end there).</p>
-            <p>Engineer only allows 3 builds, but the cost of one track tile placement (the most expensive) is halved (rounded up).</p>
+            <p>Plays 3-6, best 4-5.</p>
+            <p>The color of the six unnumbered border cities is randomly determined during setup. Cubes can never pass
+                through these cities (only end there).</p>
+            <p>Engineer only allows 3 builds, but the cost of one track tile placement (the most expensive) is halved
+                (rounded up).</p>
             <p>You cannot have any incomplete track at the end of your build action.</p>
             <p>Berlin (the unnumbered black city in the center) always receives one cube during Goods Growth.</p>
         </>;

@@ -5,6 +5,7 @@ class SouthernUS extends BasicMap {
 
     public getMapInfo(): ReactNode {
         return <>
+            <p>Plays 3-6. Best with 6.</p>
             <p>During setup, a white cube is added to every town.</p>
             <p>The four "port cities" (light city 4, light city 5, dark city 4, dark city 5) all accept white cubes and white cubes must stop movement at those cities.
             Delivering white cubes to one of those cities provides a bonus of one additional income.</p>

@@ -28,6 +28,7 @@ class RustBelt extends BasicMap {
 
     public getMapInfo(): ReactNode {
         return <>
+            <p>Plays 3-6, best 4-5.</p>
             <p>Follows the base game rules.</p>
         </>
     }

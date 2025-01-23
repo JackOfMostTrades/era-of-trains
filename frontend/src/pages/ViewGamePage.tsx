@@ -48,6 +48,7 @@ function WaitingForPlayersPage({game, onJoin, onStart}: {game: ViewGameResponse,
     }
 
     const isOwner = userSession.userInfo?.user.id === game.ownerUser.id;
+    const map = maps[game.mapName];
 
     return <>
         <p>Waiting for players...</p>
@@ -83,6 +84,12 @@ function WaitingForPlayersPage({game, onJoin, onStart}: {game: ViewGameResponse,
                 })
             }}>Start Game</Button>
         </>}
+
+        <Segment>
+            <Header as="h2">{mapNameToDisplayName(game.mapName)}</Header>
+            {map.getMapInfo()}
+            <ViewMapComponent gameState={undefined} activePlayer="" map={map} />
+        </Segment>
     </>
 }
 
