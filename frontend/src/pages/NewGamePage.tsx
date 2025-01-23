@@ -1,8 +1,10 @@
-import {Button, Checkbox, Dropdown, Form, FormField, Header, Input} from "semantic-ui-react";
+import {Button, Checkbox, Dropdown, Form, FormField, Header, Input, Segment} from "semantic-ui-react";
 import {useNavigate} from "react-router";
 import {CreateGame, CreateGameRequest} from "../api/api.ts";
 import {useState} from "react";
 import {mapNameToDisplayName} from "../util.ts";
+import {GameMap, maps} from "../maps";
+import ViewMapComponent from "./ViewMapComponent.tsx";
 
 function NewGamePage() {
     const navigate = useNavigate();
@@ -14,6 +16,8 @@ function NewGamePage() {
         inviteOnly: false,
     });
     let [loading, setLoading] = useState<boolean>(false);
+
+    let map: GameMap = maps[req.mapName];
 
     return <>
         <Header as='h1'>New Game</Header>
@@ -143,6 +147,12 @@ function NewGamePage() {
                 })
             }}>Create</Button>
         </Form>
+
+        <Segment>
+            <Header as="h2">{mapNameToDisplayName(req.mapName)}</Header>
+            {map.getMapInfo()}
+            <ViewMapComponent gameState={undefined} activePlayer="" map={map} />
+        </Segment>
     </>
 }
 

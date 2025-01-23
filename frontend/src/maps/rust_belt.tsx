@@ -26,6 +26,12 @@ class RustBelt extends BasicMap {
         </>
     }
 
+    public getMapInfo(): ReactNode {
+        return <>
+            <p>Follows the base game rules.</p>
+        </>
+    }
+
     public static fromJson(src: any): RustBelt {
         let map = new RustBelt();
         map.initializeFromJson(src);

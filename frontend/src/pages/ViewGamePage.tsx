@@ -263,7 +263,7 @@ function ViewGamePage() {
             <GameChat gameId={game.id} lastChat={lastChat} gameUsers={game.joinedUsers} />
         </Segment>
         <PlayerStatus game={game} map={map} onConfirmMove={() => reload()}/>
-        <ViewMapComponent game={game} map={map} />
+        <ViewMapComponent gameState={game.gameState} activePlayer={game.activePlayer} map={map} />
         <GoodsGrowthTable game={game} map={map} />
         {!mapInfo ? null : <Segment><Header as='h2'>Map Info</Header>{mapInfo}</Segment>}
         <GameLogsComponent gameId={game.id} game={game} reloadTime={reloadTime} />

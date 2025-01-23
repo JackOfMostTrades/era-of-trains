@@ -162,7 +162,12 @@ export class HexRenderer {
         let points = `${pos.x},${pos.y+5} ${pos.x+2.887},${pos.y} ${pos.x+8.661},${pos.y} ${pos.x+11.547},${pos.y+5} ${pos.x+8.661},${pos.y+10} ${pos.x+2.887},${pos.y+10}`
         this.paths.push(<polygon stroke='#000000' strokeWidth={0.1} fill={color} points={points} onClick={onClick}/>);
 
-        let cityColor = colorToHtml(cityProperties.color);
+        let cityColor: string;
+        if (cityProperties.color === Color.NONE) {
+            cityColor = "#cccccc";
+        } else {
+            cityColor = colorToHtml(cityProperties.color);
+        }
         let strokeColor: string = '#222222';
         if (cityProperties.darkCity) {
             strokeColor = '#ffffff';

@@ -6,6 +6,7 @@ class Scotland extends BasicMap {
 
     public getMapInfo(): ReactNode {
         return <>
+            <p>This map is intended for two players.</p>
             <p>With two players, the first player in the auction pays full price, and the second (aka last) player pays nothing.</p>
             <p>In a two-player game, if a player takes Turn Order Pass then the next auction is skipped and that player
                 automatically becomes first player.</p>

@@ -43,6 +43,12 @@ class Germany extends BasicMap {
                         label: ""
                     };
                 }
+            } else {
+                return {
+                    color: Color.NONE,
+                    darkCity: false,
+                    label: "",
+                }
             }
         }
 
