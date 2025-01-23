@@ -98,8 +98,8 @@ func (performer *buildActionPerformer) attemptTeleportLinkPlacement(teleportLink
 
 	otherHex, otherDirection := performer.gameMap.GetTeleportLink(performer.gameState, hex, direction)
 	if otherHex == nil {
-		return invalidMoveErr("cannot place teleport link at hex (%d,%d) in direction %d",
-			hex.X, hex.Y, direction)
+		return invalidMoveErr("cannot place teleport link at %s in direction %d",
+			renderHexCoordinate(hex), direction)
 	}
 
 	// Check all steps of all links and validate both sides of the teleport
@@ -441,8 +441,8 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 		ts := performer.mapState[buildAction.Urbanization.Hex.Y][buildAction.Urbanization.Hex.X]
 		ts.IsCity = true
 		ts.Routes = nil
-		handler.Log("%s urbanizes new city %c on hex (%d,%d)",
-			handler.ActivePlayerNick(), 'A'+buildAction.Urbanization.City, buildAction.Urbanization.Hex.X, buildAction.Urbanization.Hex.Y)
+		handler.Log("%s urbanizes new city %c at %s",
+			handler.ActivePlayerNick(), 'A'+buildAction.Urbanization.City, renderHexCoordinate(buildAction.Urbanization.Hex))
 
 		// Check if there is adjacent incomplete link that becomes completed by this build
 		for _, direction := range common.ALL_DIRECTIONS {
@@ -538,32 +538,32 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 		if err != nil {
 			return err
 		}
-		handler.Log("%s added track on town hex (%d,%d)",
-			handler.ActivePlayerNick(), townPlacement.Hex.X, townPlacement.Hex.Y)
+		handler.Log("%s added track on town hex %s",
+			handler.ActivePlayerNick(), renderHexCoordinate(townPlacement.Hex))
 	}
 	for _, trackRedirect := range buildAction.TrackRedirects {
 		err := performer.attemptTrackRedirect(trackRedirect)
 		if err != nil {
 			return err
 		}
-		handler.Log("%s redirected track on hex (%d,%d)",
-			handler.ActivePlayerNick(), trackRedirect.Hex.X, trackRedirect.Hex.Y)
+		handler.Log("%s redirected track on hex %s",
+			handler.ActivePlayerNick(), renderHexCoordinate(trackRedirect.Hex))
 	}
 	for _, trackPlacement := range buildAction.TrackPlacements {
 		err := performer.attemptTrackPlacement(trackPlacement)
 		if err != nil {
 			return err
 		}
-		handler.Log("%s added track on hex (%d,%d)",
-			handler.ActivePlayerNick(), trackPlacement.Hex.X, trackPlacement.Hex.Y)
+		handler.Log("%s added track on hex %s",
+			handler.ActivePlayerNick(), renderHexCoordinate(trackPlacement.Hex))
 	}
 	for _, teleportLinkPlacement := range buildAction.TeleportLinkPlacements {
 		err := performer.attemptTeleportLinkPlacement(teleportLinkPlacement)
 		if err != nil {
 			return err
 		}
-		handler.Log("%s added teleport link on hex (%d,%d)",
-			handler.ActivePlayerNick(), teleportLinkPlacement.Hex.X, teleportLinkPlacement.Hex.Y)
+		handler.Log("%s added teleport link on hex %s",
+			handler.ActivePlayerNick(), renderHexCoordinate(teleportLinkPlacement.Hex))
 	}
 
 	handler.Log("%s paid a total of $%d for track placements.", handler.ActivePlayerNick(), totalCost)
@@ -585,8 +585,8 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	// Remove ownership of any incomplete links not extended
 	for _, link := range gameState.Links {
 		if !link.Complete && link.Owner == handler.activePlayer && !performer.extendedLinks[link] {
-			handler.Log("%s lost ownership of an incomplete track that started at hex (%d,%d)",
-				handler.ActivePlayerNick(), link.SourceHex.X, link.SourceHex.Y)
+			handler.Log("%s lost ownership of an incomplete track that started at hex %s",
+				handler.ActivePlayerNick(), renderHexCoordinate(link.SourceHex))
 			link.Owner = ""
 		}
 	}

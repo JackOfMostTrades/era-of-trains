@@ -1,6 +1,6 @@
-import { ReactNode } from "react";
-import { Color, Coordinate, Direction, PlayerColor } from "../../api/api.ts";
-import { CityProperties, HexType } from "../../maps";
+import {ReactNode} from "react";
+import {Color, Coordinate, Direction, PlayerColor} from "../../api/api.ts";
+import {CityProperties, HexType} from "../../maps";
 
 export function colorToHtml(color: Color): string {
     switch (color) {
@@ -105,14 +105,16 @@ export class HexRenderer {
     private height: number;
     private paths: ReactNode[];
     private emitOnClick: boolean;
+    private shouldRenderGridLegend: boolean;
     private filterId: number;
     private static nextFilterId: number = 0;
 
-    constructor(emitOnClock: boolean) {
+    constructor(emitOnClick: boolean, shouldRenderGridLegend: boolean) {
         this.width = -1;
         this.height = -1;
         this.paths = [];
-        this.emitOnClick = emitOnClock;
+        this.emitOnClick = emitOnClick;
+        this.shouldRenderGridLegend = shouldRenderGridLegend;
         this.filterId = HexRenderer.nextFilterId;
         HexRenderer.nextFilterId += 1;
     }
@@ -451,6 +453,22 @@ export class HexRenderer {
         this.paths.push(node);
     }
 
+    private renderGridLegend(): ReactNode {
+        if (!this.shouldRenderGridLegend) {
+            return null;
+        }
+        let nodes = [];
+        for (let x = 0; x < (this.width+1)*2; x++) {
+            let xPos = 7.5 + x * 8.661 + 11.547/2;
+            nodes.push(<text key={"x" + x} fontSize={2.5} x={xPos} y={2.5} dominantBaseline="middle" textAnchor="middle">{'' + (x+1)}</text>);
+        }
+        for (let y = 0; y < this.height+1; y++) {
+            let yPos = 5 + y*5 + 5;
+            nodes.push(<text key={"y" + y} fontSize={2.5} x={y%2 == 0 ? 2.5 : 5.0} y={yPos} dominantBaseline="middle" textAnchor="middle">{String.fromCharCode('A'.charCodeAt(0) + y)}</text>);
+        }
+        return nodes;
+    }
+
     public render(): ReactNode {
         let width = this.width+1;
         let height = this.height+1;
@@ -470,6 +488,17 @@ export class HexRenderer {
                 pixelHeight += 5;
             }
         }
+        if (this.shouldRenderGridLegend) {
+            pixelWidth += 7.5;
+            pixelHeight += 5;
+        }
+
+        let paths = <>{this.paths}</>;
+        if (this.shouldRenderGridLegend) {
+            paths = <g transform="translate(7.5,5)">
+                {paths}
+            </g>
+        }
 
         return <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -481,7 +510,8 @@ export class HexRenderer {
                     <feBlend in="SourceGraphic" in2="blurOut"/>
                 </filter>
             </defs>
-            {this.paths}
+            {this.renderGridLegend()}
+            {paths}
         </svg>;
     }
 }

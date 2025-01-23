@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/common"
+)
+
 func DeleteFromSliceUnordered[T any](idx int, slice []T) []T {
 	slice[idx] = slice[len(slice)-1]
 	slice = slice[:len(slice)-1]
@@ -20,4 +25,15 @@ func boolToInt(val bool) int {
 		return 1
 	}
 	return 0
+}
+
+func renderHexCoordinate(coordinate common.Coordinate) string {
+	var x int
+	if coordinate.Y%2 == 0 {
+		x = coordinate.X*2 + 1
+	} else {
+		x = coordinate.X*2 + 2
+	}
+
+	return fmt.Sprintf("%c%d", coordinate.Y+'A', x)
 }

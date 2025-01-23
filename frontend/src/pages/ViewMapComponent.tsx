@@ -25,7 +25,7 @@ class RenderMapBuilder {
     constructor(game: ViewGameResponse, map: GameMap) {
         this.game = game;
         this.map = map;
-        this.hexRenderer = new HexRenderer(true);
+        this.hexRenderer = new HexRenderer(true, true);
     }
 
     public renderCityHex(hex: Coordinate, cityProperties: CityProperties) {

@@ -746,8 +746,8 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 			return &HttpError{"no such cube", http.StatusBadRequest}
 		}
 
-		handler.Log("%s delivered a %s good cube from (%d,%d)",
-			handler.ActivePlayerNick(), moveGoodsAction.Color.String(), moveGoodsAction.StartingLocation.X, moveGoodsAction.StartingLocation.Y)
+		handler.Log("%s delivered a %s good cube from %s",
+			handler.ActivePlayerNick(), moveGoodsAction.Color.String(), renderHexCoordinate(moveGoodsAction.StartingLocation))
 
 		if len(moveGoodsAction.Path) > gameState.PlayerLoco[handler.activePlayer] {
 			return &HttpError{"cannot move good further than current loca", http.StatusBadRequest}
@@ -819,10 +819,10 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 				gameState.PlayerIncome[link.player] += 1
 			}
 
-			handler.Log("The cube moved to (%d,%d) giving one income to %s", loc.X, loc.Y, handler.PlayerNick(link.player))
+			handler.Log("The cube moved to %s giving one income to %s", renderHexCoordinate(loc), handler.PlayerNick(link.player))
 		}
 
-		handler.Log("The cube finished its movement in (%d,%d)", loc.X, loc.Y)
+		handler.Log("The cube finished its movement at %s", renderHexCoordinate(loc))
 
 		bonus := gameMap.GetDeliveryBonus(loc, moveGoodsAction.Color)
 		if bonus > 0 {
@@ -1090,8 +1090,8 @@ func (handler *confirmMoveHandler) executeGoodsGrowthPhase(gameMap maps.GameMap)
 				Color: pickedColor,
 				Hex:   cord,
 			})
-			handler.Log("A %s cube was moved from the goods growth chart to hex (%d,%d).",
-				pickedColor.String(), cord.X, cord.Y)
+			handler.Log("A %s cube was moved from the goods growth chart to %s.",
+				pickedColor.String(), renderHexCoordinate(cord))
 		}
 	}
 
