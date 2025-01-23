@@ -14,7 +14,8 @@ func TestCreateGame(t *testing.T) {
 	player1 := h.createUser(t)
 	h.createGame(t, player1, &CreateGameRequest{
 		Name:       "game-name",
-		NumPlayers: 2,
+		MinPlayers: 2,
+		MaxPlayers: 3,
 		MapName:    "rust_belt",
 	})
 	res, err := h.listGames(t, player1, &ListGamesRequest{})
@@ -23,7 +24,8 @@ func TestCreateGame(t *testing.T) {
 	assert.Equal(t, "game-name", res.Games[0].Name)
 	assert.Equal(t, false, res.Games[0].Started)
 	assert.Equal(t, false, res.Games[0].Finished)
-	assert.Equal(t, 2, res.Games[0].NumPlayers)
+	assert.Equal(t, 2, res.Games[0].MinPlayers)
+	assert.Equal(t, 3, res.Games[0].MaxPlayers)
 	assert.Equal(t, "rust_belt", res.Games[0].MapName)
 	assert.Equal(t, player1, res.Games[0].OwnerUser.Id)
 	assert.Equal(t, 1, len(res.Games[0].JoinedUsers))
@@ -36,7 +38,27 @@ func TestCreateGameNameRequired(t *testing.T) {
 
 	player1 := h.createUser(t)
 	_, err := h.createGame(t, player1, &CreateGameRequest{
-		NumPlayers: 2,
+		MinPlayers: 2,
+		MaxPlayers: 3,
+		MapName:    "rust_belt",
+	})
+	var httpError *HttpError
+	require.ErrorAs(t, err, &httpError)
+	assert.Equal(t, http.StatusBadRequest, httpError.code)
+
+	res, err := h.listGames(t, player1, &ListGamesRequest{})
+	require.NoError(t, err)
+	assert.Equal(t, 0, len(res.Games))
+}
+
+func TestCreateGameBadPlayerCounts(t *testing.T) {
+	h := NewTestHarness(t)
+	defer h.Close()
+
+	player1 := h.createUser(t)
+	_, err := h.createGame(t, player1, &CreateGameRequest{
+		MinPlayers: 3,
+		MaxPlayers: 2,
 		MapName:    "rust_belt",
 	})
 	var httpError *HttpError
@@ -55,7 +77,8 @@ func TestJoinGame(t *testing.T) {
 	player1 := h.createUser(t)
 	createRes, err := h.createGame(t, player1, &CreateGameRequest{
 		Name:       "game-name",
-		NumPlayers: 2,
+		MinPlayers: 2,
+		MaxPlayers: 2,
 		MapName:    "rust_belt",
 	})
 	require.NoError(t, err)
@@ -87,7 +110,8 @@ func TestJoinGameAlreadyStarted(t *testing.T) {
 	player1 := h.createUser(t)
 	createRes, err := h.createGame(t, player1, &CreateGameRequest{
 		Name:       "game-name",
-		NumPlayers: 2,
+		MinPlayers: 2,
+		MaxPlayers: 2,
 		MapName:    "rust_belt",
 	})
 	require.NoError(t, err)

@@ -29,7 +29,7 @@ import "./ViewGamePage.css";
 import {mapNameToDisplayName, specialActionToDisplayName} from "../util.ts";
 import GameChat from "../components/GameChat.tsx";
 
-function WaitingForPlayersPage({game, onJoin}: {game: ViewGameResponse, onJoin: () => Promise<void>}) {
+function WaitingForPlayersPage({game, onJoin, onStart}: {game: ViewGameResponse, onJoin: () => Promise<void>, onStart: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
     let [loading, setLoading] = useState<boolean>(false);
 
@@ -46,56 +46,43 @@ function WaitingForPlayersPage({game, onJoin}: {game: ViewGameResponse, onJoin: 
         let player = game.joinedUsers[i];
         listItems.push(<ListItem>{player.nickname}</ListItem>);
     }
-    for (let i = game.joinedUsers.length; i < game.numPlayers; i++) {
-        listItems.push(<ListItem></ListItem>);
-    }
+
+    const isOwner = userSession.userInfo?.user.id === game.ownerUser.id;
 
     return <>
         <p>Waiting for players...</p>
         <List>{listItems}</List>
-        {joined ? <>
-                <Button negative loading={loading} onClick={() => {
-                    setLoading(true)
-                    LeaveGame({gameId: game.id}).then(() => {
-                        return onJoin();
-                    }).finally(() => {
-                        setLoading(false);
-                    })
-                }}>Leave Game</Button>
-            </> : <>
-                <Button primary loading={loading} onClick={() => {
-                    setLoading(true)
-                    JoinGame({gameId: game.id}).then(() => {
-                        return onJoin();
-                    }).finally(() => {
-                        setLoading(false);
-                    })
-                }}>Join Game</Button>
-            </>}
-    </>
-}
-
-function WaitingForStartPage({game, onStart}: {game: ViewGameResponse, onStart: () => Promise<void>}) {
-    let userSession = useContext(UserSessionContext);
-    let [loading, setLoading] = useState<boolean>(false);
-
-    let listItems: ReactNode[] = [];
-    for (let i = 0; i < game.joinedUsers.length; i++) {
-        let player = game.joinedUsers[i];
-        listItems.push(<ListItem>{player.nickname}</ListItem>);
-    }
-
-    return <>
-        <p>Waiting for owner to start game...</p>
-        <List>{listItems}</List>
-        <Button primary loading={loading} disabled={userSession.userInfo?.user.id !== game.ownerUser.id} onClick={() => {
-            setLoading(true)
-            StartGame({gameId: game.id}).then(() => {
-                return onStart();
-            }).finally(() => {
-                setLoading(false);
-            })
-        }}>Start Game</Button>
+        {isOwner ? null :
+            joined ? <>
+                    <Button negative loading={loading} onClick={() => {
+                        setLoading(true)
+                        LeaveGame({gameId: game.id}).then(() => {
+                            return onJoin();
+                        }).finally(() => {
+                            setLoading(false);
+                        })
+                    }}>Leave Game</Button>
+                </> : <>
+                    <Button primary loading={loading} disabled={game.joinedUsers.length >= game.maxPlayers} onClick={() => {
+                        setLoading(true)
+                        JoinGame({gameId: game.id}).then(() => {
+                            return onJoin();
+                        }).finally(() => {
+                            setLoading(false);
+                        })
+                    }}>Join Game</Button>
+                </>
+        }
+        {!isOwner || game?.joinedUsers.length < game?.minPlayers ? null : <>
+            <Button primary loading={loading} disabled={userSession.userInfo?.user.id !== game.ownerUser.id} onClick={() => {
+                setLoading(true)
+                StartGame({gameId: game.id}).then(() => {
+                    return onStart();
+                }).finally(() => {
+                    setLoading(false);
+                })
+            }}>Start Game</Button>
+        </>}
     </>
 }
 
@@ -189,7 +176,7 @@ function PlayerStatus({game, map, onConfirmMove}: { game: ViewGameResponse, map:
                             <LabelDetail>{playerById[playerId].nickname}</LabelDetail>
                         </Label>
                     </>})}<br/>
-            Turn: {game.gameState.turnNumber} / {map.getTurnLimit(game.numPlayers)} <br/>
+            Turn: {game.gameState.turnNumber} / {map.getTurnLimit(game.joinedUsers.length)} <br/>
         </Segment>
         <Segment className={"action-holder " + (game.activePlayer === userSessionContext.userInfo?.user.id ? "my-turn" : "other-player-turn") }>
             {actionHolder}
@@ -243,18 +230,19 @@ function ViewGamePage() {
     }
 
     if (!game.started) {
-        let content: ReactNode
-        if (game.joinedUsers.length < game.numPlayers) {
-            content = <WaitingForPlayersPage game={game} onJoin={() => reload()} />
+        let playerCount: number|string;
+        if (game.minPlayers === game.maxPlayers) {
+            playerCount = game.minPlayers;
         } else {
-            content = <WaitingForStartPage game={game} onStart={() => reload()}/>
+            playerCount = game.minPlayers + " to " + game.maxPlayers;
         }
+
         return <>
             <Header as='h1'>Game: {game.name}</Header>
             <Segment>
                 <Header as='h2'>Table Info</Header>
                 Map: {mapNameToDisplayName(game.mapName)}<br/>
-                Player Count: {game.numPlayers}<br/>
+                Player Count: {playerCount}<br/>
                 Table Owner: {game.ownerUser.nickname}<br/>
                 {game.inviteOnly ? <><span style={{fontStyle: "italic"}}>Invite Only</span><br/></> : null}
             </Segment>
@@ -262,7 +250,7 @@ function ViewGamePage() {
                 <Header as='h2'>Chat</Header>
                 <GameChat gameId={game.id} lastChat={lastChat} gameUsers={game.joinedUsers} />
             </Segment>
-            {content}
+            <WaitingForPlayersPage game={game} onJoin={() => reload()} onStart={() => reload()} />
         </>
     }
 

@@ -5,44 +5,19 @@ import {
     Segment,
     Table,
     TableBody,
-    TableCell,
     TableHeader,
     TableHeaderCell,
     TableRow
 } from "semantic-ui-react";
-import {ReactNode, useContext, useEffect, useState} from "react";
-import {Link} from "react-router";
+import {useContext, useEffect, useState} from "react";
 import {GameSummary, GetMyGames, GetMyGamesResponse} from "../api/api.ts";
 import UserSessionContext from "../UserSessionContext.tsx";
 import ErrorContext from "../ErrorContext.tsx";
-import {mapNameToDisplayName} from "../util.ts";
+import GameRow from "../components/GameRow.tsx";
 
 function GameSummaryTable({games, title}: {games: GameSummary[], title: string}) {
     if (games.length === 0) {
         return null;
-    }
-
-    let rows: ReactNode[] = [];
-    for (let game of games) {
-        let status: string;
-        if (!game.started) {
-            if (game.joinedUsers.length < game.numPlayers) {
-                status = 'Waiting for players';
-            } else {
-                status = 'Waiting to start';
-            }
-        } else if (game.finished) {
-            status = 'Finished';
-        } else {
-            status = 'In progress';
-        }
-
-        rows.push(<TableRow>
-            <TableCell><Link to={`/games/${game.id}`}>{game.name}</Link></TableCell>
-            <TableCell>{game.numPlayers}</TableCell>
-            <TableCell>{mapNameToDisplayName(game.mapName)}</TableCell>
-            <TableCell>{status}</TableCell>
-        </TableRow>)
     }
 
     return <Segment>
@@ -56,7 +31,7 @@ function GameSummaryTable({games, title}: {games: GameSummary[], title: string})
                     <TableHeaderCell>Status</TableHeaderCell>
                 </TableRow>
             </TableHeader>
-            <TableBody>{rows}</TableBody>
+            <TableBody>{games.map(game => <GameRow key={game.id} game={game} />)}</TableBody>
         </Table>
     </Segment>;
 }
@@ -85,7 +60,7 @@ function MyGames() {
             for (let game of games.games) {
                 if (!game.started) {
                     if (game.ownerUser.id === userInfo.userInfo?.user.id
-                            && game.joinedUsers.length === game.numPlayers) {
+                            && game.joinedUsers.length >= game.minPlayers) {
                         waitingForMe.push(game);
                     } else {
                         pendingGames.push(game);

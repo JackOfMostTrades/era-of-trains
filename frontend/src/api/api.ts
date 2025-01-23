@@ -21,7 +21,8 @@ export interface GameSummary {
     name: string;
     started: boolean;
     finished: boolean;
-    numPlayers: number;
+    minPlayers: number;
+    maxPlayers: number;
     mapName: string;
     activePlayer: string;
     ownerUser: User;
@@ -99,7 +100,8 @@ export function Logout(req: LogoutRequest): Promise<LogoutResponse> {
 
 export interface CreateGameRequest {
     name: string;
-    numPlayers: number;
+    minPlayers: number;
+    maxPlayers: number;
     mapName: string;
     inviteOnly: boolean;
 }
@@ -213,7 +215,8 @@ export interface ViewGameResponse {
     name: string;
     started: boolean;
     finished: boolean;
-    numPlayers: number;
+    minPlayers: number;
+    maxPlayers: number;
     mapName: string;
     ownerUser: User;
     activePlayer: string;

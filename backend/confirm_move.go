@@ -164,7 +164,7 @@ func (handler *confirmMoveHandler) ActivePlayerNick() string {
 }
 
 func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveRequest) (resp *ConfirmMoveResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT owner_user_id,num_players,map_name,started,finished,game_state,active_player_id FROM games WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT owner_user_id,map_name,started,finished,game_state,active_player_id FROM games WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -172,13 +172,12 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 
 	row := stmt.QueryRow(req.GameId)
 	var ownerUserId string
-	var numPlayers int
 	var mapName string
 	var startedFlag int
 	var finishedFlag int
 	var gameStateStr string
 	var activePlayer string
-	err = row.Scan(&ownerUserId, &numPlayers, &mapName, &startedFlag, &finishedFlag, &gameStateStr, &activePlayer)
+	err = row.Scan(&ownerUserId, &mapName, &startedFlag, &finishedFlag, &gameStateStr, &activePlayer)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}

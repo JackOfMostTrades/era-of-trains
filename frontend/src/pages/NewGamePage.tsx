@@ -8,7 +8,8 @@ function NewGamePage() {
     const navigate = useNavigate();
     let [req, setReq] = useState<CreateGameRequest>({
         name: "",
-        numPlayers: 2,
+        minPlayers: 2,
+        maxPlayers: 6,
         mapName: "rust_belt",
         inviteOnly: false,
     });
@@ -26,13 +27,54 @@ function NewGamePage() {
                 }} />
             </FormField>
             <FormField>
-                <label>Number of players</label>
+                <label>Minimum number of players</label>
                 <Dropdown
                     selection
-                    value={req.numPlayers}
+                    value={req.minPlayers}
                     onChange={(_, { value }) => {
                         let newReq = Object.assign({}, req);
-                        newReq.numPlayers = value as number;
+                        newReq.minPlayers = value as number;
+                        newReq.maxPlayers = Math.max(newReq.maxPlayers, newReq.minPlayers);
+                        setReq(newReq);
+                    }}
+                    options={[
+                        {
+                            key: "2",
+                            text: "2",
+                            value: 2,
+                        },
+                        {
+                            key: "3",
+                            text: "3",
+                            value: 3,
+                        },
+                        {
+                            key: "4",
+                            text: "4",
+                            value: 4,
+                        },
+                        {
+                            key: "5",
+                            text: "5",
+                            value: 5,
+                        },
+                        {
+                            key: "6",
+                            text: "6",
+                            value: 6,
+                        }
+                    ]}
+                />
+            </FormField>
+            <FormField>
+                <label>Maximum number of players</label>
+                <Dropdown
+                    selection
+                    value={req.maxPlayers}
+                    onChange={(_, { value }) => {
+                        let newReq = Object.assign({}, req);
+                        newReq.maxPlayers = value as number;
+                        newReq.minPlayers = Math.min(newReq.minPlayers, newReq.maxPlayers);
                         setReq(newReq);
                     }}
                     options={[
