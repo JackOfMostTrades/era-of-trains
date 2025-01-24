@@ -102,6 +102,10 @@ type confirmMoveHandler struct {
 	gameFinished   bool
 }
 
+func (handler *confirmMoveHandler) NumPlayers() int {
+	return len(handler.playerIdToNick)
+}
+
 type invalidMoveError struct {
 	description string
 }
@@ -964,13 +968,11 @@ func (handler *confirmMoveHandler) executeIncomeAndExpenses() error {
 		}
 	}
 
-	bankruptcyOccurred := false
 	for i := 0; i < len(gameState.PlayerOrder); i++ {
 		if gameState.PlayerIncome[gameState.PlayerOrder[i]] < 0 {
 			handler.Log("%s goes bankrupt and is eliminated from the game.", handler.PlayerNick(gameState.PlayerOrder[i]))
 			gameState.PlayerOrder = DeleteFromSliceOrdered(i, gameState.PlayerOrder)
 			i -= 1
-			bankruptcyOccurred = true
 		}
 	}
 
@@ -990,7 +992,10 @@ func (handler *confirmMoveHandler) executeIncomeAndExpenses() error {
 		}
 	}
 
-	if bankruptcyOccurred && len(gameState.PlayerOrder) <= 1 {
+	if len(gameState.PlayerOrder) == 0 {
+		handler.Log("Game ends because all players have gone bankrupt.")
+		handler.gameFinished = true
+	} else if handler.NumPlayers() > 1 && len(gameState.PlayerOrder) <= 1 {
 		handler.Log("Game ends because all but one player has gone bankrupt.")
 		handler.gameFinished = true
 	}
@@ -1058,7 +1063,7 @@ func getCoordinateForUrb(gameState *common.GameState, urbanNum int) common.Coord
 
 func (handler *confirmMoveHandler) executeGoodsGrowthPhase(gameMap maps.GameMap) error {
 	gameState := handler.gameState
-	numPlayers := len(gameState.PlayerOrder)
+	numPlayers := handler.NumPlayers()
 
 	// Finds the city on the board for the given column (if present), finds the top cube for the goods growth row (if present), and moves it to the board
 	pickCubeFromCol := func(n int) {

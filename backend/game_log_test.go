@@ -38,12 +38,18 @@ func gameLogTestCase(definition string) func(t *testing.T) {
 		gameState := caseDefinition.Steps[0].ExpectedGameState
 		activePlayer := caseDefinition.Steps[0].ExpectedActivePlayer
 
+		playerIdToNick := make(map[string]string)
+		for _, playerId := range gameState.PlayerOrder {
+			playerIdToNick[playerId] = playerId
+		}
+
 		handler := &confirmMoveHandler{
-			gameMap:      gameMap,
-			gameState:    gameState,
-			activePlayer: activePlayer,
-			randProvider: &fixedRandProvider{values: caseDefinition.RandomValues},
-			gameFinished: false,
+			gameMap:        gameMap,
+			gameState:      gameState,
+			activePlayer:   activePlayer,
+			randProvider:   &fixedRandProvider{values: caseDefinition.RandomValues},
+			playerIdToNick: playerIdToNick,
+			gameFinished:   false,
 		}
 
 		for idx, step := range caseDefinition.Steps[1:] {
