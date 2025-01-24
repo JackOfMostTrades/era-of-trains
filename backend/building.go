@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"slices"
+
 	"github.com/JackOfMostTrades/eot/backend/common"
 	"github.com/JackOfMostTrades/eot/backend/maps"
-	"slices"
 )
 
 type Route struct {
@@ -175,6 +176,11 @@ func (performer *buildActionPerformer) attemptTrackRedirect(trackRedirect *Track
 	nextHex := applyDirection(hex, direction)
 	for _, route := range performer.mapState[nextHex.Y][nextHex.X].Routes {
 		if route.Left == direction.Opposite() || route.Right == direction.Opposite() {
+			// Verify the link we're joining to is owned by the player or is unowned
+			if route.Link.Owner != "" && route.Link.Owner != performer.activePlayer {
+				return invalidMoveErr("attempted to redirect track into link that is owned by another player")
+			}
+
 			// Delete the dangling link since that will be consumed onto the joined link
 			performer.gameState.Links = DeleteFromSliceUnordered(
 				slices.Index(performer.gameState.Links, danglingRoute.Link), performer.gameState.Links)
@@ -183,6 +189,8 @@ func (performer *buildActionPerformer) attemptTrackRedirect(trackRedirect *Track
 				route.Link.Steps = append(route.Link.Steps, danglingRoute.Link.Steps[idx].Opposite())
 			}
 			route.Link.Complete = true
+			// Mark the link as owned by the current player (it may have been unowned)
+			route.Link.Owner = performer.activePlayer
 		}
 	}
 
