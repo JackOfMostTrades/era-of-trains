@@ -23,7 +23,7 @@ export function playerColorToHtml(color: PlayerColor|undefined): string {
         case PlayerColor.GREEN: return "#a7ed36";
         case PlayerColor.YELLOW: return '#f3db70';
         case PlayerColor.PINK: return '#bf88a9';
-        case PlayerColor.GRAY: return '#6f786f';
+        case PlayerColor.GRAY: return '#495049';
         case PlayerColor.ORANGE: return '#db7e2a';
     }
 }
