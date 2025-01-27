@@ -26,6 +26,7 @@ func TestBasicMoveGoods(t *testing.T) {
 			gameState := &common.GameState{
 				PlayerOrder: []string{playerId, playerTwo},
 				GamePhase:   common.MOVING_GOODS_GAME_PHASE,
+				CubeBag:     make(map[common.Color]int),
 				Links: []*common.Link{
 					{
 						SourceHex: common.Coordinate{X: 0, Y: 0},
@@ -96,6 +97,7 @@ func TestCannotMoveThroughMatchingCityColor(t *testing.T) {
 	gameState := &common.GameState{
 		PlayerOrder: []string{playerId, playerTwo},
 		GamePhase:   common.MOVING_GOODS_GAME_PHASE,
+		CubeBag:     make(map[common.Color]int),
 		Links: []*common.Link{
 			{
 				SourceHex: common.Coordinate{X: 0, Y: 0},
@@ -158,6 +160,7 @@ func TestCannotRepeatCity(t *testing.T) {
 	gameState := &common.GameState{
 		PlayerOrder: []string{playerId, playerTwo},
 		GamePhase:   common.MOVING_GOODS_GAME_PHASE,
+		CubeBag:     make(map[common.Color]int),
 		Links: []*common.Link{
 			{
 				SourceHex: common.Coordinate{X: 0, Y: 1},
@@ -229,6 +232,7 @@ func TestCannotEndInStartingCity(t *testing.T) {
 	gameState := &common.GameState{
 		PlayerOrder: []string{playerId, playerTwo},
 		GamePhase:   common.MOVING_GOODS_GAME_PHASE,
+		CubeBag:     make(map[common.Color]int),
 		Links: []*common.Link{
 			{
 				SourceHex: common.Coordinate{X: 0, Y: 1},

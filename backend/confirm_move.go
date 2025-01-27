@@ -826,6 +826,8 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 		}
 
 		handler.Log("The cube finished its movement at %s", renderHexCoordinate(loc))
+		// Put the cube back into the bag
+		gameState.CubeBag[moveGoodsAction.Color] += 1
 
 		bonus := gameMap.GetDeliveryBonus(loc, moveGoodsAction.Color)
 		if bonus > 0 {

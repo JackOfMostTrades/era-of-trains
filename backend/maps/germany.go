@@ -128,7 +128,9 @@ func (b *germanyMap) PostGoodsGrowthHook(gameState *common.GameState, randProvid
 	if err != nil {
 		return err
 	}
-	if color != common.NONE_COLOR {
+	if color == common.NONE_COLOR {
+		log("No cube was drawn to add to Berlin because the bag is empty.", color.String())
+	} else {
 		gameState.Cubes = append(gameState.Cubes, &common.BoardCube{
 			Color: color,
 			Hex:   common.Coordinate{X: 4, Y: 9},
