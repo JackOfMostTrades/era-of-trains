@@ -820,9 +820,10 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 
 			if link.player != "" {
 				gameState.PlayerIncome[link.player] += 1
+				handler.Log("The cube moved to %s giving one income to %s", renderHexCoordinate(loc), handler.PlayerNick(link.player))
+			} else {
+				handler.Log("The cube moved to %s; no one gets income for it.", renderHexCoordinate(loc))
 			}
-
-			handler.Log("The cube moved to %s giving one income to %s", renderHexCoordinate(loc), handler.PlayerNick(link.player))
 		}
 
 		handler.Log("The cube finished its movement at %s", renderHexCoordinate(loc))
@@ -971,8 +972,15 @@ func (handler *confirmMoveHandler) executeIncomeAndExpenses() error {
 	}
 
 	for i := 0; i < len(gameState.PlayerOrder); i++ {
-		if gameState.PlayerIncome[gameState.PlayerOrder[i]] < 0 {
-			handler.Log("%s goes bankrupt and is eliminated from the game.", handler.PlayerNick(gameState.PlayerOrder[i]))
+		playerId := gameState.PlayerOrder[i]
+		if gameState.PlayerIncome[playerId] < 0 {
+			handler.Log("%s goes bankrupt and is eliminated from the game.", handler.PlayerNick(playerId))
+			for _, link := range gameState.Links {
+				if link.Owner == playerId {
+					link.Owner = ""
+				}
+			}
+
 			gameState.PlayerOrder = DeleteFromSliceOrdered(i, gameState.PlayerOrder)
 			i -= 1
 		}
