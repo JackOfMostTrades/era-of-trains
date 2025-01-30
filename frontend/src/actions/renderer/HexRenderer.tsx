@@ -429,7 +429,7 @@ export class HexRenderer {
         this.height = Math.max(this.height, hex.y);
     }
 
-    public renderTeleportLink(hex: Coordinate, offset: Direction|-1, fillColor: PlayerColor|undefined, cost: number|undefined) {
+    public renderTeleportLink(id: {hex: Coordinate, direction: Direction}, hex: Coordinate, offset: Direction|-1, fillColor: PlayerColor|undefined, cost: number|undefined) {
 
         let pos: {x: number, y: number};
         if (offset === -1) {
@@ -448,7 +448,20 @@ export class HexRenderer {
             fill = playerColorToHtml(fillColor);
         }
 
-        this.paths.push(<circle stroke='#000000' strokeWidth={0.25} cx={pos.x} cy={pos.y} r={2} fill={fill} />);
+        let onClick: (() => void) | undefined;
+        if (this.emitOnClick) {
+            onClick = () => {
+                let event = new CustomEvent('teleportLinkClickEvent', {
+                    detail: {
+                        hex: id.hex,
+                        direction: id.direction,
+                    }
+                });
+                document.dispatchEvent(event);
+            }
+        }
+
+        this.paths.push(<circle onClick={onClick} stroke='#000000' strokeWidth={0.25} cx={pos.x} cy={pos.y} r={2} fill={fill} />);
         if (cost !== undefined) {
             this.paths.push(<text fill='#b63421' fontSize={1.5} x={pos.x} y={pos.y+0.125} dominantBaseline="middle" textAnchor="middle">${cost}</text>);
         }

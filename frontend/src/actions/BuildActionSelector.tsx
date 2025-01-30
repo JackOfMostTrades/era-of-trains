@@ -1,4 +1,4 @@
-import {BuildAction, ConfirmMove, Coordinate, User, ViewGameResponse} from "../api/api.ts";
+import {BuildAction, ConfirmMove, Coordinate, Direction, User, ViewGameResponse} from "../api/api.ts";
 import {
     Button,
     Header,
@@ -87,6 +87,23 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
 
         document.addEventListener('mapClickEvent', handler);
         return () => document.removeEventListener('mapClickEvent', handler);
+    }, [action, showUrbanize, urbanizeSelection, buildingTrackHex]);
+
+    useEffect(() => {
+        const handler = (e:CustomEventInit<{hex: Coordinate, direction: Direction}>) => {
+            if (e.detail) {
+                let newAction = Object.assign({}, action);
+                newAction.teleportLinkPlacements.push({
+                    hex: e.detail.hex,
+                    track: e.detail.direction,
+                });
+                setAction(newAction);
+                document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
+            }
+        };
+
+        document.addEventListener('teleportLinkClickEvent', handler);
+        return () => document.removeEventListener('teleportLinkClickEvent', handler);
     }, [action, showUrbanize, urbanizeSelection, buildingTrackHex]);
 
     if (!game.gameState) {

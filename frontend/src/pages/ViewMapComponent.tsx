@@ -45,12 +45,12 @@ class RenderMapBuilder {
         this.hexRenderer.renderLayer(node);
     }
 
-    public renderEmptyTeleportLink(hex: Coordinate, offset: Direction|-1, cost: number) {
-        this.hexRenderer.renderTeleportLink(hex, offset, undefined, cost);
+    public renderEmptyTeleportLink(id: {hex: Coordinate, direction: Direction}, hex: Coordinate, offset: Direction|-1, cost: number) {
+        this.hexRenderer.renderTeleportLink(id, hex, offset, undefined, cost);
     }
 
-    public renderOccupiedTeleportLink(hex: Coordinate, offset: Direction|-1, playerColor: PlayerColor) {
-        this.hexRenderer.renderTeleportLink(hex, offset, playerColor, undefined);
+    public renderOccupiedTeleportLink(id: {hex: Coordinate, direction: Direction}, hex: Coordinate, offset: Direction|-1, playerColor: PlayerColor) {
+        this.hexRenderer.renderTeleportLink(id, hex, offset, playerColor, undefined);
     }
 
     public renderSpecialCost(hex: Coordinate, cost: number) {
@@ -147,9 +147,15 @@ function ViewMapComponent({gameState, activePlayer, map}: {gameState: GameState|
             }
         }
         if (owner) {
-            renderer.renderOccupiedTeleportLink(teleportLink.costLocation, teleportLink.costLocationEdge, gameState?.playerColor[owner] as PlayerColor);
+            renderer.renderOccupiedTeleportLink({
+                hex: teleportLink.left.hex,
+                direction: teleportLink.left.direction,
+            }, teleportLink.costLocation, teleportLink.costLocationEdge, gameState?.playerColor[owner] as PlayerColor);
         } else {
-            renderer.renderEmptyTeleportLink(teleportLink.costLocation, teleportLink.costLocationEdge, teleportLink.cost);
+            renderer.renderEmptyTeleportLink({
+                hex: teleportLink.left.hex,
+                direction: teleportLink.left.direction,
+            }, teleportLink.costLocation, teleportLink.costLocationEdge, teleportLink.cost);
         }
     }
 
