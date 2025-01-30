@@ -1,35 +1,101 @@
-import {Container} from "semantic-ui-react";
 import {ReactNode} from "react";
-import {HexRenderer, urbCityProperties} from "./renderer/HexRenderer.tsx";
+import {HexRenderer} from "./renderer/HexRenderer.tsx";
+import {GameMap} from "../maps";
 import "./TrackSelector.css";
+import {BasicTownTile, BasicTrackTile, MapTileState, Rotation, TOWN_TILES, TRACK_TILES,} from "../game/map_state.ts";
+import {Coordinate, Direction, GameState} from "../api/api.ts";
 
-interface NewCitySelectorProps {
-    selected: number
-    alreadyUrbanized: number[]
-    onChange: (selected: number) => void
+interface TrackSelectorProps {
+    coordinate: Coordinate;
+    map: GameMap;
+    gameState: GameState;
+    activePlayer: string;
+    onClick: (newTrackRoutes: Array<[Direction, Direction]>, newTownRoutes: Array<Direction>, redirectedRoute: Direction|undefined) => void
 }
 
-export function NewCitySelector(props: NewCitySelectorProps) {
-    let columns: ReactNode[] = [];
-    for (let newCityNum = 0; newCityNum < 8; newCityNum++) {
-        let renderer = new HexRenderer(false, false);
-        renderer.renderCityHex({x: 0, y: 0}, urbCityProperties(newCityNum));
+export function TrackSelector(props: TrackSelectorProps) {
+    let mapTileState = new MapTileState(props.map, props.gameState);
 
-        let classNames = "track-select";
-        if (newCityNum === props.selected) {
-            classNames += " selected";
-        }
-        let available = props.alreadyUrbanized.indexOf(newCityNum) === -1;
-        let onClick: undefined | (() => void);
-        if (available) {
-            onClick = () => props.onChange(newCityNum);
-        } else {
-            classNames += " unavailable";
-        }
+    let tracks: Array<ReactNode> = [];
+    if (mapTileState.isTown(props.coordinate)) {
+        for (let trackTypeId = 0; trackTypeId < TOWN_TILES.length; trackTypeId++) {
+            let basicTownTile: BasicTownTile = TOWN_TILES[trackTypeId];
+            for (let rotation: Rotation = 0; rotation < 6; rotation++) {
+                if (!mapTileState.isValidTownPlacement(props.coordinate,
+                    basicTownTile, rotation as Rotation)) {
+                    continue;
+                }
 
-        columns.push(<div className={classNames} onClick={onClick}>{renderer.render()}</div>)
+                let renderer = new HexRenderer(false, false);
+                renderer.renderHex({x: 0, y: 0}, props.map.getHexType(props.coordinate));
+                for (let exit of mapTileState.getTileState(props.coordinate).routes) {
+                    renderer.renderTownTrack({x: 0, y: 0}, exit.left, props.gameState.playerColor[exit.owner]);
+                }
+                let newExits = mapTileState.getNewTownExits(props.coordinate,
+                    basicTownTile, rotation as Rotation);
+                for (let newExit of newExits) {
+                    renderer.renderTownTrack({x: 0, y: 0}, newExit, props.gameState.playerColor[props.activePlayer]);
+                }
+                let classNames = "track-select";
+
+                tracks.push(<div className={classNames} onClick={() => {
+                    props.onClick([], newExits, undefined);
+                }}>{renderer.render()}</div>);
+            }
+        }
+    } else {
+        for (let trackTypeId = 0; trackTypeId < TRACK_TILES.length; trackTypeId++) {
+            let basicTrackTile: BasicTrackTile = TRACK_TILES[trackTypeId];
+            for (let rotation: Rotation = 0; rotation < 6; rotation++) {
+                if (!mapTileState.isValidTrackPlacement(props.coordinate,
+                        basicTrackTile, rotation as Rotation, props.activePlayer)) {
+                    continue;
+                }
+                let redirectedRoutes = mapTileState.getRedirectedRoutes(props.coordinate, basicTrackTile, rotation as Rotation);
+                // FIXME: Backend only supports redirecting a single track at a time
+                if (redirectedRoutes.length > 1) {
+                    continue;
+                }
+
+                let renderer = new HexRenderer(false, false);
+                renderer.renderHex({x: 0, y: 0}, props.map.getHexType(props.coordinate));
+                for (let route of mapTileState.getTileState(props.coordinate).routes) {
+                    let skip = false;
+                    if (route.owner === "" || route.owner === props.activePlayer) {
+                        let isDangler = false;
+                        for (let dangler of mapTileState.getTileState(props.coordinate).danglers) {
+                            if (dangler.from === route.left || dangler.from === route.right) {
+                                isDangler = true;
+                                break;
+                            }
+                        }
+                        if (isDangler) {
+                            skip = true;
+                        }
+                    }
+                    if (!skip) {
+                        renderer.renderTrack({
+                            x: 0,
+                            y: 0
+                        }, route.left, route.right, props.gameState.playerColor[route.owner]);
+                    }
+                }
+                let newRoutes = mapTileState.getNewRoutes(props.coordinate, basicTrackTile, rotation as Rotation);
+                for (let route of newRoutes) {
+                    renderer.renderTrack({x: 0, y: 0}, route[0], route[1], props.gameState.playerColor[props.activePlayer]);
+                }
+                for (let route of redirectedRoutes) {
+                    renderer.renderTrack({x: 0, y: 0}, route[0], route[1], props.gameState.playerColor[props.activePlayer]);
+                }
+                let classNames = "track-select";
+
+                tracks.push(<div className={classNames} onClick={() => props.onClick(newRoutes, [],
+                    redirectedRoutes.length === 0 ? undefined : redirectedRoutes[0][1])}>{renderer.render()}</div>);
+            }
+        }
     }
-    return <Container>
-        {columns}
-    </Container>
+
+    return <>
+        {tracks}
+    </>
 }

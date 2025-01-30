@@ -1,4 +1,4 @@
-import {ALL_DIRECTIONS, BuildAction, Color, Coordinate, Direction, GameState, PlayerColor} from "../api/api.ts";
+import {BuildAction, Color, Coordinate, Direction, GameState, PlayerColor} from "../api/api.ts";
 import {ReactNode, useEffect, useState} from "react";
 import {CityProperties, GameMap, HexType} from "../maps";
 import {HexRenderer, urbCityProperties} from "../actions/renderer/HexRenderer.tsx";
@@ -85,7 +85,6 @@ class RenderMapBuilder {
 function ViewMapComponent({gameState, activePlayer, map}: {gameState: GameState|undefined, activePlayer: string, map: GameMap}) {
     let [pendingBuildAction, setPendingBuildAction] = useState<BuildAction|undefined>(undefined);
     let [pendingMoveGoods, setPendingMoveGoods] = useState<MoveGoodsStep|undefined>(undefined)
-    let [buildingTrackHex, setBuildingTrackHex] = useState<Coordinate|undefined>(undefined);
 
     useEffect(() => {
         const handler = (e:CustomEventInit<BuildAction>) => {
@@ -93,14 +92,6 @@ function ViewMapComponent({gameState, activePlayer, map}: {gameState: GameState|
         };
         document.addEventListener('pendingBuildAction', handler);
         return () => document.removeEventListener('pendingBuildAction', handler);
-    }, []);
-
-    useEffect(() => {
-        const handler = (e:CustomEventInit<Coordinate|undefined>) => {
-            setBuildingTrackHex(e.detail);
-        };
-        document.addEventListener('buildingTrackHex', handler);
-        return () => document.removeEventListener('buildingTrackHex', handler);
     }, []);
 
     useEffect(() => {
@@ -183,7 +174,7 @@ function ViewMapComponent({gameState, activePlayer, map}: {gameState: GameState|
                         let right = link.steps[i];
 
                         // If this track is being redirected by a pending action, change "right" to match
-                        if (!link.complete && pendingBuildAction && pendingBuildAction.trackRedirects) {
+                        if (!link.complete && link.owner === activePlayer && pendingBuildAction && pendingBuildAction.trackRedirects) {
                             for (let pendingRedirect of pendingBuildAction.trackRedirects) {
                                 if (pendingRedirect.hex.x === hex.x && pendingRedirect.hex.y === hex.y) {
                                     right = pendingRedirect.track;
@@ -266,19 +257,6 @@ function ViewMapComponent({gameState, activePlayer, map}: {gameState: GameState|
                 for (let option of pendingMoveGoods.nextStepOptions) {
                     let hex = applyDirection(pendingMoveGoods.currentCubePosition, option.direction);
                     renderer.renderArrow(hex, option.direction, option.owner);
-                }
-            }
-        }
-
-        if (buildingTrackHex) {
-            for (let direction of ALL_DIRECTIONS) {
-                let stepHex = applyMapDirection(map, gameState, pendingBuildAction, buildingTrackHex, direction);
-                let hexType = map.getHexType(stepHex);
-                if (stepHex.x >= 0 && stepHex.y >= 0
-                        && stepHex.x < map.getWidth() && stepHex.y < map.getHeight()
-                        && hexType !== HexType.OFFBOARD
-                        && hexType !== HexType.WATER) {
-                    renderer.renderArrow(applyDirection(buildingTrackHex, direction), direction, undefined);
                 }
             }
         }
