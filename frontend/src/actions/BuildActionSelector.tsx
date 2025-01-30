@@ -7,7 +7,8 @@ import {
     ModalActions,
     ModalContent,
     ModalDescription,
-    ModalHeader
+    ModalHeader,
+    Segment
 } from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
@@ -15,6 +16,7 @@ import {TrackSelector,} from "./TrackSelector.tsx";
 import ErrorContext from "../ErrorContext.tsx";
 import {HexType, maps} from "../maps";
 import {NewCitySelector} from "./NewCitySelector.tsx";
+import {renderHexCoordinate} from "../util.ts";
 
 function ConfirmSkipBuildsModal({open, onConfirm, onCancel}: {open: 'urbanization'|'tracks'|undefined, onConfirm: () => void, onCancel: () => void}) {
     return (
@@ -201,16 +203,16 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
     return <>
         <Header as='h2'>Building Phase</Header>
         {content}
-        {buildingTrackHex === undefined ? null : <Modal
-            open={true}
-            onClose={() => setBuildingTrackHex(undefined)}>
-            <ModalContent>
+        {buildingTrackHex === undefined ? null : <Segment>
+                <Header as="h2">Building on hex {renderHexCoordinate(buildingTrackHex)}</Header>
                 <TrackSelector coordinate={buildingTrackHex} map={map}
                                gameState={game.gameState} activePlayer={game.activePlayer}
                                onClick={(newTrackRoutes, newTownRoutes, redirectedRoute) => {
                     let newAction = Object.assign({}, action);
                     newAction.trackPlacements = newAction.trackPlacements.slice();
                     newAction.townPlacements = newAction.townPlacements.slice();
+                    newAction.trackRedirects = newAction.trackRedirects.slice();
+                    clearBuildsForHex(newAction, buildingTrackHex);
                     for (let newRoute of newTrackRoutes) {
                         newAction.trackPlacements.push({
                             track: newRoute,
@@ -231,14 +233,41 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                     }
                     setAction(newAction);
                     document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
-                    setBuildingTrackHex(undefined);
                 }} />
-            </ModalContent>
-            <ModalActions>
-                <Button negative onClick={() => setBuildingTrackHex(undefined)}>Cancel</Button>
-            </ModalActions>
-        </Modal>}
+            <Button primary onClick={() => setBuildingTrackHex(undefined)}>OK</Button>
+            <Button negative onClick={() => {
+                let newAction = Object.assign({}, action);
+                newAction.trackPlacements = newAction.trackPlacements.slice();
+                newAction.townPlacements = newAction.townPlacements.slice();
+                newAction.trackRedirects = newAction.trackRedirects.slice();
+                clearBuildsForHex(newAction, buildingTrackHex);
+                setAction(newAction);
+                document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
+                setBuildingTrackHex(undefined);
+            }}>Cancel</Button>
+        </Segment>}
     </>
+}
+
+function clearBuildsForHex(action: BuildAction, hex: Coordinate) {
+    for (let i = 0; i < action.trackPlacements.length; i++) {
+        if (action.trackPlacements[i].hex.x === hex.x && action.trackPlacements[i].hex.y === hex.y) {
+            action.trackPlacements.splice(i, 1);
+            i -= 1;
+        }
+    }
+    for (let i = 0; i < action.townPlacements.length; i++) {
+        if (action.townPlacements[i].hex.x === hex.x && action.townPlacements[i].hex.y === hex.y) {
+            action.townPlacements.splice(i, 1);
+            i -= 1;
+        }
+    }
+    for (let i = 0; i < action.trackRedirects.length; i++) {
+        if (action.trackRedirects[i].hex.x === hex.x && action.trackRedirects[i].hex.y === hex.y) {
+            action.trackRedirects.splice(i, 1);
+            i -= 1;
+        }
+    }
 }
 
 export default BuildActionSelector

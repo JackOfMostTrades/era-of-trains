@@ -1,6 +1,6 @@
-import { BuildAction, Coordinate, Direction, GameState, SpecialAction } from "./api/api.ts";
-import { GameMap } from "./maps";
-import { TeleportLinkEdge } from "./maps/basic_map.tsx";
+import {BuildAction, Coordinate, Direction, GameState, SpecialAction} from "./api/api.ts";
+import {GameMap} from "./maps";
+import {TeleportLinkEdge} from "./maps/basic_map.tsx";
 
 export function applyTeleport(map: GameMap, gameState: GameState|undefined, pendingBuildAction: BuildAction|undefined,
                               coordinate: Coordinate, direction: Direction): TeleportLinkEdge|undefined {
@@ -110,4 +110,15 @@ export function specialActionToDisplayName(specialAction: SpecialAction): string
         return "Turn Order Pass"
     }
     return specialAction;
+}
+
+export function renderHexCoordinate(coordinate: Coordinate): string {
+    let x: number
+    if (coordinate.y%2 === 0) {
+        x = coordinate.x*2 + 1
+    } else {
+        x = coordinate.x*2 + 2
+    }
+
+    return String.fromCharCode('A'.charCodeAt(0) + coordinate.y) + x
 }

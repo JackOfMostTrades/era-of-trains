@@ -96,6 +96,8 @@ export function TrackSelector(props: TrackSelectorProps) {
     }
 
     return <>
-        {tracks}
+        <div style={{overflowX: "scroll", whiteSpace: "nowrap", paddingBottom: "1em"}}>
+            {tracks}
+        </div>
     </>
 }
