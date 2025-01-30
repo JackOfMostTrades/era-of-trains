@@ -35,5 +35,10 @@ func renderHexCoordinate(coordinate common.Coordinate) string {
 		x = coordinate.X*2 + 2
 	}
 
-	return fmt.Sprintf("%c%d", coordinate.Y+'A', x)
+	yLabel := string(rune((coordinate.Y % 26) + 'A'))
+	if coordinate.Y >= 26 {
+		yLabel = "A" + yLabel
+	}
+
+	return fmt.Sprintf("%s%d", yLabel, x)
 }

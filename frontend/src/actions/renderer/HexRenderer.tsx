@@ -482,7 +482,11 @@ export class HexRenderer {
         }
         for (let y = 0; y < this.height+1; y++) {
             let yPos = 5 + y*5 + 5;
-            nodes.push(<text key={"y" + y} fontSize={2.5} x={y%2 == 0 ? 2.5 : 5.0} y={yPos} dominantBaseline="middle" textAnchor="middle">{String.fromCharCode('A'.charCodeAt(0) + y)}</text>);
+            let label = String.fromCharCode('A'.charCodeAt(0) + (y%26));
+            if (y >= 26) {
+                label = 'A' + label;
+            }
+            nodes.push(<text key={"y" + y} fontSize={2.5} x={y%2 == 0 ? 2.5 : 5.0} y={yPos} dominantBaseline="middle" textAnchor="middle">{label}</text>);
         }
         return nodes;
     }

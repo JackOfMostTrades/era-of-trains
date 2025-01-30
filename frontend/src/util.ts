@@ -120,5 +120,11 @@ export function renderHexCoordinate(coordinate: Coordinate): string {
         x = coordinate.x*2 + 2
     }
 
-    return String.fromCharCode('A'.charCodeAt(0) + coordinate.y) + x
+    let yPart: string = "";
+    if (coordinate.y >= 26) {
+        yPart = 'A';
+    }
+    yPart += String.fromCharCode('A'.charCodeAt(0) + (coordinate.y%26));
+
+    return yPart + x;
 }
