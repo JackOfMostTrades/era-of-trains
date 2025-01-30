@@ -53,7 +53,7 @@ function ProductionAction({game, onDone}: {game: ViewGameResponse, onDone: () =>
         let columns: ReactNode[] = [];
         for (let i = 0; i < game.gameState.productionCubes.length; i++) {
             columns.push(<GridColumn key={i}>
-                <div className="cubeSpot"><div className="cube" style={{background: colorToHtml(game.gameState.productionCubes[i])}}/></div>
+                <div className="cubeSpot"><div className="cube" style={{background: colorToHtml(game.gameState.productionCubes[i], userSession)}}/></div>
                 {action.destinations.length > i ? <p>Placing on {toCityLabel(action.destinations[i].x)} in spot {action.destinations[i].y+1}.</p> : null}
             </GridColumn>);
         }

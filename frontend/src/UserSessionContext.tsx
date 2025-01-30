@@ -1,8 +1,9 @@
 import {createContext, ReactNode, useEffect, useState} from "react";
-import {GetMyGames, Logout, WhoAmI, WhoAmIResponse} from "./api/api.ts";
+import {GetMyGames, GetMyProfile, GetMyProfileResponse, Logout, WhoAmI, WhoAmIResponse} from "./api/api.ts";
 
-interface UserSession {
+export interface UserSession {
     userInfo?: WhoAmIResponse
+    userProfile?: GetMyProfileResponse
     waitingForMeCount: number
     loading?: boolean
     reload: () => Promise<void>
@@ -92,6 +93,7 @@ export function UserSessionProvider({ children }: {children: ReactNode}) {
         try {
             let userInfoRes = await WhoAmI({});
             let myGamesRes = await GetMyGames({});
+            let userProfile = await GetMyProfile({});
             let waitingForMeCount = 0;
             if (myGamesRes.games) {
                 for (let game of myGamesRes.games) {
@@ -100,7 +102,7 @@ export function UserSessionProvider({ children }: {children: ReactNode}) {
                     }
                 }
             }
-            setUserSession({loading: false, userInfo: userInfoRes, waitingForMeCount: waitingForMeCount, reload: reload});
+            setUserSession({loading: false, userInfo: userInfoRes, userProfile: userProfile, waitingForMeCount: waitingForMeCount, reload: reload});
         } catch (e) {
             setUserSession({loading: false, waitingForMeCount: 0, reload: reload});
         }

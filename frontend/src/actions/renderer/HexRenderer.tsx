@@ -1,10 +1,19 @@
 import {ReactNode} from "react";
 import {Color, Coordinate, Direction, PlayerColor} from "../../api/api.ts";
 import {CityProperties, HexType} from "../../maps";
+import {UserSession} from "../../UserSessionContext.tsx";
 
-export function colorToHtml(color: Color): string {
+export function colorToHtml(color: Color, userSession: UserSession|undefined): string {
+    if (color == Color.NONE) {
+        return '#ffffff';
+    }
+
+    let customColor = userSession?.userProfile?.customColors?.goodsColors?.[color];
+    if (customColor) {
+        return customColor;
+    }
+
     switch (color) {
-        case Color.NONE: return '#ffffff';
         case Color.BLACK: return "#444444";
         case Color.BLUE: return '#00a2d3';
         case Color.RED: return '#d41e2d';
@@ -14,10 +23,16 @@ export function colorToHtml(color: Color): string {
     }
 }
 
-export function playerColorToHtml(color: PlayerColor|undefined): string {
+export function playerColorToHtml(color: PlayerColor|undefined, userSession: UserSession|undefined): string {
     if (color === undefined) {
         return '#222222';
     }
+
+    let customColor = userSession?.userProfile?.customColors?.playerColors?.[color];
+    if (customColor) {
+        return customColor;
+    }
+
     switch (color) {
         case PlayerColor.BLUE: return '#035f70';
         case PlayerColor.GREEN: return "#a7ed36";
@@ -105,16 +120,18 @@ export class HexRenderer {
     private height: number;
     private paths: ReactNode[];
     private emitOnClick: boolean;
+    private userSession: UserSession|undefined;
     private shouldRenderGridLegend: boolean;
     private filterId: number;
     private static nextFilterId: number = 0;
 
-    constructor(emitOnClick: boolean, shouldRenderGridLegend: boolean) {
+    constructor(emitOnClick: boolean, shouldRenderGridLegend: boolean, userSession: UserSession|undefined) {
         this.width = -1;
         this.height = -1;
         this.paths = [];
         this.emitOnClick = emitOnClick;
         this.shouldRenderGridLegend = shouldRenderGridLegend;
+        this.userSession = userSession;
         this.filterId = HexRenderer.nextFilterId;
         HexRenderer.nextFilterId += 1;
     }
@@ -166,7 +183,7 @@ export class HexRenderer {
         if (cityProperties.color === Color.NONE) {
             cityColor = "#cccccc";
         } else {
-            cityColor = colorToHtml(cityProperties.color);
+            cityColor = colorToHtml(cityProperties.color, this.userSession);
         }
         let strokeColor: string = '#222222';
         if (cityProperties.darkCity) {
@@ -252,7 +269,7 @@ export class HexRenderer {
         let pos = this.getHexXY(hex);
 
         let offset = hexEdgeOffset(direction);
-        this.paths.push(<line stroke={playerColorToHtml(playerColor)} strokeWidth={1} x1={pos.x+5.7735} y1={pos.y+5} x2={pos.x+offset.dx} y2={pos.y+offset.dy} />);
+        this.paths.push(<line stroke={playerColorToHtml(playerColor, this.userSession)} strokeWidth={1} x1={pos.x+5.7735} y1={pos.y+5} x2={pos.x+offset.dx} y2={pos.y+offset.dy} />);
 
         this.width = Math.max(this.width, hex.x);
         this.height = Math.max(this.height, hex.y);
@@ -261,7 +278,7 @@ export class HexRenderer {
     public renderTrack(hex: Coordinate, left: Direction, right: Direction, playerColor: PlayerColor|undefined) {
         let pos = this.getHexXY(hex);
 
-        let htmlColor = playerColorToHtml(playerColor);
+        let htmlColor = playerColorToHtml(playerColor, this.userSession);
 
         let leftOffset = hexEdgeOffset(left);
         let rightOffset = hexEdgeOffset(right);
@@ -312,7 +329,7 @@ export class HexRenderer {
             }
 
             let points = `${pos.x+i*2.5},${pos.y+0.5} ${pos.x+2+i*2.5},${pos.y+0.5} ${pos.x+2+i*2.5},${pos.y+2.5} ${pos.x+i*2.5},${pos.y+2.5}`
-            this.paths.push(<polygon stroke='#222222' strokeWidth={0.25} fill={colorToHtml(cube)} points={points} filter={`url(#${this.filterId})`} onClick={onClick}/>);
+            this.paths.push(<polygon stroke='#222222' strokeWidth={0.25} fill={colorToHtml(cube, this.userSession)} points={points} filter={`url(#${this.filterId})`} onClick={onClick}/>);
         }
 
         this.width = Math.max(this.width, hex.x);
@@ -345,14 +362,14 @@ export class HexRenderer {
                 begin="indefinite" dur={(100*(moveAlong.length+1)) + "ms"} path={path} />
         }
         let points = `${cubeCoord.x-1.25},${cubeCoord.y-1.25} ${cubeCoord.x+1.25},${cubeCoord.y-1.25} ${cubeCoord.x+1.25},${cubeCoord.y+1.25} ${cubeCoord.x-1.25},${cubeCoord.y+1.25}`
-        this.paths.push(<polygon stroke='#FFFF00' strokeWidth={0.5} fill={colorToHtml(cube)} points={points} filter={`url(#${this.filterId})`}>{animate}</polygon>);
+        this.paths.push(<polygon stroke='#FFFF00' strokeWidth={0.5} fill={colorToHtml(cube, this.userSession)} points={points} filter={`url(#${this.filterId})`}>{animate}</polygon>);
 
         this.width = Math.max(this.width, hex.x);
         this.height = Math.max(this.height, hex.y);
     }
 
     public renderArrow(hex: Coordinate, direction: Direction, color: PlayerColor|undefined) {
-        let htmlColor = playerColorToHtml(color);
+        let htmlColor = playerColorToHtml(color, this.userSession);
 
         // Big hex
         // W        NW       NE        E           SE          SW
@@ -445,7 +462,7 @@ export class HexRenderer {
         if (fillColor === undefined) {
             fill = '#ffffff';
         } else {
-            fill = playerColorToHtml(fillColor);
+            fill = playerColorToHtml(fillColor, this.userSession);
         }
 
         let onClick: (() => void) | undefined;

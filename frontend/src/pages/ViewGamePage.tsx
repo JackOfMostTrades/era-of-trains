@@ -94,17 +94,19 @@ function WaitingForPlayersPage({game, onJoin, onStart}: {game: ViewGameResponse,
 }
 
 function PlayerColorAndName({nickname, color}: {nickname: string, color: PlayerColor|undefined}) {
+    let userSession = useContext(UserSessionContext);
+
     return <><div style={{
         height: '1em',
         width: '1em',
         borderRadius: '50%',
         display: 'inline-block',
-        backgroundColor: playerColorToHtml(color)
+        backgroundColor: playerColorToHtml(color, userSession)
     }}/> {nickname}</>
 }
 
 function PlayerStatus({game, map, onConfirmMove}: { game: ViewGameResponse, map: GameMap, onConfirmMove: () => Promise<void> }) {
-    let userSessionContext = useContext(UserSessionContext);
+    let userSession = useContext(UserSessionContext);
 
     if (!game.gameState) {
         return null;
@@ -178,14 +180,14 @@ function PlayerStatus({game, map, onConfirmMove}: { game: ViewGameResponse, map:
                                 width: '1em',
                                 borderRadius: '50%',
                                 display: 'inline-block',
-                                backgroundColor: playerColorToHtml(game.gameState?.playerColor[playerId])
+                                backgroundColor: playerColorToHtml(game.gameState?.playerColor[playerId], userSession)
                             }}/>
                             <LabelDetail>{playerById[playerId].nickname}</LabelDetail>
                         </Label>
                     </>})}<br/>
             Turn: {game.gameState.turnNumber} / {map.getTurnLimit(game.joinedUsers.length)} <br/>
         </Segment>
-        <Segment className={"action-holder " + (game.activePlayer === userSessionContext.userInfo?.user.id ? "my-turn" : "other-player-turn") }>
+        <Segment className={"action-holder " + (game.activePlayer === userSession.userInfo?.user.id ? "my-turn" : "other-player-turn") }>
             {actionHolder}
         </Segment>
     </>

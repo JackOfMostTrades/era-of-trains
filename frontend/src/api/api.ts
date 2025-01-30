@@ -149,6 +149,8 @@ export enum Color {
     PURPLE,
     WHITE,
 }
+export const Colors = [Color.BLACK, Color.RED, Color.YELLOW, Color.BLUE, Color.PURPLE, Color.WHITE];
+
 export interface Link {
     sourceHex: Coordinate;
     steps:     Direction[];
@@ -172,6 +174,7 @@ export enum PlayerColor {
     GRAY,
     ORANGE
 }
+export const PlayerColors = [PlayerColor.BLUE, PlayerColor.GREEN, PlayerColor.YELLOW, PlayerColor.PINK, PlayerColor.GRAY, PlayerColor.ORANGE];
 
 export interface GameState {
     playerOrder: string[];
@@ -346,6 +349,11 @@ export function GetGameLogs(req: GetGameLogsRequest): Promise<GetGameLogsRespons
     return doApiCall('/api/getGameLogs', req);
 }
 
+export interface CustomColors {
+    playerColors?: Array<string|undefined>
+    goodsColors?: Array<string|undefined>
+}
+
 export interface GetMyProfileRequest {
 }
 export interface GetMyProfileResponse {
@@ -357,6 +365,7 @@ export interface GetMyProfileResponse {
     emailNotificationsEnabled: boolean;
     discordTurnAlertsEnabled: boolean;
     colorPreferences?: PlayerColor[];
+    customColors?: CustomColors;
     webhooks: string[];
 }
 export function GetMyProfile(req: GetMyProfileRequest): Promise<GetMyProfileResponse> {
@@ -367,6 +376,7 @@ export interface SetMyProfileRequest {
     emailNotificationsEnabled?: boolean;
     discordTurnAlertsEnabled?: boolean;
     colorPreferences?: PlayerColor[];
+    customColors?: CustomColors;
     webhooks?: string[];
 }
 export interface SetMyProfileResponse {

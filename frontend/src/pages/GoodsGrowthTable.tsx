@@ -1,9 +1,10 @@
 import {Header, Segment, Table, TableBody, TableCell, TableRow} from "semantic-ui-react";
 import {Color, ViewGameResponse} from "../api/api.ts";
 import './GoodsGrowthTable.css';
-import {CSSProperties, ReactNode} from "react";
+import {CSSProperties, ReactNode, useContext} from "react";
 import {colorToHtml, urbCityProperties} from "../actions/renderer/HexRenderer.tsx";
 import {GameMap} from "../maps";
+import UserSessionContext, {UserSession} from "../UserSessionContext.tsx";
 
 function emitEvent(x: number, y: number) {
     let event = new CustomEvent('goodsGrowthClickEvent', {
@@ -15,10 +16,10 @@ function emitEvent(x: number, y: number) {
     document.dispatchEvent(event);
 }
 
-function cssStyleForCity(cityColor: Color): CSSProperties {
+function cssStyleForCity(cityColor: Color, userSession: UserSession|undefined): CSSProperties {
     let style: CSSProperties = {};
     if (cityColor != Color.NONE) {
-        style.background = colorToHtml(cityColor);
+        style.background = colorToHtml(cityColor, userSession);
     } else {
         style.background = '#777777';
     }
@@ -26,6 +27,8 @@ function cssStyleForCity(cityColor: Color): CSSProperties {
 }
 
 function GoodsGrowthTable({ game, map }: {game: ViewGameResponse, map: GameMap}) {
+    let userSession = useContext(UserSessionContext);
+
     if (!game.gameState) {
         return
     }
@@ -36,10 +39,10 @@ function GoodsGrowthTable({ game, map }: {game: ViewGameResponse, map: GameMap})
 
     let topHeaderCells: ReactNode[] = [];
     for (let i = 0; i < 6; i++) {
-        topHeaderCells.push(<TableCell key={i}><div style={cssStyleForCity(map.getCityColor(i))} className="goodsGrowthHeader lightCity">{i+1}</div></TableCell>);
+        topHeaderCells.push(<TableCell key={i}><div style={cssStyleForCity(map.getCityColor(i), userSession)} className="goodsGrowthHeader lightCity">{i+1}</div></TableCell>);
     }
     for (let i = 0; i < 6; i++) {
-        topHeaderCells.push(<TableCell key={i+6}><div style={cssStyleForCity(map.getCityColor(i+6))} className="goodsGrowthHeader darkCity">{i+1}</div></TableCell>);
+        topHeaderCells.push(<TableCell key={i+6}><div style={cssStyleForCity(map.getCityColor(i+6), userSession)} className="goodsGrowthHeader darkCity">{i+1}</div></TableCell>);
     }
     tableRows.push(<TableRow key={0} className="goodsGrowthHeaderRow">{topHeaderCells}</TableRow>);
     for (let i = 0; i < 3; i++) {
@@ -47,7 +50,7 @@ function GoodsGrowthTable({ game, map }: {game: ViewGameResponse, map: GameMap})
         for (let j = 0; j < 12; j++) {
             let cube: ReactNode;
             if (goodsGrowth[j][i] !== Color.NONE) {
-                let color = colorToHtml(goodsGrowth[j][i]);
+                let color = colorToHtml(goodsGrowth[j][i], userSession);
                 cube = <div className="cube" style={{background: color}} />;
             }
             cells.push(<TableCell key={j}><div className="cubeSpot" onClick={() => emitEvent(j,i)}>{cube}</div></TableCell>);
@@ -57,10 +60,10 @@ function GoodsGrowthTable({ game, map }: {game: ViewGameResponse, map: GameMap})
 
     let bottomHeaderCells: ReactNode[] = [];
     for (let i = 0; i < 4; i++) {
-        bottomHeaderCells.push(<TableCell key={i}><div style={cssStyleForCity(urbCityProperties(i).color)} className="goodsGrowthHeader lightCity">{String.fromCharCode(i+'A'.charCodeAt(0))}</div></TableCell>);
+        bottomHeaderCells.push(<TableCell key={i}><div style={cssStyleForCity(urbCityProperties(i).color, userSession)} className="goodsGrowthHeader lightCity">{String.fromCharCode(i+'A'.charCodeAt(0))}</div></TableCell>);
     }
     for (let i = 0; i < 4; i++) {
-        bottomHeaderCells.push(<TableCell key={i+4}><div style={cssStyleForCity(urbCityProperties(i+4).color)} className="goodsGrowthHeader darkCity">{String.fromCharCode(i+'E'.charCodeAt(0))}</div></TableCell>);
+        bottomHeaderCells.push(<TableCell key={i+4}><div style={cssStyleForCity(urbCityProperties(i+4).color, userSession)} className="goodsGrowthHeader darkCity">{String.fromCharCode(i+'E'.charCodeAt(0))}</div></TableCell>);
     }
     tableRows.push(<TableRow key={4} className="goodsGrowthHeaderRow"><TableCell/><TableCell/>{bottomHeaderCells}<TableCell/><TableCell/></TableRow>);
 
@@ -69,7 +72,7 @@ function GoodsGrowthTable({ game, map }: {game: ViewGameResponse, map: GameMap})
         for (let j = 0; j < 8; j++) {
             let cube: ReactNode;
             if (goodsGrowth[j+12][i] !== Color.NONE) {
-                let color = colorToHtml(goodsGrowth[j+12][i]);
+                let color = colorToHtml(goodsGrowth[j+12][i], userSession);
                 cube = <div className="cube" style={{background: color}} />;
             }
             cells.push(<TableCell key={j}><div className="cubeSpot" onClick={() => emitEvent(j+12,i)}>{cube}</div></TableCell>);

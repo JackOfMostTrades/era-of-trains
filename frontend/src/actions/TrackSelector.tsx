@@ -1,9 +1,10 @@
-import {ReactNode} from "react";
+import {ReactNode, useContext} from "react";
 import {HexRenderer} from "./renderer/HexRenderer.tsx";
 import {GameMap} from "../maps";
 import "./TrackSelector.css";
 import {BasicTownTile, BasicTrackTile, MapTileState, Rotation, TOWN_TILES, TRACK_TILES,} from "../game/map_state.ts";
 import {Coordinate, Direction, GameState} from "../api/api.ts";
+import UserSessionContext from "../UserSessionContext.tsx";
 
 interface TrackSelectorProps {
     coordinate: Coordinate;
@@ -14,6 +15,7 @@ interface TrackSelectorProps {
 }
 
 export function TrackSelector(props: TrackSelectorProps) {
+    let userSession = useContext(UserSessionContext);
     let mapTileState = new MapTileState(props.map, props.gameState);
 
     let tracks: Array<ReactNode> = [];
@@ -26,7 +28,7 @@ export function TrackSelector(props: TrackSelectorProps) {
                     continue;
                 }
 
-                let renderer = new HexRenderer(false, false);
+                let renderer = new HexRenderer(false, false, userSession);
                 renderer.renderHex({x: 0, y: 0}, props.map.getHexType(props.coordinate));
                 for (let exit of mapTileState.getTileState(props.coordinate).routes) {
                     renderer.renderTownTrack({x: 0, y: 0}, exit.left, props.gameState.playerColor[exit.owner]);
@@ -57,7 +59,7 @@ export function TrackSelector(props: TrackSelectorProps) {
                     continue;
                 }
 
-                let renderer = new HexRenderer(false, false);
+                let renderer = new HexRenderer(false, false, userSession);
                 renderer.renderHex({x: 0, y: 0}, props.map.getHexType(props.coordinate));
                 for (let route of mapTileState.getTileState(props.coordinate).routes) {
                     let skip = false;

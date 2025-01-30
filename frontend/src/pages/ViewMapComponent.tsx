@@ -1,9 +1,10 @@
 import {BuildAction, Color, Coordinate, Direction, GameState, PlayerColor} from "../api/api.ts";
-import {ReactNode, useEffect, useState} from "react";
+import {ReactNode, useContext, useEffect, useState} from "react";
 import {CityProperties, GameMap, HexType} from "../maps";
 import {HexRenderer, urbCityProperties} from "../actions/renderer/HexRenderer.tsx";
 import {applyDirection, applyMapDirection, oppositeDirection} from "../util.ts";
 import {Step as MoveGoodsStep} from "../actions/MoveGoodsActionSelector.tsx";
+import UserSessionContext, {UserSession} from "../UserSessionContext.tsx";
 
 function getCityProperties(gameState: GameState|undefined, map: GameMap, coordinate: Coordinate): CityProperties|undefined {
     if (gameState && gameState.urbanizations) {
@@ -22,10 +23,10 @@ class RenderMapBuilder {
     private map: GameMap;
     private hexRenderer: HexRenderer;
 
-    constructor(gameState: GameState|undefined, map: GameMap) {
+    constructor(gameState: GameState|undefined, map: GameMap, userSession: UserSession|undefined) {
         this.gameState = gameState;
         this.map = map;
-        this.hexRenderer = new HexRenderer(true, true);
+        this.hexRenderer = new HexRenderer(true, true, userSession);
     }
 
     public renderCityHex(hex: Coordinate, cityProperties: CityProperties) {
@@ -83,6 +84,7 @@ class RenderMapBuilder {
 }
 
 function ViewMapComponent({gameState, activePlayer, map}: {gameState: GameState|undefined, activePlayer: string, map: GameMap}) {
+    let userSession = useContext(UserSessionContext);
     let [pendingBuildAction, setPendingBuildAction] = useState<BuildAction|undefined>(undefined);
     let [pendingMoveGoods, setPendingMoveGoods] = useState<MoveGoodsStep|undefined>(undefined)
 
@@ -102,7 +104,7 @@ function ViewMapComponent({gameState, activePlayer, map}: {gameState: GameState|
         return () => document.removeEventListener('pendingMoveGoods', handler);
     }, []);
 
-    let renderer = new RenderMapBuilder(gameState, map);
+    let renderer = new RenderMapBuilder(gameState, map, userSession);
 
     for (let y = 0; y < map.getHeight(); y++) {
         for (let x = 0; x < map.getWidth(); x++) {

@@ -975,22 +975,28 @@ func (server *GameServer) getMyGames(ctx *RequestContext, req *GetMyGamesRequest
 	}, nil
 }
 
+type CustomColors struct {
+	PlayerColors []string `json:"playerColors"`
+	GoodsColors  []string `json:"goodsColors"`
+}
+
 type GetMyProfileRequest struct {
 }
 type GetMyProfileResponse struct {
-	Id                        string   `json:"id"`
-	Nickname                  string   `json:"nickname"`
-	Email                     string   `json:"email"`
-	GoogleId                  string   `json:"googleId"`
-	DiscordId                 string   `json:"discordId"`
-	EmailNotificationsEnabled bool     `json:"emailNotificationsEnabled"`
-	DiscordTurnAlertsEnabled  bool     `json:"discordTurnAlertsEnabled"`
-	ColorPreferences          []int    `json:"colorPreferences"`
-	Webhooks                  []string `json:"webhooks"`
+	Id                        string        `json:"id"`
+	Nickname                  string        `json:"nickname"`
+	Email                     string        `json:"email"`
+	GoogleId                  string        `json:"googleId"`
+	DiscordId                 string        `json:"discordId"`
+	EmailNotificationsEnabled bool          `json:"emailNotificationsEnabled"`
+	DiscordTurnAlertsEnabled  bool          `json:"discordTurnAlertsEnabled"`
+	ColorPreferences          []int         `json:"colorPreferences"`
+	CustomColors              *CustomColors `json:"customColors"`
+	Webhooks                  []string      `json:"webhooks"`
 }
 
 func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesRequest) (resp *GetMyProfileResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT nickname,email,discord_user_id,google_user_id,email_notifications_enabled,discord_turn_alerts_enabled,color_preferences,webhooks FROM users WHERE id=?")
+	stmt, err := server.db.Prepare("SELECT nickname,email,discord_user_id,google_user_id,email_notifications_enabled,discord_turn_alerts_enabled,color_preferences,custom_colors,webhooks FROM users WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -1004,8 +1010,9 @@ func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesReque
 	var emailNotificationsEnabled int
 	var discordTurnAlertsEnabled int
 	var colorPreferencesStr sql.NullString
+	var customColorsStr sql.NullString
 	var webhooksStr sql.NullString
-	err = row.Scan(&nickname, &email, &discordId, &googleId, &emailNotificationsEnabled, &discordTurnAlertsEnabled, &colorPreferencesStr, &webhooksStr)
+	err = row.Scan(&nickname, &email, &discordId, &googleId, &emailNotificationsEnabled, &discordTurnAlertsEnabled, &colorPreferencesStr, &customColorsStr, &webhooksStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan row: %v", err)
 	}
@@ -1017,6 +1024,15 @@ func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesReque
 			return nil, fmt.Errorf("failed to unmarshal color preferences: %v", err)
 		}
 	}
+	var customColors *CustomColors
+	if customColorsStr.Valid {
+		customColors = new(CustomColors)
+		err = json.Unmarshal([]byte(customColorsStr.String), customColors)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal custom colors: %v", err)
+		}
+	}
+
 	var webhooks []string
 	if webhooksStr.Valid {
 		err = json.Unmarshal([]byte(webhooksStr.String), &webhooks)
@@ -1034,21 +1050,23 @@ func (server *GameServer) getMyProfile(ctx *RequestContext, req *GetMyGamesReque
 		EmailNotificationsEnabled: emailNotificationsEnabled != 0,
 		DiscordTurnAlertsEnabled:  discordTurnAlertsEnabled != 0,
 		ColorPreferences:          colorPreferences,
+		CustomColors:              customColors,
 		Webhooks:                  webhooks,
 	}, nil
 }
 
 type SetMyProfileRequest struct {
-	EmailNotificationsEnabled bool     `json:"emailNotificationsEnabled"`
-	DiscordTurnAlertsEnabled  bool     `json:"discordTurnAlertsEnabled"`
-	ColorPreferences          []int    `json:"colorPreferences"`
-	Webhooks                  []string `json:"webhooks"`
+	EmailNotificationsEnabled bool          `json:"emailNotificationsEnabled"`
+	DiscordTurnAlertsEnabled  bool          `json:"discordTurnAlertsEnabled"`
+	ColorPreferences          []int         `json:"colorPreferences"`
+	CustomColors              *CustomColors `json:"customColors"`
+	Webhooks                  []string      `json:"webhooks"`
 }
 type SetMyProfileResponse struct {
 }
 
 func (server *GameServer) setMyProfile(ctx *RequestContext, req *SetMyProfileRequest) (resp *SetMyProfileResponse, err error) {
-	stmt, err := server.db.Prepare("UPDATE users SET email_notifications_enabled=?,color_preferences=?,webhooks=?,discord_turn_alerts_enabled=? WHERE id=?")
+	stmt, err := server.db.Prepare("UPDATE users SET email_notifications_enabled=?,color_preferences=?,custom_colors=?,webhooks=?,discord_turn_alerts_enabled=? WHERE id=?")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -1062,6 +1080,16 @@ func (server *GameServer) setMyProfile(ctx *RequestContext, req *SetMyProfileReq
 		}
 		colorPreferencesStr.Valid = true
 		colorPreferencesStr.String = string(jsonBytes)
+	}
+
+	var customColorsStr sql.NullString
+	if req.CustomColors != nil {
+		jsonBytes, err := json.Marshal(req.CustomColors)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal custom colors: %v", err)
+		}
+		customColorsStr.Valid = true
+		customColorsStr.String = string(jsonBytes)
 	}
 
 	var emailNotificationsEnabled int
@@ -1083,7 +1111,7 @@ func (server *GameServer) setMyProfile(ctx *RequestContext, req *SetMyProfileReq
 		webhooksStr.String = string(jsonBytes)
 	}
 
-	_, err = stmt.Exec(emailNotificationsEnabled, colorPreferencesStr, webhooksStr, discordTurnAlertsEnabled, ctx.User.Id)
+	_, err = stmt.Exec(emailNotificationsEnabled, colorPreferencesStr, customColorsStr, webhooksStr, discordTurnAlertsEnabled, ctx.User.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
