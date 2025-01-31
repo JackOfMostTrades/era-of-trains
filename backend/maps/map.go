@@ -31,6 +31,7 @@ type GameMap interface {
 	PostBuildActionHook(gameState *common.GameState, player string) error
 	PostGoodsGrowthHook(gameState *common.GameState, randProvider common.RandProvider, log LogFun) error
 	GetDeliveryBonus(coordinate common.Coordinate, color common.Color) int
+	ShouldPutDeliveryInBag(color common.Color) bool
 	LocationBlocksCubePassage(cube common.Color, hex common.Coordinate) bool
 	LocationCanAcceptCube(cube common.Color, hex common.Coordinate) bool
 }
@@ -202,6 +203,10 @@ func (*AbstractGameMapImpl) PostGoodsGrowthHook(gameState *common.GameState, ran
 
 func (*AbstractGameMapImpl) GetDeliveryBonus(coordinate common.Coordinate, color common.Color) int {
 	return 0
+}
+
+func (*AbstractGameMapImpl) ShouldPutDeliveryInBag(color common.Color) bool {
+	return true
 }
 
 func (*AbstractGameMapImpl) LocationBlocksCubePassage(cube common.Color, hex common.Coordinate) bool {

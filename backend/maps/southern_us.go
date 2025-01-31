@@ -38,6 +38,13 @@ func (b *southernUsMap) GetDeliveryBonus(coordinate common.Coordinate, color com
 	return 0
 }
 
+func (b *southernUsMap) ShouldPutDeliveryInBag(color common.Color) bool {
+	if color == common.WHITE {
+		return false
+	}
+	return true
+}
+
 func (b *southernUsMap) GetIncomeReduction(gameState *common.GameState, player string) (int, error) {
 	reduction, err := b.basicMap.GetIncomeReduction(gameState, player)
 	if err != nil {
