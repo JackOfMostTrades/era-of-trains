@@ -1,3 +1,4 @@
+import {TrackTile} from "../game/map_state.ts";
 
 async function doApiCall<ReqT, ResT>(requestPath: string, req: ReqT): Promise<ResT> {
     let res = await fetch(requestPath, {
@@ -279,12 +280,8 @@ export interface TownPlacement {
 }
 
 export interface TrackPlacement {
-    track: [Direction, Direction];
-    hex: Coordinate;
-}
-
-export interface TrackRedirect {
-    track: Direction;
+    tile: TrackTile;
+    rotation: number;
     hex: Coordinate;
 }
 
@@ -296,7 +293,6 @@ export interface TeleportLinkPlacement {
 export interface BuildAction {
     urbanization?: Urbanization;
     townPlacements: TownPlacement[];
-    trackRedirects: TrackRedirect[];
     trackPlacements: TrackPlacement[];
     teleportLinkPlacements: TeleportLinkPlacement[];
 }

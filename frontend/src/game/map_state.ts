@@ -2,7 +2,7 @@ import {Coordinate, Direction, GameState} from "../api/api.ts";
 import {GameMap, HexType} from "../maps";
 import {applyDirection, oppositeDirection} from "../util.ts";
 
-interface Route {
+export interface Route {
     left: Direction;
     right: Direction;
     owner: string;
@@ -315,23 +315,23 @@ export enum TrackTile {
     STRAIGHT_AND_SHARP_TRACK_TILE,
 }
 export const TrackTiles: TrackTile[] =
-    [TrackTile.STRAIGHT_TRACK_TILE, TrackTile.SHARP_CURVE_TRACK_TILE, TrackTile.GENTLE_CURVE_TRACK_TILE,
+    [TrackTile.STRAIGHT_TRACK_TILE, TrackTile.GENTLE_CURVE_TRACK_TILE, TrackTile.SHARP_CURVE_TRACK_TILE,
         TrackTile.BOW_AND_ARROW_TRACK_TILE, TrackTile.TWO_GENTLE_TRACK_TILE, TrackTile.TWO_STRAIGHT_TRACK_TILE,
         TrackTile.BASEBALL_TRACK_TILE, TrackTile.LEFT_GENTLE_AND_SHARP_TRACK_TILE, TrackTile.RIGHT_GENTLE_AND_SHARP_TRACK_TILE, TrackTile.STRAIGHT_AND_SHARP_TRACK_TILE];
 
 const TRACK_TILE_ROUTES: Map<TrackTile, Array<[Direction, Direction]>> = new Map([
     [TrackTile.STRAIGHT_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH]]],
-    [TrackTile.SHARP_CURVE_TRACK_TILE, [[Direction.NORTH, Direction.NORTH_EAST]]],
-    [TrackTile.GENTLE_CURVE_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH_EAST]]],
+    [TrackTile.SHARP_CURVE_TRACK_TILE, [[Direction.SOUTH_EAST, Direction.SOUTH]]],
+    [TrackTile.GENTLE_CURVE_TRACK_TILE, [[Direction.NORTH_EAST, Direction.SOUTH]]],
 
-    [TrackTile.BOW_AND_ARROW_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH], [Direction.SOUTH_WEST, Direction.SOUTH_EAST]]],
+    [TrackTile.BOW_AND_ARROW_TRACK_TILE, [[Direction.NORTH_EAST, Direction.SOUTH], [Direction.SOUTH_EAST, Direction.NORTH_WEST]]],
     [TrackTile.TWO_GENTLE_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH_EAST], [Direction.NORTH_EAST, Direction.SOUTH]]],
-    [TrackTile.TWO_STRAIGHT_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH], [Direction.SOUTH_WEST, Direction.NORTH_EAST]]],
+    [TrackTile.TWO_STRAIGHT_TRACK_TILE, [[Direction.NORTH_EAST, Direction.SOUTH_WEST], [Direction.SOUTH_EAST, Direction.NORTH_WEST]]],
 
-    [TrackTile.BASEBALL_TRACK_TILE, [[Direction.NORTH_WEST, Direction.NORTH_EAST], [Direction.SOUTH_WEST, Direction.SOUTH_EAST]]],
-    [TrackTile.LEFT_GENTLE_AND_SHARP_TRACK_TILE, [[Direction.NORTH_WEST, Direction.SOUTH], [Direction.NORTH, Direction.NORTH_EAST]]],
-    [TrackTile.RIGHT_GENTLE_AND_SHARP_TRACK_TILE, [[Direction.NORTH_WEST, Direction.SOUTH], [Direction.NORTH_EAST, Direction.SOUTH_EAST]]],
-    [TrackTile.STRAIGHT_AND_SHARP_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH], [Direction.NORTH_EAST, Direction.SOUTH_EAST]]],
+    [TrackTile.BASEBALL_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH_WEST], [Direction.NORTH_EAST, Direction.SOUTH]]],
+    [TrackTile.LEFT_GENTLE_AND_SHARP_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH_EAST], [Direction.SOUTH_WEST, Direction.NORTH_WEST]]],
+    [TrackTile.RIGHT_GENTLE_AND_SHARP_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH_WEST], [Direction.NORTH_EAST, Direction.SOUTH_EAST]]],
+    [TrackTile.STRAIGHT_AND_SHARP_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH], [Direction.SOUTH_WEST, Direction.NORTH_WEST]]],
 ]);
 
 export type Rotation = 0 | 1 | 2 | 3 | 4 | 5;
@@ -350,13 +350,14 @@ export class MapTrackTile {
         if (!routes) {
             throw Error("Invalid tile: " + this.tile);
         }
+        let rotatedRoutes: Array<[Direction, Direction]> = [];
         for (let route of routes) {
             let rotatedRoute: [Direction, Direction] = [
                 (route[0]+this.rotation)%6 as Direction, (route[1]+this.rotation)%6 as Direction
             ];
-            routes.push(rotatedRoute);
+            rotatedRoutes.push(rotatedRoute);
         }
-        return routes;
+        return rotatedRoutes;
     }
 }
 

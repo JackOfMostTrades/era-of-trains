@@ -42,7 +42,6 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
     let [showConfirmModal, setShowConfirmModal] = useState<'urbanization'|'tracks'|undefined>(undefined);
     let [action, setAction] = useState<BuildAction>({
         townPlacements: [],
-        trackRedirects: [],
         trackPlacements: [],
         urbanization: undefined,
         teleportLinkPlacements: []
@@ -158,7 +157,6 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                 }).then(() => {
                     let newAction: BuildAction = {
                         townPlacements: [],
-                        trackRedirects: [],
                         trackPlacements: [],
                         teleportLinkPlacements: [],
                         urbanization: undefined,
@@ -186,7 +184,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                         }
                         let buildLimit = map.getBuildLimit(game.gameState, game.activePlayer);
                         let cashOnHand = game.gameState?.playerCash[game.activePlayer];
-                        if (cashOnHand !== undefined && cashOnHand >= 2 && action.townPlacements.length + action.trackPlacements.length + action.teleportLinkPlacements.length + action.trackRedirects.length < buildLimit) {
+                        if (cashOnHand !== undefined && cashOnHand >= 2 && action.townPlacements.length + action.trackPlacements.length + action.teleportLinkPlacements.length < buildLimit) {
                             setShowConfirmModal('tracks');
                             return;
                         }
@@ -203,7 +201,6 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                     <Button negative loading={loading} onClick={() => {
                         let newAction: BuildAction = {
                             townPlacements: [],
-                            trackRedirects: [],
                             trackPlacements: [],
                             teleportLinkPlacements: [],
                             urbanization: undefined,
@@ -224,27 +221,21 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                 <Header as="h2">Building on hex {renderHexCoordinate(buildingTrackHex)}</Header>
                 <TrackSelector coordinate={buildingTrackHex} map={map}
                                gameState={game.gameState} activePlayer={game.activePlayer}
-                               onClick={(newTrackRoutes, newTownRoutes, redirectedRoute) => {
+                               onClick={(newTrackTile, newTownRoutes) => {
                     let newAction = Object.assign({}, action);
                     newAction.trackPlacements = newAction.trackPlacements.slice();
                     newAction.townPlacements = newAction.townPlacements.slice();
-                    newAction.trackRedirects = newAction.trackRedirects.slice();
                     clearBuildsForHex(newAction, buildingTrackHex);
-                    for (let newRoute of newTrackRoutes) {
+                    if (newTrackTile) {
                         newAction.trackPlacements.push({
-                            track: newRoute,
                             hex: buildingTrackHex,
+                            tile: newTrackTile.tile,
+                            rotation: newTrackTile.rotation,
                         });
                     }
                     for (let newExit of newTownRoutes) {
                         newAction.townPlacements.push({
                             track: newExit,
-                            hex: buildingTrackHex,
-                        });
-                    }
-                    if (redirectedRoute !== undefined) {
-                        newAction.trackRedirects.push({
-                            track: redirectedRoute,
                             hex: buildingTrackHex,
                         });
                     }
@@ -256,7 +247,6 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                 let newAction = Object.assign({}, action);
                 newAction.trackPlacements = newAction.trackPlacements.slice();
                 newAction.townPlacements = newAction.townPlacements.slice();
-                newAction.trackRedirects = newAction.trackRedirects.slice();
                 clearBuildsForHex(newAction, buildingTrackHex);
                 setAction(newAction);
                 document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
@@ -276,12 +266,6 @@ function clearBuildsForHex(action: BuildAction, hex: Coordinate) {
     for (let i = 0; i < action.townPlacements.length; i++) {
         if (action.townPlacements[i].hex.x === hex.x && action.townPlacements[i].hex.y === hex.y) {
             action.townPlacements.splice(i, 1);
-            i -= 1;
-        }
-    }
-    for (let i = 0; i < action.trackRedirects.length; i++) {
-        if (action.trackRedirects[i].hex.x === hex.x && action.trackRedirects[i].hex.y === hex.y) {
-            action.trackRedirects.splice(i, 1);
             i -= 1;
         }
     }

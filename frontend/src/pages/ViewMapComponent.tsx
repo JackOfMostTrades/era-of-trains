@@ -5,6 +5,8 @@ import {HexRenderer, urbCityProperties} from "../actions/renderer/HexRenderer.ts
 import {applyDirection, applyMapDirection, oppositeDirection} from "../util.ts";
 import {Step as MoveGoodsStep} from "../actions/MoveGoodsActionSelector.tsx";
 import UserSessionContext, {UserSession} from "../UserSessionContext.tsx";
+import {renderTrackTile} from "../actions/TrackSelector.tsx";
+import {MapTileState, Rotation} from "../game/map_state.ts";
 
 function getCityProperties(gameState: GameState|undefined, map: GameMap, coordinate: Coordinate): CityProperties|undefined {
     if (gameState && gameState.urbanizations) {
@@ -21,7 +23,7 @@ function getCityProperties(gameState: GameState|undefined, map: GameMap, coordin
 class RenderMapBuilder {
     private gameState: GameState|undefined;
     private map: GameMap;
-    private hexRenderer: HexRenderer;
+    public hexRenderer: HexRenderer;
 
     constructor(gameState: GameState|undefined, map: GameMap, userSession: UserSession|undefined) {
         this.gameState = gameState;
@@ -176,19 +178,25 @@ function ViewMapComponent({gameState, activePlayer, map}: {gameState: GameState|
 
                 for (let i = 1; i < link.steps.length; i++) {
                     hex = applyMapDirection(map, gameState, pendingBuildAction, hex, link.steps[i-1]);
+
+                    // If there is a track placement on this hex, skip rendering here
+                    let hasTilePlacement = false;
+                    if (pendingBuildAction && pendingBuildAction.trackPlacements) {
+                        for (let trackPlacement of pendingBuildAction.trackPlacements) {
+                            if (trackPlacement.hex.x === hex.x && trackPlacement.hex.y === hex.y) {
+                                hasTilePlacement = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (hasTilePlacement) {
+                        continue;
+                    }
+
                     let cityProperties = getCityProperties(gameState, map, hex);
                     if (!cityProperties) {
                         let left = oppositeDirection(link.steps[i-1]);
                         let right = link.steps[i];
-
-                        // If this track is being redirected by a pending action, change "right" to match
-                        if (!link.complete && link.owner === activePlayer && pendingBuildAction && pendingBuildAction.trackRedirects) {
-                            for (let pendingRedirect of pendingBuildAction.trackRedirects) {
-                                if (pendingRedirect.hex.x === hex.x && pendingRedirect.hex.y === hex.y) {
-                                    right = pendingRedirect.track;
-                                }
-                            }
-                        }
 
                         if (map.getHexType(hex) === HexType.TOWN) {
                             renderer.renderTownTrack(hex, left, link.owner);
@@ -211,6 +219,8 @@ function ViewMapComponent({gameState, activePlayer, map}: {gameState: GameState|
 
         // Render pending build action
         if (pendingBuildAction) {
+            let mapTileState = new MapTileState(map, gameState);
+
             if (pendingBuildAction.urbanization) {
                 renderer.renderCityHex(pendingBuildAction.urbanization.hex, urbCityProperties(pendingBuildAction.urbanization.city));
             }
@@ -218,7 +228,13 @@ function ViewMapComponent({gameState, activePlayer, map}: {gameState: GameState|
                 renderer.renderTownTrack(townPlacement.hex, townPlacement.track, activePlayer);
             }
             for (let trackPlacement of pendingBuildAction.trackPlacements) {
-                renderer.renderTrack(trackPlacement.hex, trackPlacement.track[0], trackPlacement.track[1], activePlayer);
+                renderTrackTile(mapTileState.getTileState(trackPlacement.hex).routes,
+                        gameState,
+                        activePlayer,
+                        trackPlacement.hex,
+                        trackPlacement.tile,
+                        trackPlacement.rotation as Rotation,
+                        renderer.hexRenderer);
             }
         }
 
