@@ -1,8 +1,8 @@
-import {Button, Header, Loader, Table, TableBody, TableHeader, TableHeaderCell, TableRow} from "semantic-ui-react";
+import {Button, Header, Loader} from "semantic-ui-react";
 import {useEffect, useState} from "react";
 import {Link} from "react-router";
-import {ListGames, ListGamesResponse} from "../api/api.ts";
-import GameRow from "../components/GameRow.tsx";
+import {GameSummary, ListGames, ListGamesResponse} from "../api/api.ts";
+import {GameSummaryTable} from "../components/GameSummaryTable.tsx";
 
 function Games() {
     let [games, setGames] = useState<ListGamesResponse|undefined>(undefined);
@@ -19,17 +19,25 @@ function Games() {
         table = <Loader active={true} />
     } else {
         if (games.games) {
-            table = <Table celled>
-                <TableHeader>
-                    <TableRow>
-                        <TableHeaderCell>Name</TableHeaderCell>
-                        <TableHeaderCell>Number of Players</TableHeaderCell>
-                        <TableHeaderCell>Map</TableHeaderCell>
-                        <TableHeaderCell>Status</TableHeaderCell>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>{games.games.map(game => <GameRow key={game.id} game={game} />)}</TableBody>
-            </Table>;
+            let availableGames: GameSummary[] = [];
+            let activeGames: GameSummary[] = [];
+            let finishedGames: GameSummary[] = [];
+
+            for (let game of games.games) {
+                if (!game.started && game.joinedUsers.length < game.maxPlayers) {
+                    availableGames.push(game);
+                } else if (game.finished) {
+                    finishedGames.push(game);
+                } else {
+                    activeGames.push(game);
+                }
+            }
+
+            table = <>
+                <GameSummaryTable games={availableGames} title="Waiting For Players" />
+                <GameSummaryTable games={activeGames} title="Active Games" />
+                <GameSummaryTable games={finishedGames} title="Finished Games" />
+            </>
         }
     }
 
