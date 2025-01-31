@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS game_log (
     description text,
     new_active_player text,
     new_game_state text,
+    reversible int,
     PRIMARY KEY (game_id, timestamp)
 );
 

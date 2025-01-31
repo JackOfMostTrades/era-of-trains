@@ -266,6 +266,7 @@ func (server *GameServer) createHttpMux() http.Handler {
 	mux.HandleFunc("/api/getGameChat", jsonHandler(server, server.getGameChat))
 	mux.HandleFunc("/api/sendGameChat", jsonHandler(server, server.sendGameChat))
 	mux.HandleFunc("/api/pollGameStatus", jsonHandler(server, server.pollGameStatus))
+	mux.HandleFunc("/api/undoMove", jsonHandler(server, server.undoMove))
 	return mux
 }
 

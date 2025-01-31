@@ -337,6 +337,7 @@ export interface GameLogEntry {
     userId: string;
     action: string;
     description: string;
+    reversible: boolean;
 }
 
 export interface GetGameLogsRequest {
@@ -420,4 +421,13 @@ export interface PollGameStatusResponse {
 }
 export function PollGameStatus(req: PollGameStatusRequest): Promise<PollGameStatusResponse> {
     return doApiCall('/api/pollGameStatus', req);
+}
+
+export interface UndoMoveRequest {
+    gameId: string;
+}
+export interface UndoMoveResponse {
+}
+export function UndoMove(req: UndoMoveRequest): Promise<UndoMoveResponse> {
+    return doApiCall('/api/undoMove', req);
 }

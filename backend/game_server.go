@@ -694,7 +694,7 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 	}
 
 	// Log the start of the game
-	stmt, err = server.db.Prepare("INSERT INTO game_log (game_id,timestamp,user_id,action,description,new_active_player,new_game_state) VALUES(?, ?, ?, ?, ?, ?, ?)")
+	stmt, err = server.db.Prepare("INSERT INTO game_log (game_id,timestamp,user_id,action,description,new_active_player,new_game_state,reversible) VALUES(?, ?, ?, ?, ?, ?, ?, 0)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -848,6 +848,7 @@ type GameLogEntry struct {
 	UserId      string `json:"userId"`
 	Action      string `json:"action"`
 	Description string `json:"description"`
+	Reversible  bool   `json:"reversible"`
 }
 
 type GetGameLogsRequest struct {
@@ -858,7 +859,7 @@ type GetGameLogsResponse struct {
 }
 
 func (server *GameServer) getGameLogs(ctx *RequestContext, req *GetGameLogsRequest) (resp *GetGameLogsResponse, err error) {
-	stmt, err := server.db.Prepare("SELECT timestamp,user_id,action,description FROM game_log WHERE game_id=? ORDER BY timestamp ASC")
+	stmt, err := server.db.Prepare("SELECT timestamp,user_id,action,description,reversible FROM game_log WHERE game_id=? ORDER BY timestamp ASC")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -875,7 +876,8 @@ func (server *GameServer) getGameLogs(ctx *RequestContext, req *GetGameLogsReque
 		var userId string
 		var action sql.NullString
 		var description string
-		err = rows.Scan(&timestamp, &userId, &action, &description)
+		var reversibleFlag int
+		err = rows.Scan(&timestamp, &userId, &action, &description, &reversibleFlag)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan row: %v", err)
 		}
@@ -884,6 +886,7 @@ func (server *GameServer) getGameLogs(ctx *RequestContext, req *GetGameLogsReque
 			UserId:      userId,
 			Action:      action.String,
 			Description: description,
+			Reversible:  reversibleFlag != 0,
 		})
 	}
 
@@ -1251,4 +1254,78 @@ func (server *GameServer) pollGameStatus(ctx *RequestContext, req *PollGameStatu
 		LastMove: int(lastMove.Int64),
 		LastChat: int(lastChat.Int64),
 	}, nil
+}
+
+type UndoMoveRequest struct {
+	GameId string `json:"gameId"`
+}
+type UndoMoveResponse struct {
+}
+
+func (server *GameServer) undoMove(ctx *RequestContext, req *UndoMoveRequest) (resp *UndoMoveResponse, err error) {
+	trx, err := server.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer trx.Rollback()
+
+	var lastTimestamp int
+	var lastPlayer string
+	var lastWasReversible int
+	stmt, err := trx.Prepare("SELECT timestamp,user_id,reversible FROM game_log WHERE game_id=? ORDER BY timestamp DESC LIMIT 1")
+	if err != nil {
+		return nil, err
+	}
+	row := stmt.QueryRow(req.GameId)
+	err = row.Scan(&lastTimestamp, &lastPlayer, &lastWasReversible)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
+		}
+		return nil, err
+	}
+	if lastPlayer != ctx.User.Id {
+		return nil, &HttpError{"caller did not perform the last move", http.StatusBadRequest}
+	}
+	if lastWasReversible == 0 {
+		return nil, &HttpError{"last move is not reversible", http.StatusBadRequest}
+	}
+
+	var priorState string
+	stmt, err = trx.Prepare("SELECT new_game_state FROM game_log WHERE game_id=? AND timestamp < ? ORDER BY TIMESTAMP DESC LIMIT 1")
+	if err != nil {
+		return nil, err
+	}
+	row = stmt.QueryRow(req.GameId, lastTimestamp)
+	err = row.Scan(&priorState)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply the reverted game state
+	stmt, err = trx.Prepare("UPDATE games SET active_player_id=?,game_state=? WHERE id=?")
+	if err != nil {
+		return nil, err
+	}
+	_, err = stmt.Exec(lastPlayer, priorState, req.GameId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add a log of the undo action
+	stmt, err = trx.Prepare("INSERT INTO game_log (game_id,timestamp,user_id,action,description,new_active_player,new_game_state,reversible) VALUES(?, ?, ?, 'undo', ?, ?, ?, 0)")
+	if err != nil {
+		return nil, err
+	}
+	_, err = stmt.Exec(req.GameId, time.Now().Unix(), lastPlayer, fmt.Sprintf("%s undid their previous action", ctx.User.Nickname),
+		lastPlayer, priorState)
+	if err != nil {
+		return nil, err
+	}
+	err = trx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
+	}
+
+	return &UndoMoveResponse{}, nil
 }

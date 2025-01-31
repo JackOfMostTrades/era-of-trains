@@ -97,6 +97,7 @@ type confirmMoveHandler struct {
 	gameState      *common.GameState
 	activePlayer   string
 	logs           []string
+	reversible     bool
 	playerIdToNick map[string]string
 	randProvider   common.RandProvider
 	gameFinished   bool
@@ -127,6 +128,7 @@ func newConfirmMoveHandler(server *GameServer, gameId string, gameMap maps.GameM
 		playerIdToNick: make(map[string]string),
 		randProvider:   server.randProvider,
 		gameFinished:   false,
+		reversible:     true,
 	}
 
 	stmt, err := server.db.Prepare("SELECT id,nickname FROM users INNER JOIN game_player_map ON users.id=game_player_map.player_user_id WHERE game_player_map.game_id=?")
@@ -224,10 +226,11 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 
 	if handler.gameFinished {
 		finishedFlag = 1
+		handler.reversible = false
 	}
 
 	// Log the action
-	stmt, err = server.db.Prepare("INSERT INTO game_log (game_id,timestamp,user_id,action,description,new_active_player,new_game_state) VALUES(?, ?, ?, ?, ?, ?, ?)")
+	stmt, err = server.db.Prepare("INSERT INTO game_log (game_id,timestamp,user_id,action,description,new_active_player,new_game_state,reversible) VALUES(?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare query: %v", err)
 	}
@@ -237,7 +240,7 @@ func (server *GameServer) confirmMove(ctx *RequestContext, req *ConfirmMoveReque
 		return nil, fmt.Errorf("failed to serialze the request for logging: %v", err)
 	}
 	_, err = stmt.Exec(req.GameId, time.Now().Unix(), ctx.User.Id, string(reqString), strings.Join(handler.logs, "\n"),
-		handler.activePlayer, string(newGameStateStr))
+		handler.activePlayer, string(newGameStateStr), boolToInt(handler.reversible))
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
@@ -946,6 +949,9 @@ func (handler *confirmMoveHandler) handleMoveGoodsAction(moveGoodsAction *MoveGo
 						handler.Log("A %s cube was drawn for the production action.",
 							gameState.ProductionCubes[n].String())
 					}
+
+					// Random draw makes action non-reversible
+					handler.reversible = false
 				}
 			}
 		} else {
@@ -1143,6 +1149,8 @@ func (handler *confirmMoveHandler) executeGoodsGrowthPhase(gameMap maps.GameMap)
 
 	// Advance to next turn
 	gameState.TurnNumber += 1
+	// Goods growth phase rolls dice and makes the action non-reversible
+	handler.reversible = false
 
 	// Determine if the game is over
 	turnLimit := gameMap.GetTurnLimit(numPlayers)

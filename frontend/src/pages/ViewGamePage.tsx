@@ -3,11 +3,14 @@ import {ReactNode, useContext, useEffect, useState} from "react";
 import {useParams} from "react-router";
 import {
     GamePhase,
+    GetGameLogs,
+    GetGameLogsResponse,
     JoinGame,
     LeaveGame,
     PlayerColor,
     PollGameStatus,
     StartGame,
+    UndoMove,
     User,
     ViewGame,
     ViewGameResponse
@@ -28,6 +31,7 @@ import {GameMap, maps} from "../maps";
 import "./ViewGamePage.css";
 import {mapNameToDisplayName, specialActionToDisplayName} from "../util.ts";
 import GameChat from "../components/GameChat.tsx";
+import ErrorContext from "../ErrorContext.tsx";
 
 function WaitingForPlayersPage({game, onJoin, onStart}: {game: ViewGameResponse, onJoin: () => Promise<void>, onStart: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
@@ -193,13 +197,32 @@ function PlayerStatus({game, map, onConfirmMove}: { game: ViewGameResponse, map:
     </>
 }
 
+function UndoSegment({gameId, reload}: {gameId: string, reload: () => Promise<void>}) {
+    let [loading, setLoading] = useState<boolean>(false);
+    let {setError} = useContext(ErrorContext);
+
+    return <Segment>
+        <Button negative loading={loading} onClick={() => {
+            setLoading(true);
+            return UndoMove({gameId: gameId})
+                .then(() => {
+                    return reload();
+                }).catch(err => {
+                    setError(err);
+                }).finally(() => {
+                    setLoading(false);
+                })
+        }}>Undo</Button>
+    </Segment>
+}
+
 function ViewGamePage() {
     let params = useParams();
     let userSession = useContext(UserSessionContext);
     let gameId = params.gameId;
 
     let [game, setGame] = useState<ViewGameResponse|undefined>(undefined);
-    let [reloadTime, setReloadTime] = useState<number>(0);
+    let [gameLogs, setGameLogs] = useState<GetGameLogsResponse|undefined>(undefined);
     let [lastChat, setLastChat] = useState<number>(0);
 
     const reload: () => Promise<void> = () => {
@@ -207,8 +230,9 @@ function ViewGamePage() {
         if (gameId) {
             return ViewGame({gameId: gameId}).then(res => {
                 setGame(res);
-                setReloadTime(Date.now());
-            });
+            }).then(() => GetGameLogs({gameId: gameId}).then(res => {
+                setGameLogs(res);
+            }))
         } else {
             setGame(undefined);
             return Promise.resolve();
@@ -263,6 +287,17 @@ function ViewGamePage() {
         </>
     }
 
+    let canUndo = false;
+    if (gameLogs && gameLogs.logs) {
+        let maxTimestamp = 0;
+        for (let log of gameLogs.logs) {
+            if (log.timestamp > maxTimestamp) {
+                maxTimestamp = log.timestamp;
+                canUndo = (log.reversible && log.userId === userSession.userInfo?.user.id);
+            }
+        }
+    }
+
     let map = maps[game.mapName];
     let mapInfo = map.getMapInfo();
     return <>
@@ -272,10 +307,11 @@ function ViewGamePage() {
             <GameChat gameId={game.id} lastChat={lastChat} gameUsers={game.joinedUsers} />
         </Segment>
         <PlayerStatus game={game} map={map} onConfirmMove={() => reload()}/>
+        {!canUndo ? null : <UndoSegment gameId={game.id} reload={reload} />}
         <ViewMapComponent gameState={game.gameState} activePlayer={game.activePlayer} map={map} />
         <GoodsGrowthTable game={game} map={map} />
         {!mapInfo ? null : <Segment><Header as='h2'>Map Info</Header>{mapInfo}</Segment>}
-        <GameLogsComponent gameId={game.id} game={game} reloadTime={reloadTime} />
+        <GameLogsComponent game={game} gameLogs={gameLogs} />
     </>
 }
 

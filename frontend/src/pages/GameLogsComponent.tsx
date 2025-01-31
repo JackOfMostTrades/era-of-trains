@@ -1,5 +1,5 @@
-import {ReactNode, useEffect, useState} from "react";
-import {GameLogEntry, GetGameLogs, GetGameLogsResponse, User, ViewGameResponse} from "../api/api.ts";
+import {ReactNode} from "react";
+import {GameLogEntry, GetGameLogsResponse, User, ViewGameResponse} from "../api/api.ts";
 import {
     Container,
     Header,
@@ -24,14 +24,7 @@ function LogRow({playerById, entry}: {playerById: { [playerId: string]: User }, 
     </TableRow>
 }
 
-function GameLogsComponent({ gameId, game, reloadTime }: {gameId: string, game: ViewGameResponse, reloadTime: number}) {
-    let [gameLogs, setGameLogs] = useState<GetGameLogsResponse|undefined>(undefined);
-    useEffect(() => {
-        GetGameLogs({gameId: gameId}).then(res => {
-            setGameLogs(res);
-        })
-    }, [gameId, reloadTime]);
-
+function GameLogsComponent({ game, gameLogs }: {game: ViewGameResponse, gameLogs: GetGameLogsResponse|undefined}) {
     let content: ReactNode;
     if (!gameLogs) {
         content = <Loader active />
