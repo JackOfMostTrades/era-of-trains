@@ -76,7 +76,9 @@ func handleJsonRequest[ReqT any, ResT any](ctx *RequestContext, handler func(ctx
 	}
 
 	req := new(ReqT)
-	err := json.NewDecoder(ctx.HttpRequest.Body).Decode(req)
+	decoder := json.NewDecoder(ctx.HttpRequest.Body)
+	decoder.DisallowUnknownFields()
+	err := decoder.Decode(req)
 	if err != nil {
 		http.Error(ctx.HttpResponse, err.Error(), http.StatusBadRequest)
 		return
