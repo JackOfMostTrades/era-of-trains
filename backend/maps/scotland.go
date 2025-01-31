@@ -16,11 +16,12 @@ func (m *scotlandMap) PreAuctionHook(gameState *common.GameState, log LogFun) er
 	if gameState.PlayerActions[gameState.PlayerOrder[0]] == common.TURN_ORDER_PASS_SPECIAL_ACTION {
 		// Player order doesn't change, but skip auction
 		log("Auction is skipped because because of special turn order pass behavior.")
-		gameState.GamePhase = common.CHOOSE_SPECIAL_ACTIONS_GAME_PHASE
+		gameState.AuctionState[gameState.PlayerOrder[1]] = -1
+		gameState.AuctionState[gameState.PlayerOrder[0]] = -2
 	} else if gameState.PlayerActions[gameState.PlayerOrder[1]] == common.TURN_ORDER_PASS_SPECIAL_ACTION {
 		log("Auction is skipped because because of special turn order pass behavior.")
-		gameState.PlayerOrder[0], gameState.PlayerOrder[1] = gameState.PlayerOrder[1], gameState.PlayerOrder[0]
-		gameState.GamePhase = common.CHOOSE_SPECIAL_ACTIONS_GAME_PHASE
+		gameState.AuctionState[gameState.PlayerOrder[0]] = -1
+		gameState.AuctionState[gameState.PlayerOrder[1]] = -2
 	}
 	return nil
 }
