@@ -7,14 +7,11 @@ import (
 	"net/http"
 )
 
-func checkTownMarkerLimit(mapState [][]*TileState) error {
+func checkTownMarkerLimit(mapState *MapState) error {
 	townMarkerCount := 0
-	for y := 0; y < len(mapState); y++ {
-		for x := 0; x < len(mapState[y]); x++ {
-			ts := mapState[y][x]
-			if ts.HasTown && !ts.IsCity && (len(ts.Routes) == 2 || len(ts.Routes) == 4) {
-				townMarkerCount += 1
-			}
+	for _, ts := range mapState.GetAllTileState() {
+		if ts.isTown && !ts.isCity && (len(ts.routes) == 2 || len(ts.routes) == 4) {
+			townMarkerCount += 1
 		}
 	}
 	if townMarkerCount > 8 {
@@ -23,7 +20,7 @@ func checkTownMarkerLimit(mapState [][]*TileState) error {
 	return nil
 }
 
-func routesEqual(a [][2]common.Direction, b []Route) bool {
+func routesEqual(a [][2]common.Direction, b []*Route) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -43,7 +40,7 @@ func routesEqual(a [][2]common.Direction, b []Route) bool {
 	return true
 }
 
-func getTrackTileForRoutes(routes []Route) tiles.TrackTile {
+func getTrackTileForRoutes(routes []*Route) tiles.TrackTile {
 	for _, tile := range tiles.AllTrackTiles {
 		tileRoutes := tiles.GetRoutesForTile(tile)
 		for rotation := 0; rotation < 6; rotation++ {
@@ -61,7 +58,7 @@ func getTrackTileForRoutes(routes []Route) tiles.TrackTile {
 	return 0
 }
 
-func checkTrackTileLimit(mapState [][]*TileState) error {
+func checkTrackTileLimit(mapState *MapState) error {
 	componentCount := map[tiles.TrackTile]int{
 		tiles.STRAIGHT_TRACK_TILE:     48,
 		tiles.SHARP_CURVE_TRACK_TILE:  7,
@@ -77,21 +74,18 @@ func checkTrackTileLimit(mapState [][]*TileState) error {
 		tiles.STRAIGHT_AND_SHARP_TRACK_TILE:     1,
 	}
 
-	for y := 0; y < len(mapState); y++ {
-		for x := 0; x < len(mapState[y]); x++ {
-			ts := mapState[y][x]
-			if ts.HasTown || ts.IsCity || len(ts.Routes) == 0 {
-				continue
-			}
-			tile := getTrackTileForRoutes(ts.Routes)
-			if tile == 0 {
-				return fmt.Errorf("failed to identify track tile type for hex (%d,%d)", x, y)
-			}
-			if componentCount[tile] == 0 {
-				return invalidMoveErr("ran out of track tiles for tile type %d", tile)
-			}
-			componentCount[tile] -= 1
+	for _, ts := range mapState.GetAllTileState() {
+		if ts.isTown || ts.isCity || len(ts.routes) == 0 {
+			continue
 		}
+		tile := getTrackTileForRoutes(ts.routes)
+		if tile == 0 {
+			return fmt.Errorf("failed to identify track tile type for hex")
+		}
+		if componentCount[tile] == 0 {
+			return invalidMoveErr("ran out of track tiles for tile type %d", tile)
+		}
+		componentCount[tile] -= 1
 	}
 
 	return nil

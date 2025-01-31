@@ -7,34 +7,20 @@ import (
 	"github.com/JackOfMostTrades/eot/backend/tiles"
 )
 
-type Route struct {
-	// Default value and meaningless if there is a town. Otherwise, one edge of the route
-	Left common.Direction
-	// Other edge of the route
-	Right common.Direction
-	// What link is this a part of?
-	Link *common.Link
-}
-
-type TileState struct {
-	IsCity  bool
-	HasTown bool
-	Routes  []Route
-}
-
 func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownPlacement) error {
 	hex := townPlacement.Hex
 	direction := townPlacement.Track
-	ts := performer.mapState[hex.Y][hex.X]
+	mapState := newMapState(performer.gameMap, performer.gameState)
+	ts := mapState.GetTileState(hex)
 
-	if !ts.HasTown {
+	if !ts.isTown {
 		return invalidMoveErr("cannot build town track on a non-town hex")
 	}
-	if len(ts.Routes)+1 > 4 {
+	if len(ts.routes)+1 > 4 {
 		return invalidMoveErr("cannot build more than four tracks on a town hex")
 	}
 	// Verify that none of the new routes overlap with existing routes
-	for _, existingRoute := range ts.Routes {
+	for _, existingRoute := range ts.routes {
 		if existingRoute.Right == townPlacement.Track {
 			return invalidMoveErr("cannot build over existing track")
 		}
@@ -45,9 +31,9 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 	// If it hits nothing, add an incomplete new link for the player
 
 	nextHex := applyDirection(hex, direction)
-	next := performer.mapState[nextHex.Y][nextHex.X]
+	next := mapState.GetTileState(nextHex)
 	var link *common.Link
-	if next.IsCity {
+	if next.isCity {
 		link = &common.Link{
 			SourceHex: hex,
 			Owner:     performer.activePlayer,
@@ -57,7 +43,7 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 		performer.gameState.Links = append(performer.gameState.Links, link)
 	} else {
 		isJoiningRoute := false
-		for _, route := range next.Routes {
+		for _, route := range next.routes {
 			if route.Left == direction.Opposite() || route.Right == direction.Opposite() {
 				// Check that we are not joining into a different player's track
 				if route.Link.Owner != "" && route.Link.Owner != performer.activePlayer {
@@ -82,12 +68,6 @@ func (performer *buildActionPerformer) attemptTownPlacement(townPlacement *TownP
 			performer.extendedLinks[link] = true
 		}
 	}
-
-	ts.Routes = append(ts.Routes, Route{
-		Left:  direction,
-		Right: direction,
-		Link:  link,
-	})
 
 	return nil
 }
@@ -127,19 +107,19 @@ func (performer *buildActionPerformer) attemptTeleportLinkPlacement(teleportLink
 }
 
 func (performer *buildActionPerformer) determineTownBuildCost(hex common.Coordinate, tracks []common.Direction) (int, error) {
-	ts := performer.mapState[hex.Y][hex.X]
+	ts := newMapState(performer.gameMap, performer.gameState).GetTileState(hex)
 
 	var cost int
-	cost = performer.gameMap.GetTownBuildCost(performer.gameState, performer.activePlayer, hex, len(tracks), len(ts.Routes) != 0)
+	cost = performer.gameMap.GetTownBuildCost(performer.gameState, performer.activePlayer, hex, len(tracks), len(ts.routes) != 0)
 	return cost, nil
 }
 
 func (performer *buildActionPerformer) determineTrackBuildCost(hex common.Coordinate, tile tiles.TrackTile) (int, error) {
-	ts := performer.mapState[hex.Y][hex.X]
+	ts := newMapState(performer.gameMap, performer.gameState).GetTileState(hex)
 
 	hexType := performer.gameMap.GetHexType(hex)
 	cost, err := performer.gameMap.GetTrackBuildCost(performer.gameState, performer.activePlayer,
-		hexType, hex, tiles.GetTrackType(tile), len(ts.Routes) != 0)
+		hexType, hex, tiles.GetTrackType(tile), len(ts.routes) != 0)
 	if err != nil {
 		return 0, fmt.Errorf("failed to determine cost for placing track tile: %v", err)
 	}
@@ -148,15 +128,10 @@ func (performer *buildActionPerformer) determineTrackBuildCost(hex common.Coordi
 }
 
 func (performer *buildActionPerformer) attemptTrackPlacement(trackPlacement *TrackPlacement) error {
-	tilePlacer, err := newTilePlacer(performer)
-	if err != nil {
-		return err
-	}
-	err = tilePlacer.applyTrackTilePlacement(trackPlacement.Hex,
+	tilePlacer := newTilePlacer(performer)
+	err := tilePlacer.applyTrackTilePlacement(trackPlacement.Hex,
 		trackPlacement.Tile,
-		trackPlacement.Rotation,
-		performer.activePlayer,
-		performer.gameState)
+		trackPlacement.Rotation)
 	if err != nil {
 		return err
 	}
@@ -169,7 +144,6 @@ type buildActionPerformer struct {
 	gameState     *common.GameState
 	activePlayer  string
 	gameMap       maps.GameMap
-	mapState      [][]*TileState
 }
 
 func newBuildActionPerformer(gameMap maps.GameMap, gameState *common.GameState, activePlayer string) *buildActionPerformer {
@@ -179,67 +153,6 @@ func newBuildActionPerformer(gameMap maps.GameMap, gameState *common.GameState, 
 		gameState:     gameState,
 		activePlayer:  activePlayer,
 		gameMap:       gameMap,
-		mapState:      make([][]*TileState, gameMap.GetHeight()),
-	}
-
-	for y := range performer.mapState {
-		performer.mapState[y] = make([]*TileState, gameMap.GetWidth())
-		for x := range performer.mapState[y] {
-			hexType := gameMap.GetHexType(common.Coordinate{X: x, Y: y})
-			performer.mapState[y][x] = &TileState{
-				IsCity:  hexType == maps.CITY_HEX_TYPE,
-				HasTown: hexType == maps.TOWN_HEX_TYPE,
-				Routes:  nil,
-			}
-		}
-	}
-	for _, urb := range gameState.Urbanizations {
-		performer.mapState[urb.Hex.Y][urb.Hex.X].IsCity = true
-	}
-	for _, link := range gameState.Links {
-		hex := link.SourceHex
-		tileState := performer.mapState[hex.Y][hex.X]
-		if tileState.HasTown {
-			tileState.Routes = append(tileState.Routes, Route{
-				Left:  link.Steps[0],
-				Right: link.Steps[0],
-				Link:  link,
-			})
-		}
-		for idx := 1; idx < len(link.Steps); idx++ {
-			hex = applyDirection(hex, link.Steps[idx-1])
-			tileState = performer.mapState[hex.Y][hex.X]
-			if tileState.IsCity {
-				// Do nothing
-			} else if tileState.HasTown {
-				tileState.Routes = append(tileState.Routes, Route{
-					Left:  link.Steps[idx-1].Opposite(),
-					Right: link.Steps[idx-1].Opposite(),
-					Link:  link,
-				})
-			} else {
-				// Ordinary track in this tile
-				tileState.Routes = append(tileState.Routes, Route{
-					Left:  link.Steps[idx-1].Opposite(),
-					Right: link.Steps[idx],
-					Link:  link,
-				})
-			}
-		}
-		// If this is a complete link that ends at a town hex, also add the last step to the town hex
-		if link.Complete {
-			lastStep := link.Steps[len(link.Steps)-1]
-			hex = applyDirection(hex, lastStep)
-			tileState = performer.mapState[hex.Y][hex.X]
-			if tileState.HasTown && !tileState.IsCity {
-				tileState.Routes = append(tileState.Routes, Route{
-					Left:  lastStep.Opposite(),
-					Right: lastStep.Opposite(),
-					Link:  link,
-				})
-			}
-		}
-
 	}
 
 	return performer
@@ -272,19 +185,16 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 		}
 
 		gameState.Urbanizations = append(gameState.Urbanizations, buildAction.Urbanization)
-		ts := performer.mapState[buildAction.Urbanization.Hex.Y][buildAction.Urbanization.Hex.X]
-		ts.IsCity = true
-		ts.Routes = nil
 		handler.Log("%s urbanizes new city %c at %s",
 			handler.ActivePlayerNick(), 'A'+buildAction.Urbanization.City, renderHexCoordinate(buildAction.Urbanization.Hex))
 
 		// Check if there is adjacent incomplete link that becomes completed by this build
+		mapState := newMapState(performer.gameMap, performer.gameState)
 		for _, direction := range common.ALL_DIRECTIONS {
 			adjacentHex := applyDirection(buildAction.Urbanization.Hex, direction)
-			if adjacentHex.Y >= 0 && adjacentHex.Y < len(performer.mapState) &&
-				adjacentHex.X >= 0 && adjacentHex.X < len(performer.mapState[adjacentHex.Y]) {
-				ts := performer.mapState[adjacentHex.Y][adjacentHex.X]
-				for _, route := range ts.Routes {
+			ts := mapState.GetTileState(adjacentHex)
+			if ts != nil {
+				for _, route := range ts.routes {
 					if route.Left == direction.Opposite() || route.Right == direction.Opposite() {
 						route.Link.Complete = true
 					}
@@ -350,22 +260,6 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	}
 	gameState.PlayerCash[performer.activePlayer] -= totalCost
 
-	// For each placement...
-	//   If it is a town...
-	//     (Verify upgrade is valid and): determine new player's routes; for each:
-	//        If it hits a stop add a new link for the player
-	//        If it hits player exist track, add this new step to the link and mark it as complete
-	//        If it hits nothing, add an incomplete new link for the player
-	//   Else (not a stop)
-	//     (Verify upgrade is valid and): determine new player's routes; for each:
-	//        On each side, determine if it hits a stop or extends the player's track
-	//          If nothing on either side, this is invalid build
-	//          If stop on one side, add this as a new incomplete link
-	//          If track on one side, extend existing incomplete link
-	//          If track on both sides, join the two incomplete links as a single complete link
-	//          If stop on both sides, add new complete track
-	//          If track and stop, extend existing incomplete track as a completed link
-
 	for _, townPlacement := range buildAction.TownPlacements {
 		err := performer.attemptTownPlacement(townPlacement)
 		if err != nil {
@@ -394,11 +288,12 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 	handler.Log("%s paid a total of $%d for track placements.", handler.ActivePlayerNick(), totalCost)
 
 	// Verify we have not exceeded any component limits by this build
-	err = checkTownMarkerLimit(performer.mapState)
+	mapState := newMapState(handler.gameMap, gameState)
+	err = checkTownMarkerLimit(mapState)
 	if err != nil {
 		return err
 	}
-	err = checkTrackTileLimit(performer.mapState)
+	err = checkTrackTileLimit(mapState)
 	if err != nil {
 		return err
 	}

@@ -7,94 +7,26 @@ import (
 	"slices"
 )
 
-type dangler struct {
-	from common.Direction
-	link *common.Link
-}
-
-type tileState struct {
-	routes   []*Route
-	danglers []*dangler
-	isTown   bool
-	isCity   bool
-}
-
 type tilePlacer struct {
 	performer *buildActionPerformer
-	tileState [][]*tileState
+	mapState  *MapState
 }
 
-func newTilePlacer(performer *buildActionPerformer) (*tilePlacer, error) {
-	gameMap := performer.gameMap
-	gameState := performer.gameState
-
-	ts := make([][]*tileState, gameMap.GetHeight())
-	for y := 0; y < gameMap.GetHeight(); y++ {
-		ts[y] = make([]*tileState, gameMap.GetWidth())
-		for x := 0; x < gameMap.GetWidth(); x++ {
-			hexType := gameMap.GetHexType(common.Coordinate{X: x, Y: y})
-			ts[y][x] = &tileState{
-				routes:   nil,
-				danglers: nil,
-				isTown:   hexType == maps.TOWN_HEX_TYPE,
-				isCity:   hexType == maps.CITY_HEX_TYPE,
-			}
-		}
-	}
-
-	if gameState != nil {
-		for _, urb := range gameState.Urbanizations {
-			ts[urb.Hex.Y][urb.Hex.X].isCity = true
-		}
-		for _, link := range gameState.Links {
-			hex := link.SourceHex
-			ts[hex.Y][hex.X].routes = append(ts[hex.Y][hex.X].routes, &Route{
-				Left:  link.Steps[0],
-				Right: link.Steps[0],
-				Link:  link,
-			})
-
-			for i := 1; i < len(link.Steps); i++ {
-				hex = applyDirection(hex, link.Steps[i-1])
-				ts[hex.Y][hex.X].routes = append(ts[hex.Y][hex.X].routes, &Route{
-					Left:  link.Steps[i-1].Opposite(),
-					Right: link.Steps[i],
-					Link:  link,
-				})
-			}
-
-			if !link.Complete && len(link.Steps) > 1 {
-				ts[hex.Y][hex.X].danglers = append(ts[hex.Y][hex.X].danglers, &dangler{
-					from: link.Steps[len(link.Steps)-2].Opposite(),
-					link: link,
-				})
-			}
-
-			hex = applyDirection(hex, link.Steps[len(link.Steps)-1])
-			if ts[hex.Y][hex.X].isTown && link.Complete {
-				dir := link.Steps[len(link.Steps)-1].Opposite()
-				ts[hex.Y][hex.X].routes = append(ts[hex.Y][hex.X].routes, &Route{
-					Left:  dir,
-					Right: dir,
-					Link:  link,
-				})
-			}
-		}
-	}
-
+func newTilePlacer(performer *buildActionPerformer) *tilePlacer {
 	return &tilePlacer{
 		performer: performer,
-		tileState: ts,
-	}, nil
+		mapState:  newMapState(performer.gameMap, performer.gameState),
+	}
 }
 
 func (tp *tilePlacer) applyTrackTilePlacement(coordinate common.Coordinate,
 	tile tiles.TrackTile,
-	rotation int,
-	activePlayer string,
-	gameState *common.GameState) error {
+	rotation int) error {
 
-	ts := tp.tileState[coordinate.Y][coordinate.X]
+	activePlayer := tp.performer.activePlayer
+	gameState := tp.performer.gameState
+
+	ts := tp.mapState.GetTileState(coordinate)
 	if ts.isTown || ts.isCity {
 		return invalidMoveErr("cannot place track tile on city or town hex")
 	}
@@ -182,8 +114,8 @@ func (tp *tilePlacer) applyTrackTilePlacement(coordinate common.Coordinate,
 			}
 		}
 		if !isOldRoute {
-			var leftDangler *dangler
-			var rightDangler *dangler
+			var leftDangler *Dangler
+			var rightDangler *Dangler
 			for _, dangler := range ts.danglers {
 				if dangler.from == newRoute[0] {
 					leftDangler = dangler
@@ -217,16 +149,16 @@ func (tp *tilePlacer) applyTrackTilePlacement(coordinate common.Coordinate,
 				// Create a new route. The left or right side must be a city since it is not connecting to track
 				leftHex := applyDirection(coordinate, newRoute[0])
 				rightHex := applyDirection(coordinate, newRoute[1])
-				if tp.tileState[leftHex.Y][leftHex.X].isCity {
+				if tp.mapState.GetTileState(leftHex).isCity {
 					newLink := &common.Link{
 						SourceHex: leftHex,
 						Steps:     []common.Direction{newRoute[0].Opposite(), newRoute[1]},
 						Owner:     activePlayer,
-						Complete:  tp.tileState[rightHex.Y][rightHex.X].isCity,
+						Complete:  tp.mapState.GetTileState(rightHex).isCity,
 					}
 					gameState.Links = append(gameState.Links, newLink)
 					tp.performer.extendedLinks[newLink] = true
-				} else if tp.tileState[rightHex.Y][rightHex.X].isCity {
+				} else if tp.mapState.GetTileState(rightHex).isCity {
 					newLink := &common.Link{
 						SourceHex: rightHex,
 						Steps:     []common.Direction{newRoute[1].Opposite(), newRoute[0]},
@@ -260,7 +192,7 @@ func (tp *tilePlacer) applyTrackTilePlacement(coordinate common.Coordinate,
 				} else {
 					// If the other side is a city, we need to mark the link as complete
 					rightHex := applyDirection(coordinate, remainingDirection)
-					if tp.tileState[rightHex.Y][rightHex.X].isCity {
+					if tp.mapState.GetTileState(rightHex).isCity {
 						attachingLink.Complete = true
 					}
 				}
@@ -273,7 +205,7 @@ func (tp *tilePlacer) applyTrackTilePlacement(coordinate common.Coordinate,
 
 func (tp *tilePlacer) getAdjoiningLink(fromHex common.Coordinate, direction common.Direction) *common.Link {
 	hex := applyDirection(fromHex, direction)
-	ts := tp.tileState[hex.Y][hex.X]
+	ts := tp.mapState.GetTileState(hex)
 	opp := direction.Opposite()
 	for _, route := range ts.routes {
 		if route.Left == opp || route.Right == opp {
