@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/tiles"
 	"net/http"
 	"slices"
 	"strings"
@@ -48,8 +49,9 @@ type TrackRedirect struct {
 }
 
 type TrackPlacement struct {
-	Track [2]common.Direction `json:"track""`
-	Hex   common.Coordinate   `json:"hex"`
+	Tile     tiles.TrackTile   `json:"tile"`
+	Rotation int               `json:"rotation"`
+	Hex      common.Coordinate `json:"hex"`
 }
 
 type TeleportLinkPlacement struct {
@@ -60,7 +62,6 @@ type TeleportLinkPlacement struct {
 type BuildAction struct {
 	Urbanization           *common.Urbanization     `json:"urbanization"`
 	TownPlacements         []*TownPlacement         `json:"townPlacements"`
-	TrackRedirects         []*TrackRedirect         `json:"trackRedirects"`
 	TrackPlacements        []*TrackPlacement        `json:"trackPlacements"`
 	TeleportLinkPlacements []*TeleportLinkPlacement `json:"teleportLinkPlacements"`
 }

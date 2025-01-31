@@ -2,7 +2,7 @@ import {ReactNode, useContext} from "react";
 import {HexRenderer} from "./renderer/HexRenderer.tsx";
 import {GameMap} from "../maps";
 import "./TrackSelector.css";
-import {BasicTownTile, BasicTrackTile, MapTileState, Rotation, TOWN_TILES, TRACK_TILES,} from "../game/map_state.ts";
+import {BasicTownTile, MapTileState, Rotation, TOWN_TILES, TrackTiles,} from "../game/map_state.ts";
 import {Coordinate, Direction, GameState} from "../api/api.ts";
 import UserSessionContext from "../UserSessionContext.tsx";
 
@@ -46,14 +46,13 @@ export function TrackSelector(props: TrackSelectorProps) {
             }
         }
     } else {
-        for (let trackTypeId = 0; trackTypeId < TRACK_TILES.length; trackTypeId++) {
-            let basicTrackTile: BasicTrackTile = TRACK_TILES[trackTypeId];
+        for (let trackTile of TrackTiles) {
             for (let rotation: Rotation = 0; rotation < 6; rotation++) {
                 if (!mapTileState.isValidTrackPlacement(props.coordinate,
-                        basicTrackTile, rotation as Rotation, props.activePlayer)) {
+                        trackTile, rotation as Rotation, props.activePlayer)) {
                     continue;
                 }
-                let redirectedRoutes = mapTileState.getRedirectedRoutes(props.coordinate, basicTrackTile, rotation as Rotation);
+                let redirectedRoutes = mapTileState.getRedirectedRoutes(props.coordinate, trackTile, rotation as Rotation);
                 // FIXME: Backend only supports redirecting a single track at a time
                 if (redirectedRoutes.length > 1) {
                     continue;
@@ -82,7 +81,7 @@ export function TrackSelector(props: TrackSelectorProps) {
                         }, route.left, route.right, props.gameState.playerColor[route.owner]);
                     }
                 }
-                let newRoutes = mapTileState.getNewRoutes(props.coordinate, basicTrackTile, rotation as Rotation);
+                let newRoutes = mapTileState.getNewRoutes(props.coordinate, trackTile, rotation as Rotation);
                 for (let route of newRoutes) {
                     renderer.renderTrack({x: 0, y: 0}, route[0], route[1], props.gameState.playerColor[props.activePlayer]);
                 }

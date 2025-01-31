@@ -9,17 +9,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestGetTotalBuildCost(t *testing.T) {
-	testCase := func(expectedCost int, action common.SpecialAction, redirectCosts []int, townCosts []int, trackCosts []int, teleportCosts []int) func(t *testing.T) {
+	testCase := func(expectedCost int, action common.SpecialAction, townCosts []int, trackCosts []int, teleportCosts []int) func(t *testing.T) {
 		return func(t *testing.T) {
 			playerId := "123"
 			gameMap := &australiaMap{&basicMap{}}
 			gameState := &common.GameState{
 				PlayerActions: map[string]common.SpecialAction{playerId: action},
 			}
-			
-			cost := gameMap.GetTotalBuildCost(gameState, playerId, redirectCosts, townCosts, trackCosts, teleportCosts)
+
+			cost := gameMap.GetTotalBuildCost(gameState, playerId, townCosts, trackCosts, teleportCosts)
 			assert.Equal(t, expectedCost, cost)
 		}
 	}
@@ -27,13 +26,13 @@ func TestGetTotalBuildCost(t *testing.T) {
 	emptyArray := []int{}
 
 	t.Run("regular costs for non-engineer",
-		testCase(18, common.FIRST_BUILD_SPECIAL_ACTION, []int{3}, []int{4}, []int{5}, []int{6}))
+		testCase(15, common.FIRST_BUILD_SPECIAL_ACTION, []int{4}, []int{5}, []int{6}))
 
 	t.Run("handles empty arrays gracefully",
-		testCase(0, common.ENGINEER_SPECIAL_ACTION, emptyArray, emptyArray, emptyArray, emptyArray))
+		testCase(0, common.ENGINEER_SPECIAL_ACTION, emptyArray, emptyArray, emptyArray))
 
 	t.Run("ignores the most expensive element",
-		testCase(29, common.ENGINEER_SPECIAL_ACTION, []int{3, 7}, []int{4, 1}, []int{3, 5}, []int{9, 6}))
+		testCase(19, common.ENGINEER_SPECIAL_ACTION, []int{4, 1}, []int{3, 5}, []int{9, 6}))
 }
 
 func TestGetBuildLimit(t *testing.T) {
@@ -44,7 +43,7 @@ func TestGetBuildLimit(t *testing.T) {
 			gameState := &common.GameState{
 				PlayerActions: map[string]common.SpecialAction{playerId: action},
 			}
-			
+
 			result, err := gameMap.GetBuildLimit(gameState, playerId)
 			assert.Equal(t, expectedResult, result)
 			assert.Equal(t, nil, err)
@@ -62,14 +61,14 @@ func TestPopulateStartingCubes(t *testing.T) {
 	gameMap := &australiaMap{&basicMap{}}
 	gameState := &common.GameState{
 		CubeBag: map[common.Color]int{
-			common.BLUE: 12,
-			common.RED: 12,
+			common.BLUE:   12,
+			common.RED:    12,
 			common.PURPLE: 12,
 			common.YELLOW: 12,
-			common.BLACK: 20,
+			common.BLACK:  20,
 		},
 	}
-	
+
 	err := gameMap.PopulateStartingCubes(gameState, &common.CryptoRandProvider{})
 	assert.Equal(t, nil, err)
 

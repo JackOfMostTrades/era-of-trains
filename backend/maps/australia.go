@@ -11,12 +11,11 @@ type australiaMap struct {
 	*basicMap
 }
 
-
 func (b *australiaMap) GetTotalBuildCost(gameState *common.GameState, player string,
-	redirectCosts []int, townCosts []int, trackCosts []int, teleportCosts []int) int {
+	townCosts []int, trackCosts []int, teleportCosts []int) int {
 
 	baseCost := b.basicMap.GetTotalBuildCost(
-		gameState, player, redirectCosts, townCosts, trackCosts, teleportCosts)
+		gameState, player, townCosts, trackCosts, teleportCosts)
 
 	action := gameState.PlayerActions[player]
 	if action != common.ENGINEER_SPECIAL_ACTION {
@@ -24,7 +23,6 @@ func (b *australiaMap) GetTotalBuildCost(gameState *common.GameState, player str
 	}
 
 	allCosts := []int{}
-	allCosts = append(allCosts, redirectCosts...)
 	allCosts = append(allCosts, townCosts...)
 	allCosts = append(allCosts, trackCosts...)
 	allCosts = append(allCosts, teleportCosts...)
@@ -40,7 +38,6 @@ func (b *australiaMap) GetDeliveryBonus(coordinate common.Coordinate, color comm
 	}
 	return 0
 }
-
 
 func (*australiaMap) GetBuildLimit(gameState *common.GameState, player string) (int, error) {
 	action := gameState.PlayerActions[player]
@@ -77,11 +74,10 @@ func (b *australiaMap) PopulateStartingCubes(gameState *common.GameState, randPr
 	return b.basicMap.PopulateStartingCubes(gameState, randProvider)
 }
 
-
 func loadAustraliaMap() (GameMap, error) {
 	b, err := loadBasicMap("maps/australia.json")
 	if err != nil {
 		return nil, err
-  }
+	}
 	return &australiaMap{b}, nil
 }

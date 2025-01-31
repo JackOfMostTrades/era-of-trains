@@ -3,6 +3,7 @@ package maps
 import (
 	"fmt"
 	"github.com/JackOfMostTrades/eot/backend/common"
+	"github.com/JackOfMostTrades/eot/backend/tiles"
 )
 
 type LogFun = func(format string, a ...any)
@@ -21,8 +22,8 @@ type GameMap interface {
 
 	GetBuildLimit(gameState *common.GameState, player string) (int, error)
 	GetTownBuildCost(gameState *common.GameState, player string, hex common.Coordinate, routeCount int, isUpgrade bool) int
-	GetTrackBuildCost(gameState *common.GameState, player string, hexType HexType, hex common.Coordinate, trackType common.TrackType, isUpgrade bool) (int, error)
-	GetTotalBuildCost(gameState *common.GameState, player string, redirectCosts []int, townCosts []int, trackCosts []int, teleportCosts []int) int
+	GetTrackBuildCost(gameState *common.GameState, player string, hexType HexType, hex common.Coordinate, trackType tiles.TrackType, isUpgrade bool) (int, error)
+	GetTotalBuildCost(gameState *common.GameState, player string, townCosts []int, trackCosts []int, teleportCosts []int) int
 	GetTeleportLinkBuildCost(gameState *common.GameState, player string, hex common.Coordinate, direction common.Direction) int
 	GetIncomeReduction(gameState *common.GameState, player string) (int, error)
 	PostSetupHook(gameState *common.GameState, randProvider common.RandProvider) error
@@ -100,42 +101,42 @@ func (*AbstractGameMapImpl) GetTownBuildCost(gameState *common.GameState, player
 	return 1 + routeCount
 }
 
-func (*AbstractGameMapImpl) GetTrackBuildCost(gameState *common.GameState, player string, hexType HexType, hex common.Coordinate, trackType common.TrackType, isUpgrade bool) (int, error) {
+func (*AbstractGameMapImpl) GetTrackBuildCost(gameState *common.GameState, player string, hexType HexType, hex common.Coordinate, trackType tiles.TrackType, isUpgrade bool) (int, error) {
 	if isUpgrade {
 		switch trackType {
-		case common.SIMPLE_TRACK_TYPE:
-			break
-		case common.COMPLEX_COEXISTING_TRACK_TYPE:
+		case tiles.SIMPLE_TRACK_TYPE:
 			return 2, nil
-		case common.COMPLEX_CROSSING_TRACK_TYPE:
+		case tiles.COMPLEX_COEXISTING_TRACK_TYPE:
+			return 2, nil
+		case tiles.COMPLEX_CROSSING_TRACK_TYPE:
 			return 3, nil
 		}
 	} else {
 		if hexType == PLAINS_HEX_TYPE {
 			switch trackType {
-			case common.SIMPLE_TRACK_TYPE:
+			case tiles.SIMPLE_TRACK_TYPE:
 				return 2, nil
-			case common.COMPLEX_COEXISTING_TRACK_TYPE:
+			case tiles.COMPLEX_COEXISTING_TRACK_TYPE:
 				return 3, nil
-			case common.COMPLEX_CROSSING_TRACK_TYPE:
+			case tiles.COMPLEX_CROSSING_TRACK_TYPE:
 				return 4, nil
 			}
 		} else if hexType == RIVER_HEX_TYPE || hexType == HILLS_HEX_TYPE {
 			switch trackType {
-			case common.SIMPLE_TRACK_TYPE:
+			case tiles.SIMPLE_TRACK_TYPE:
 				return 3, nil
-			case common.COMPLEX_COEXISTING_TRACK_TYPE:
+			case tiles.COMPLEX_COEXISTING_TRACK_TYPE:
 				return 4, nil
-			case common.COMPLEX_CROSSING_TRACK_TYPE:
+			case tiles.COMPLEX_CROSSING_TRACK_TYPE:
 				return 5, nil
 			}
 		} else if hexType == MOUNTAIN_HEX_TYPE {
 			switch trackType {
-			case common.SIMPLE_TRACK_TYPE:
+			case tiles.SIMPLE_TRACK_TYPE:
 				return 4, nil
-			case common.COMPLEX_COEXISTING_TRACK_TYPE:
+			case tiles.COMPLEX_COEXISTING_TRACK_TYPE:
 				return 5, nil
-			case common.COMPLEX_CROSSING_TRACK_TYPE:
+			case tiles.COMPLEX_CROSSING_TRACK_TYPE:
 				return 6, nil
 			}
 		}
@@ -144,12 +145,9 @@ func (*AbstractGameMapImpl) GetTrackBuildCost(gameState *common.GameState, playe
 }
 
 func (*AbstractGameMapImpl) GetTotalBuildCost(gameState *common.GameState, player string,
-	redirectCosts []int, townCosts []int, trackCosts []int, teleportCosts []int) int {
+	townCosts []int, trackCosts []int, teleportCosts []int) int {
 
 	totalCost := 0
-	for _, cost := range redirectCosts {
-		totalCost += cost
-	}
 	for _, cost := range townCosts {
 		totalCost += cost
 	}

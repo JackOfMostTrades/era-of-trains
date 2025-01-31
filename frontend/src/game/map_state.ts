@@ -98,7 +98,7 @@ export class MapTileState {
     }
 
     public isValidTrackPlacement(coordinate: Coordinate,
-                                 tile: BasicTrackTile,
+                                 tile: TrackTile,
                                  rotation: Rotation,
                                  activePlayer: string): boolean {
         let tileState = this.tileState[coordinate.y][coordinate.x];
@@ -106,7 +106,7 @@ export class MapTileState {
             return false;
         }
 
-        let newTrackTile = new TrackTile(tile, rotation);
+        let newTrackTile = new MapTrackTile(tile, rotation);
 
         // Check that any routes that must be preserved are in fact preserved
         for (let oldRoute of tileState.routes) {
@@ -171,10 +171,10 @@ export class MapTileState {
     }
 
     public getNewRoutes(coordinate: Coordinate,
-                        tile: BasicTrackTile,
+                        tile: TrackTile,
                         rotation: Rotation): Array<[Direction, Direction]> {
         let tileState = this.tileState[coordinate.y][coordinate.x];
-        let newTrackTile = new TrackTile(tile, rotation);
+        let newTrackTile = new MapTrackTile(tile, rotation);
 
         let newRoutes: Array<[Direction, Direction]> = [];
         for (let route of newTrackTile.getRoutes()) {
@@ -204,10 +204,10 @@ export class MapTileState {
     }
 
     public getRedirectedRoutes(coordinate: Coordinate,
-                               tile: BasicTrackTile,
+                               tile: TrackTile,
                                rotation: Rotation): Array<[Direction, Direction]> {
         let tileState = this.tileState[coordinate.y][coordinate.x];
-        let newTrackTile = new TrackTile(tile, rotation);
+        let newTrackTile = new MapTrackTile(tile, rotation);
 
         let redirectedRoutes: Array<[Direction, Direction]> = [];
         for (let route of newTrackTile.getRoutes()) {
@@ -296,62 +296,67 @@ export class MapTileState {
     }
 }
 
-export type BasicTrackTile = Array<[Direction, Direction]>;
-
-export const TRACK_TILES: BasicTrackTile[] = [
+// This needs to match the trackTile enum in component_limit_checks.go
+export enum TrackTile {
     // Simple
-    // Straight
-    [[Direction.NORTH, Direction.SOUTH]],
-    // Gentle
-    [[Direction.NORTH, Direction.SOUTH_EAST]],
-    // Tight
-    [[Direction.NORTH, Direction.NORTH_EAST]],
+    STRAIGHT_TRACK_TILE = 1,
+    SHARP_CURVE_TRACK_TILE,
+    GENTLE_CURVE_TRACK_TILE,
 
     // Complex crossing
-    // X
-    [[Direction.NORTH, Direction.SOUTH], [Direction.SOUTH_WEST, Direction.NORTH_EAST]],
-    // Gentle X
-    [[Direction.NORTH, Direction.SOUTH_EAST], [Direction.NORTH_EAST, Direction.SOUTH]],
-    // Bow and arrow
-    [[Direction.NORTH, Direction.SOUTH], [Direction.SOUTH_WEST, Direction.SOUTH_EAST]],
+    BOW_AND_ARROW_TRACK_TILE,
+    TWO_GENTLE_TRACK_TILE,
+    TWO_STRAIGHT_TRACK_TILE,
 
-    // Complex co-existing
-    // Baseball
-    [[Direction.NORTH_WEST, Direction.NORTH_EAST], [Direction.SOUTH_WEST, Direction.SOUTH_EAST]],
-    // Gentle+tight, left
-    [[Direction.NORTH_WEST, Direction.SOUTH], [Direction.NORTH, Direction.NORTH_EAST]],
-    // Gentle+tight, right
-    [[Direction.NORTH_WEST, Direction.SOUTH], [Direction.NORTH_EAST, Direction.SOUTH_EAST]],
-    // Straight and tight
-    [[Direction.NORTH, Direction.SOUTH], [Direction.NORTH_EAST, Direction.SOUTH_EAST]],
-];
+    // Complex coexist
+    BASEBALL_TRACK_TILE,
+    LEFT_GENTLE_AND_SHARP_TRACK_TILE,
+    RIGHT_GENTLE_AND_SHARP_TRACK_TILE,
+    STRAIGHT_AND_SHARP_TRACK_TILE,
+}
+export const TrackTiles: TrackTile[] =
+    [TrackTile.STRAIGHT_TRACK_TILE, TrackTile.SHARP_CURVE_TRACK_TILE, TrackTile.GENTLE_CURVE_TRACK_TILE,
+        TrackTile.BOW_AND_ARROW_TRACK_TILE, TrackTile.TWO_GENTLE_TRACK_TILE, TrackTile.TWO_STRAIGHT_TRACK_TILE,
+        TrackTile.BASEBALL_TRACK_TILE, TrackTile.LEFT_GENTLE_AND_SHARP_TRACK_TILE, TrackTile.RIGHT_GENTLE_AND_SHARP_TRACK_TILE, TrackTile.STRAIGHT_AND_SHARP_TRACK_TILE];
+
+const TRACK_TILE_ROUTES: Map<TrackTile, Array<[Direction, Direction]>> = new Map([
+    [TrackTile.STRAIGHT_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH]]],
+    [TrackTile.SHARP_CURVE_TRACK_TILE, [[Direction.NORTH, Direction.NORTH_EAST]]],
+    [TrackTile.GENTLE_CURVE_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH_EAST]]],
+
+    [TrackTile.BOW_AND_ARROW_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH], [Direction.SOUTH_WEST, Direction.SOUTH_EAST]]],
+    [TrackTile.TWO_GENTLE_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH_EAST], [Direction.NORTH_EAST, Direction.SOUTH]]],
+    [TrackTile.TWO_STRAIGHT_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH], [Direction.SOUTH_WEST, Direction.NORTH_EAST]]],
+
+    [TrackTile.BASEBALL_TRACK_TILE, [[Direction.NORTH_WEST, Direction.NORTH_EAST], [Direction.SOUTH_WEST, Direction.SOUTH_EAST]]],
+    [TrackTile.LEFT_GENTLE_AND_SHARP_TRACK_TILE, [[Direction.NORTH_WEST, Direction.SOUTH], [Direction.NORTH, Direction.NORTH_EAST]]],
+    [TrackTile.RIGHT_GENTLE_AND_SHARP_TRACK_TILE, [[Direction.NORTH_WEST, Direction.SOUTH], [Direction.NORTH_EAST, Direction.SOUTH_EAST]]],
+    [TrackTile.STRAIGHT_AND_SHARP_TRACK_TILE, [[Direction.NORTH, Direction.SOUTH], [Direction.NORTH_EAST, Direction.SOUTH_EAST]]],
+]);
 
 export type Rotation = 0 | 1 | 2 | 3 | 4 | 5;
 
-export class TrackTile {
-    private tile: BasicTrackTile;
+export class MapTrackTile {
+    private tile: TrackTile;
     private rotation: Rotation;
 
-    constructor(tile: BasicTrackTile, rotation: Rotation) {
+    constructor(tile: TrackTile, rotation: Rotation) {
         this.tile = tile;
         this.rotation = rotation;
     }
 
     public getRoutes(): Array<[Direction, Direction]> {
-        let routes: Array<[Direction, Direction]> = [];
-        for (let route of this.tile) {
+        let routes: Array<[Direction, Direction]>|undefined = TRACK_TILE_ROUTES.get(this.tile);
+        if (!routes) {
+            throw Error("Invalid tile: " + this.tile);
+        }
+        for (let route of routes) {
             let rotatedRoute: [Direction, Direction] = [
                 (route[0]+this.rotation)%6 as Direction, (route[1]+this.rotation)%6 as Direction
             ];
             routes.push(rotatedRoute);
         }
         return routes;
-    }
-
-    public static fromId(id: number): TrackTile {
-        let trackTypeId = Math.floor(id/6);
-        let rotation: Rotation = (id%6) as Rotation;
-        return new TrackTile(TRACK_TILES[trackTypeId], rotation);
     }
 }
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/JackOfMostTrades/eot/backend/tiles"
 	"testing"
 
 	"github.com/JackOfMostTrades/eot/backend/common"
@@ -58,16 +59,19 @@ func TestAttemptTrackPlacement(t *testing.T) {
 	err := handler.performBuildAction(&BuildAction{
 		TrackPlacements: []*TrackPlacement{
 			{
-				Hex:   common.Coordinate{X: 0, Y: 1},
-				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
+				Hex:      common.Coordinate{X: 0, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
 			},
 			{
-				Hex:   common.Coordinate{X: 1, Y: 0},
-				Track: [2]common.Direction{common.SOUTH_WEST, common.SOUTH_EAST},
+				Hex:      common.Coordinate{X: 1, Y: 0},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 1,
 			},
 			{
-				Hex:   common.Coordinate{X: 1, Y: 1},
-				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
+				Hex:      common.Coordinate{X: 1, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
 			},
 		},
 	})
@@ -102,17 +106,21 @@ func TestAttemptTrackPlacementEngineer(t *testing.T) {
 	err := handler.performBuildAction(&BuildAction{
 		TrackPlacements: []*TrackPlacement{
 			{
-				Hex:   common.Coordinate{X: 0, Y: 1},
-				Track: [2]common.Direction{common.NORTH_EAST, common.SOUTH_WEST},
+				Hex:      common.Coordinate{X: 0, Y: 1},
+				Tile:     tiles.STRAIGHT_TRACK_TILE,
+				Rotation: 1,
 			}, {
-				Hex:   common.Coordinate{X: 1, Y: 0},
-				Track: [2]common.Direction{common.SOUTH_EAST, common.SOUTH_WEST},
+				Hex:      common.Coordinate{X: 1, Y: 0},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 1,
 			}, {
-				Hex:   common.Coordinate{X: 1, Y: 1},
-				Track: [2]common.Direction{common.SOUTH_EAST, common.NORTH_WEST},
+				Hex:      common.Coordinate{X: 1, Y: 1},
+				Tile:     tiles.STRAIGHT_TRACK_TILE,
+				Rotation: 2,
 			}, {
-				Hex:   common.Coordinate{X: 2, Y: 2},
-				Track: [2]common.Direction{common.NORTH_EAST, common.NORTH_WEST},
+				Hex:      common.Coordinate{X: 2, Y: 2},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
 			},
 		},
 	})
@@ -122,8 +130,8 @@ func TestAttemptTrackPlacementEngineer(t *testing.T) {
 	link := gameState.Links[0]
 	assert.Equal(t, true, link.Complete)
 	assert.Equal(t, playerId, link.Owner)
-	assert.Equal(t, common.Coordinate{X: 2, Y: 1}, link.SourceHex)
-	assert.Equal(t, []common.Direction{common.SOUTH_WEST, common.NORTH_WEST, common.NORTH_WEST, common.SOUTH_WEST, common.SOUTH_WEST}, link.Steps)
+	assert.Equal(t, common.Coordinate{X: 0, Y: 2}, link.SourceHex)
+	assert.Equal(t, []common.Direction{common.NORTH_EAST, common.NORTH_EAST, common.SOUTH_EAST, common.SOUTH_EAST, common.NORTH_EAST}, link.Steps)
 }
 
 func TestTrackFromCityToTown(t *testing.T) {
@@ -151,8 +159,9 @@ func TestTrackFromCityToTown(t *testing.T) {
 		},
 		TrackPlacements: []*TrackPlacement{
 			{
-				Hex:   common.Coordinate{X: 0, Y: 1},
-				Track: [2]common.Direction{common.NORTH_EAST, common.NORTH_WEST},
+				Hex:      common.Coordinate{X: 0, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
 			},
 		},
 	})
@@ -162,8 +171,8 @@ func TestTrackFromCityToTown(t *testing.T) {
 	link := gameState.Links[0]
 	assert.Equal(t, true, link.Complete)
 	assert.Equal(t, playerId, link.Owner)
-	assert.Equal(t, common.Coordinate{X: 1, Y: 0}, link.SourceHex)
-	assert.Equal(t, []common.Direction{common.SOUTH_WEST, common.NORTH_WEST}, link.Steps)
+	assert.Equal(t, common.Coordinate{X: 0, Y: 0}, link.SourceHex)
+	assert.Equal(t, []common.Direction{common.SOUTH_EAST, common.NORTH_EAST}, link.Steps)
 }
 
 func TestTrackFromTownToCity(t *testing.T) {
@@ -191,8 +200,9 @@ func TestTrackFromTownToCity(t *testing.T) {
 		},
 		TrackPlacements: []*TrackPlacement{
 			{
-				Hex:   common.Coordinate{X: 0, Y: 1},
-				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
+				Hex:      common.Coordinate{X: 0, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
 			},
 		},
 	})
@@ -266,8 +276,9 @@ func TestUrbanizeAndConnect(t *testing.T) {
 		},
 		TrackPlacements: []*TrackPlacement{
 			{
-				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
-				Hex:   common.Coordinate{X: 0, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 0, Y: 1},
 			},
 		},
 	})
@@ -312,12 +323,14 @@ func TestBuildThroughTown(t *testing.T) {
 		},
 		TrackPlacements: []*TrackPlacement{
 			{
-				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
-				Hex:   common.Coordinate{X: 0, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 0, Y: 1},
 			},
 			{
-				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
-				Hex:   common.Coordinate{X: 1, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 1, Y: 1},
 			},
 		},
 	})
@@ -327,8 +340,8 @@ func TestBuildThroughTown(t *testing.T) {
 	link := gameState.Links[0]
 	assert.Equal(t, true, link.Complete)
 	assert.Equal(t, playerId, link.Owner)
-	assert.Equal(t, common.Coordinate{X: 0, Y: 0}, link.SourceHex)
-	assert.Equal(t, []common.Direction{common.SOUTH_EAST, common.NORTH_EAST}, link.Steps)
+	assert.Equal(t, common.Coordinate{X: 1, Y: 0}, link.SourceHex)
+	assert.Equal(t, []common.Direction{common.SOUTH_WEST, common.NORTH_WEST}, link.Steps)
 	link = gameState.Links[1]
 	assert.Equal(t, true, link.Complete)
 	assert.Equal(t, playerId, link.Owner)
@@ -363,8 +376,9 @@ func TestLolipopToTown(t *testing.T) {
 		},
 		TrackPlacements: []*TrackPlacement{
 			{
-				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
-				Hex:   common.Coordinate{X: 0, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 0, Y: 1},
 			},
 		},
 	})
@@ -374,8 +388,8 @@ func TestLolipopToTown(t *testing.T) {
 	link := gameState.Links[0]
 	assert.Equal(t, true, link.Complete)
 	assert.Equal(t, playerId, link.Owner)
-	assert.Equal(t, common.Coordinate{X: 0, Y: 0}, link.SourceHex)
-	assert.Equal(t, []common.Direction{common.SOUTH_EAST, common.NORTH_EAST}, link.Steps)
+	assert.Equal(t, common.Coordinate{X: 1, Y: 0}, link.SourceHex)
+	assert.Equal(t, []common.Direction{common.SOUTH_WEST, common.NORTH_WEST}, link.Steps)
 }
 
 func TestLolipopFromTown(t *testing.T) {
@@ -405,12 +419,14 @@ func TestLolipopFromTown(t *testing.T) {
 		},
 		TrackPlacements: []*TrackPlacement{
 			{
-				Track: [2]common.Direction{common.SOUTH_EAST, common.SOUTH_WEST},
-				Hex:   common.Coordinate{X: 1, Y: 0},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 1,
+				Hex:      common.Coordinate{X: 1, Y: 0},
 			},
 			{
-				Track: [2]common.Direction{common.NORTH_EAST, common.NORTH_WEST},
-				Hex:   common.Coordinate{X: 0, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 0, Y: 1},
 			},
 		},
 	})
@@ -448,8 +464,9 @@ func TestUpgradeToComplex(t *testing.T) {
 	err := handler.performBuildAction(&BuildAction{
 		TrackPlacements: []*TrackPlacement{
 			{
-				Track: [2]common.Direction{common.SOUTH_WEST, common.SOUTH_EAST},
-				Hex:   common.Coordinate{X: 1, Y: 2},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 1,
+				Hex:      common.Coordinate{X: 1, Y: 2},
 			},
 		},
 	})
@@ -466,12 +483,14 @@ func TestUpgradeToComplex(t *testing.T) {
 	err = handler.performBuildAction(&BuildAction{
 		TrackPlacements: []*TrackPlacement{
 			{
-				Track: [2]common.Direction{common.NORTH, common.NORTH_EAST},
-				Hex:   common.Coordinate{X: 1, Y: 4},
+				Tile:     tiles.SHARP_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 1, Y: 4},
 			},
 			{
-				Track: [2]common.Direction{common.SOUTH, common.NORTH},
-				Hex:   common.Coordinate{X: 1, Y: 2},
+				Tile:     tiles.BOW_AND_ARROW_TRACK_TILE,
+				Rotation: 1,
+				Hex:      common.Coordinate{X: 1, Y: 2},
 			},
 		},
 	})
@@ -518,8 +537,16 @@ func TestIssue1Regression(t *testing.T) {
 			{Track: common.NORTH, Hex: common.Coordinate{X: 0, Y: 3}},
 		},
 		TrackPlacements: []*TrackPlacement{
-			{Track: [2]common.Direction{common.NORTH_EAST, common.SOUTH}, Hex: common.Coordinate{X: 0, Y: 1}},
-			{Track: [2]common.Direction{common.NORTH_EAST, common.SOUTH}, Hex: common.Coordinate{X: 0, Y: 4}},
+			{
+				Hex:      common.Coordinate{X: 0, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 0,
+			},
+			{
+				Hex:      common.Coordinate{X: 0, Y: 4},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 0,
+			},
 		},
 	})
 	require.NoError(t, err)
@@ -534,8 +561,8 @@ func TestIssue1Regression(t *testing.T) {
 	link = gameState.Links[1]
 	assert.Equal(t, true, link.Complete)
 	assert.Equal(t, playerId, link.Owner)
-	assert.Equal(t, common.Coordinate{X: 1, Y: 0}, link.SourceHex)
-	assert.Equal(t, []common.Direction{common.SOUTH_WEST, common.SOUTH}, link.Steps)
+	assert.Equal(t, common.Coordinate{X: 0, Y: 3}, link.SourceHex)
+	assert.Equal(t, []common.Direction{common.NORTH, common.NORTH_EAST}, link.Steps)
 }
 
 func TestDirectComplex(t *testing.T) {
@@ -565,10 +592,21 @@ func TestDirectComplex(t *testing.T) {
 	}
 	err := handler.performBuildAction(&BuildAction{
 		TrackPlacements: []*TrackPlacement{
-			{Track: [2]common.Direction{common.SOUTH, common.NORTH_EAST}, Hex: common.Coordinate{X: 0, Y: 3}},
-			{Track: [2]common.Direction{common.SOUTH_WEST, common.NORTH}, Hex: common.Coordinate{X: 1, Y: 2}},
-			{Track: [2]common.Direction{common.NORTH_EAST, common.SOUTH_EAST}, Hex: common.Coordinate{X: 0, Y: 1}},
-			{Track: [2]common.Direction{common.NORTH_WEST, common.SOUTH_EAST}, Hex: common.Coordinate{X: 1, Y: 2}},
+			{
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 0,
+				Hex:      common.Coordinate{X: 0, Y: 3},
+			},
+			{
+				Tile:     tiles.SHARP_CURVE_TRACK_TILE,
+				Rotation: 5,
+				Hex:      common.Coordinate{X: 0, Y: 1},
+			},
+			{
+				Tile:     tiles.BOW_AND_ARROW_TRACK_TILE,
+				Rotation: 3,
+				Hex:      common.Coordinate{X: 1, Y: 2},
+			},
 		},
 	})
 	require.NoError(t, err)
@@ -609,8 +647,9 @@ func TestUrbCompletesLink(t *testing.T) {
 	err := handler.performBuildAction(&BuildAction{
 		TrackPlacements: []*TrackPlacement{
 			{
-				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
-				Hex:   common.Coordinate{X: 0, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 0, Y: 1},
 			},
 		},
 	})
@@ -660,12 +699,14 @@ func TestExtendIncompleteTrack(t *testing.T) {
 	err := handler.performBuildAction(&BuildAction{
 		TrackPlacements: []*TrackPlacement{
 			{
-				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
-				Hex:   common.Coordinate{X: 0, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 0, Y: 1},
 			},
 			{
-				Track: [2]common.Direction{common.SOUTH_WEST, common.SOUTH_EAST},
-				Hex:   common.Coordinate{X: 1, Y: 0},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 1,
+				Hex:      common.Coordinate{X: 1, Y: 0},
 			},
 		},
 	})
@@ -681,8 +722,9 @@ func TestExtendIncompleteTrack(t *testing.T) {
 	err = handler.performBuildAction(&BuildAction{
 		TrackPlacements: []*TrackPlacement{
 			{
-				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
-				Hex:   common.Coordinate{X: 1, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 1, Y: 1},
 			},
 		},
 	})
@@ -717,12 +759,14 @@ func TestExtendIncompleteUnownedTrack(t *testing.T) {
 	err := handler.performBuildAction(&BuildAction{
 		TrackPlacements: []*TrackPlacement{
 			{
-				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
-				Hex:   common.Coordinate{X: 0, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 0, Y: 1},
 			},
 			{
-				Track: [2]common.Direction{common.SOUTH_WEST, common.SOUTH_EAST},
-				Hex:   common.Coordinate{X: 1, Y: 0},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 1,
+				Hex:      common.Coordinate{X: 1, Y: 0},
 			},
 		},
 	})
@@ -746,8 +790,9 @@ func TestExtendIncompleteUnownedTrack(t *testing.T) {
 	err = handler.performBuildAction(&BuildAction{
 		TrackPlacements: []*TrackPlacement{
 			{
-				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
-				Hex:   common.Coordinate{X: 1, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 1, Y: 1},
 			},
 		},
 	})
@@ -776,7 +821,7 @@ func TestRedirectAndCompleteTrack(t *testing.T) {
 		Links: []*common.Link{
 			{
 				SourceHex: common.Coordinate{X: 0, Y: 0},
-				Steps:     []common.Direction{common.SOUTH_EAST, common.SOUTH},
+				Steps:     []common.Direction{common.SOUTH_EAST, common.SOUTH_WEST},
 				Owner:     "",
 				Complete:  false,
 			},
@@ -789,20 +834,21 @@ func TestRedirectAndCompleteTrack(t *testing.T) {
 		activePlayer: playerId,
 	}
 	err := handler.performBuildAction(&BuildAction{
-		TrackRedirects: []*TrackRedirect{
-			{
-				Track: common.NORTH_EAST,
-				Hex:   common.Coordinate{X: 0, Y: 1},
-			},
-		},
 		TrackPlacements: []*TrackPlacement{
 			{
-				Track: [2]common.Direction{common.SOUTH_WEST, common.SOUTH_EAST},
-				Hex:   common.Coordinate{X: 1, Y: 0},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 0, Y: 1},
 			},
 			{
-				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
-				Hex:   common.Coordinate{X: 1, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 1,
+				Hex:      common.Coordinate{X: 1, Y: 0},
+			},
+			{
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 1, Y: 1},
 			},
 		},
 	})
@@ -894,10 +940,11 @@ func TestIssue26Regression(t *testing.T) {
 		activePlayer: playerId,
 	}
 	err := handler.performBuildAction(&BuildAction{
-		TrackRedirects: []*TrackRedirect{
+		TrackPlacements: []*TrackPlacement{
 			{
-				Track: common.NORTH_WEST,
-				Hex:   common.Coordinate{X: 1, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 1, Y: 1},
 			},
 		},
 	})
@@ -938,8 +985,9 @@ func TestTownToNowhere(t *testing.T) {
 		},
 		TrackPlacements: []*TrackPlacement{
 			{
-				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
-				Hex:   common.Coordinate{X: 0, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 0, Y: 1},
 			},
 		},
 	})
@@ -979,8 +1027,9 @@ func TestTownToTown(t *testing.T) {
 		},
 		TrackPlacements: []*TrackPlacement{
 			{
-				Track: [2]common.Direction{common.NORTH_WEST, common.NORTH_EAST},
-				Hex:   common.Coordinate{X: 0, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 0, Y: 1},
 			},
 		},
 	})
@@ -1056,7 +1105,7 @@ func TestRedirectJoinUnownedLinks(t *testing.T) {
 	gameMap := &testMap{
 		hexes: [][]maps.HexType{
 			{maps.CITY_HEX_TYPE, maps.PLAINS_HEX_TYPE, maps.CITY_HEX_TYPE},
-			         {maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
 			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
 		},
 	}
@@ -1085,10 +1134,11 @@ func TestRedirectJoinUnownedLinks(t *testing.T) {
 		activePlayer: playerId,
 	}
 	err := handler.performBuildAction(&BuildAction{
-		TrackRedirects: []*TrackRedirect{
+		TrackPlacements: []*TrackPlacement{
 			{
-				Track: common.NORTH_WEST,
-				Hex:   common.Coordinate{X: 1, Y: 1},
+				Tile:     tiles.GENTLE_CURVE_TRACK_TILE,
+				Rotation: 4,
+				Hex:      common.Coordinate{X: 1, Y: 1},
 			},
 		},
 	})

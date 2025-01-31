@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/JackOfMostTrades/eot/backend/common"
+	"github.com/JackOfMostTrades/eot/backend/tiles"
 	"net/http"
 )
 
@@ -20,47 +21,6 @@ func checkTownMarkerLimit(mapState [][]*TileState) error {
 		return &HttpError{"Limit of town markers (8) is exceeded", http.StatusBadRequest}
 	}
 	return nil
-}
-
-type trackTile int
-
-const (
-	// Simple
-	STRAIGHT_TRACK_TILE trackTile = iota + 1
-	SHARP_CURVE_TRACK_TILE
-	GENTLE_CURVE_TRACK_TILE
-
-	// Complex crossing
-	BOW_AND_ARROW_TRACK_TILE
-	TWO_GENTLE_TRACK_TILE
-	TWO_STRAIGHT_TRACK_TILE
-
-	// Complex coexist
-	BASEBALL_TRACK_TILE
-	LEFT_GENTLE_AND_SHARP_TRACK_TILE
-	RIGHT_GENTRLE_AND_SHARP_TRACK_TILE
-	STRAIGHT_AND_SHARP_TRACK_TILE
-)
-
-var allTrackTiles []trackTile = []trackTile{
-	STRAIGHT_TRACK_TILE, SHARP_CURVE_TRACK_TILE, GENTLE_CURVE_TRACK_TILE,
-	BOW_AND_ARROW_TRACK_TILE, TWO_GENTLE_TRACK_TILE, TWO_STRAIGHT_TRACK_TILE,
-	BASEBALL_TRACK_TILE, LEFT_GENTLE_AND_SHARP_TRACK_TILE, RIGHT_GENTRLE_AND_SHARP_TRACK_TILE, STRAIGHT_AND_SHARP_TRACK_TILE,
-}
-
-var trackTileRoutes = map[trackTile][][2]common.Direction{
-	STRAIGHT_TRACK_TILE:     {{common.NORTH, common.SOUTH}},
-	SHARP_CURVE_TRACK_TILE:  {{common.SOUTH_EAST, common.SOUTH}},
-	GENTLE_CURVE_TRACK_TILE: {{common.NORTH_EAST, common.SOUTH}},
-
-	BOW_AND_ARROW_TRACK_TILE: {{common.NORTH_EAST, common.SOUTH}, {common.SOUTH_EAST, common.NORTH_WEST}},
-	TWO_GENTLE_TRACK_TILE:    {{common.NORTH, common.SOUTH_EAST}, {common.NORTH_EAST, common.SOUTH}},
-	TWO_STRAIGHT_TRACK_TILE:  {{common.NORTH_EAST, common.SOUTH_WEST}, {common.SOUTH_EAST, common.NORTH_WEST}},
-
-	BASEBALL_TRACK_TILE:                {{common.NORTH, common.SOUTH_WEST}, {common.NORTH_EAST, common.SOUTH}},
-	LEFT_GENTLE_AND_SHARP_TRACK_TILE:   {{common.NORTH, common.SOUTH_EAST}, {common.SOUTH_WEST, common.NORTH_WEST}},
-	RIGHT_GENTRLE_AND_SHARP_TRACK_TILE: {{common.NORTH, common.SOUTH_WEST}, {common.NORTH_EAST, common.SOUTH_EAST}},
-	STRAIGHT_AND_SHARP_TRACK_TILE:      {{common.NORTH, common.SOUTH}, {common.SOUTH_WEST, common.NORTH_WEST}},
 }
 
 func routesEqual(a [][2]common.Direction, b []Route) bool {
@@ -83,9 +43,9 @@ func routesEqual(a [][2]common.Direction, b []Route) bool {
 	return true
 }
 
-func getTrackTileForRoutes(routes []Route) trackTile {
-	for _, tile := range allTrackTiles {
-		tileRoutes := trackTileRoutes[tile]
+func getTrackTileForRoutes(routes []Route) tiles.TrackTile {
+	for _, tile := range tiles.AllTrackTiles {
+		tileRoutes := tiles.GetRoutesForTile(tile)
 		for rotation := 0; rotation < 6; rotation++ {
 			rotatedRoutes := make([][2]common.Direction, 0, len(tileRoutes))
 			for _, route := range tileRoutes {
@@ -102,19 +62,19 @@ func getTrackTileForRoutes(routes []Route) trackTile {
 }
 
 func checkTrackTileLimit(mapState [][]*TileState) error {
-	componentCount := map[trackTile]int{
-		STRAIGHT_TRACK_TILE:     48,
-		SHARP_CURVE_TRACK_TILE:  7,
-		GENTLE_CURVE_TRACK_TILE: 55,
+	componentCount := map[tiles.TrackTile]int{
+		tiles.STRAIGHT_TRACK_TILE:     48,
+		tiles.SHARP_CURVE_TRACK_TILE:  7,
+		tiles.GENTLE_CURVE_TRACK_TILE: 55,
 
-		BOW_AND_ARROW_TRACK_TILE: 4,
-		TWO_GENTLE_TRACK_TILE:    3,
-		TWO_STRAIGHT_TRACK_TILE:  4,
+		tiles.BOW_AND_ARROW_TRACK_TILE: 4,
+		tiles.TWO_GENTLE_TRACK_TILE:    3,
+		tiles.TWO_STRAIGHT_TRACK_TILE:  4,
 
-		BASEBALL_TRACK_TILE:                1,
-		LEFT_GENTLE_AND_SHARP_TRACK_TILE:   1,
-		RIGHT_GENTRLE_AND_SHARP_TRACK_TILE: 1,
-		STRAIGHT_AND_SHARP_TRACK_TILE:      1,
+		tiles.BASEBALL_TRACK_TILE:               1,
+		tiles.LEFT_GENTLE_AND_SHARP_TRACK_TILE:  1,
+		tiles.RIGHT_GENTLE_AND_SHARP_TRACK_TILE: 1,
+		tiles.STRAIGHT_AND_SHARP_TRACK_TILE:     1,
 	}
 
 	for y := 0; y < len(mapState); y++ {

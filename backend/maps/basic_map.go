@@ -3,6 +3,7 @@ package maps
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/tiles"
 	"os"
 	"slices"
 
@@ -100,17 +101,17 @@ func (b *basicMap) GetHexType(hex common.Coordinate) HexType {
 	return b.Hexes[hex.Y][hex.X]
 }
 
-func (b *basicMap) GetTrackBuildCost(gameState *common.GameState, player string, hexType HexType, hex common.Coordinate, trackType common.TrackType, isUpgrade bool) (int, error) {
+func (b *basicMap) GetTrackBuildCost(gameState *common.GameState, player string, hexType HexType, hex common.Coordinate, trackType tiles.TrackType, isUpgrade bool) (int, error) {
 	if !isUpgrade {
 		for _, pricing := range b.SpecialTrackPricing {
 			if pricing.Hex.X == hex.X && pricing.Hex.Y == hex.Y {
 				cost := pricing.Cost
 				switch trackType {
-				case common.SIMPLE_TRACK_TYPE:
+				case tiles.SIMPLE_TRACK_TYPE:
 					break
-				case common.COMPLEX_COEXISTING_TRACK_TYPE:
+				case tiles.COMPLEX_COEXISTING_TRACK_TYPE:
 					cost += 1
-				case common.COMPLEX_CROSSING_TRACK_TYPE:
+				case tiles.COMPLEX_CROSSING_TRACK_TYPE:
 					cost += 2
 				default:
 					panic(fmt.Errorf("Unhandled track type: %d", trackType))
