@@ -359,6 +359,49 @@ export class MapTrackTile {
         }
         return rotatedRoutes;
     }
+
+    public getTile(): TrackTile {
+        return this.tile;
+    }
+
+    public getRotation(): Rotation {
+        return this.rotation;
+    }
+
+    public static fromRoutes(routes: Array<[Direction, Direction]>): MapTrackTile|undefined {
+        for (let tile of TrackTiles) {
+            for (let rotation = 0; rotation < 6; rotation++) {
+                let mapTrackTile = new MapTrackTile(tile, rotation as Rotation);
+
+                let tileRoutes = mapTrackTile.getRoutes();
+                if (tileRoutes.length !== routes.length) {
+                    continue;
+                }
+
+                let isMatch = true;
+                for (let route of routes) {
+                    let found = false;
+                    for (let tileRoute of tileRoutes) {
+                        if ((tileRoute[0] === route[0] && tileRoute[1] === route[1])
+                                || (tileRoute[0] === route[1] && tileRoute[1] === route[0])) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        isMatch = false;
+                        break;
+                    }
+                }
+
+                if (isMatch) {
+                    return mapTrackTile;
+                }
+            }
+        }
+
+        return undefined;
+    }
 }
 
 export type BasicTownTile = Array<Direction>;

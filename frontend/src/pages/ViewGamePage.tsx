@@ -32,6 +32,7 @@ import "./ViewGamePage.css";
 import {mapNameToDisplayName, specialActionToDisplayName} from "../util.ts";
 import GameChat from "../components/GameChat.tsx";
 import ErrorContext from "../ErrorContext.tsx";
+import PartsCountComponent from "./PartsCountComponent.tsx";
 
 function WaitingForPlayersPage({game, onJoin, onStart}: {game: ViewGameResponse, onJoin: () => Promise<void>, onStart: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
@@ -312,6 +313,7 @@ function ViewGamePage() {
         <GoodsGrowthTable game={game} map={map} />
         {!mapInfo ? null : <Segment><Header as='h2'>Map Info</Header>{mapInfo}</Segment>}
         <GameLogsComponent game={game} gameLogs={gameLogs} />
+        <PartsCountComponent map={map} game={game} />
     </>
 }
 
