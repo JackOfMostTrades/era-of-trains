@@ -1,4 +1,4 @@
-import {Container, Loader} from "semantic-ui-react";
+import {Button, Container, Icon, Loader} from "semantic-ui-react";
 import {useContext, useEffect, useState} from "react";
 import {GameSummary, GetMyGames, GetMyGamesResponse} from "../api/api.ts";
 import UserSessionContext from "../UserSessionContext.tsx";
@@ -7,14 +7,23 @@ import {GameSummaryTable} from "../components/GameSummaryTable.tsx";
 
 function MyGames() {
     let [games, setGames] = useState<GetMyGamesResponse|undefined>(undefined);
+    let [loading, setLoading] = useState<boolean>(false);
     let {setError} = useContext(ErrorContext);
     let userInfo = useContext(UserSessionContext);
-    useEffect(() => {
-        GetMyGames({}).then(res => {
+
+    const reload: () => Promise<void> = () => {
+        setLoading(true);
+        return GetMyGames({}).then(res => {
             setGames(res);
         }).catch(err => {
             setError(err);
-        });
+        }).finally(() => {
+            setLoading(false);
+        })
+    }
+
+    useEffect(() => {
+        reload();
     }, []);
 
     if (!games) {
@@ -49,6 +58,7 @@ function MyGames() {
         }
 
         return <Container>
+            <div><Button primary floated='right' icon onClick={reload} loading={loading}><Icon name='refresh' /> Refresh</Button><div style={{clear: "both"}} /></div>
             <GameSummaryTable games={waitingForMe} title="Waiting for me" />
             <GameSummaryTable games={activeGames} title="Active Games" />
             <GameSummaryTable games={pendingGames} title="Pending Games" />
