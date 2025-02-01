@@ -35,9 +35,6 @@ func (server *GameServer) getUserById(userId string) (*User, error) {
 	defer stmt.Close()
 
 	row := stmt.QueryRow(userId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to excute statement: %v", err)
-	}
 
 	var nickname string
 	err = row.Scan(&nickname)

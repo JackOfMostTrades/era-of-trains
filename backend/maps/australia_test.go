@@ -3,8 +3,6 @@ package maps
 import (
 	"testing"
 
-	"github.com/samber/lo"
-
 	"github.com/JackOfMostTrades/eot/backend/common"
 	"github.com/stretchr/testify/assert"
 )
@@ -73,9 +71,12 @@ func TestPopulateStartingCubes(t *testing.T) {
 	assert.Equal(t, nil, err)
 
 	for _, city := range gameMap.Cities {
-		cubes := lo.Filter(gameState.Cubes, func(cube *common.BoardCube, index int) bool {
-			return cube.Hex == city.Coordinate
-		})
+		var cubes []*common.BoardCube
+		for _, cube := range gameState.Cubes {
+			if cube.Hex == city.Coordinate {
+				cubes = append(cubes, cube)
+			}
+		}
 		if city.GoodsGrowth[0] >= 6 {
 			assert.Equal(t, common.BLUE, cubes[0])
 			assert.Equal(t, common.BLUE, cubes[1])

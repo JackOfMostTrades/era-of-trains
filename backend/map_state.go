@@ -1,9 +1,10 @@
 package main
 
 import (
+	"iter"
+
 	"github.com/JackOfMostTrades/eot/backend/common"
 	"github.com/JackOfMostTrades/eot/backend/maps"
-	"iter"
 )
 
 type Dangler struct {
@@ -102,7 +103,9 @@ func (ms *MapState) GetAllTileState() iter.Seq2[common.Coordinate, *TileState] {
 	return func(yield func(common.Coordinate, *TileState) bool) {
 		for y := 0; y < len(ms.tileState); y++ {
 			for x := 0; x < len(ms.tileState[y]); x++ {
-				yield(common.Coordinate{X: x, Y: y}, ms.tileState[y][x])
+				if !yield(common.Coordinate{X: x, Y: y}, ms.tileState[y][x]) {
+					return
+				}
 			}
 		}
 	}
