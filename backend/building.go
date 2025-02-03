@@ -201,6 +201,16 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) 
 				}
 			}
 		}
+
+		// Any single-step incomplete links coming out of the town (stubs) get destroyed by urbanization
+		for i := 0; i < len(gameState.Links); i++ {
+			link := gameState.Links[i]
+			if link.SourceHex.X == buildAction.Urbanization.Hex.X && link.SourceHex.Y == buildAction.Urbanization.Hex.Y &&
+				!link.Complete && len(link.Steps) == 1 {
+				gameState.Links = DeleteFromSliceUnordered(i, gameState.Links)
+				i -= 1
+			}
+		}
 	}
 
 	// Consolidate placements by hex to determine cost and validity
