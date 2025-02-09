@@ -1,1 +1,796 @@
-{"hexes":[[{"type":1},{"type":1},{"type":1},{"type":1},{"type":1},{"type":1},{"type":1}],[{"type":1},{"type":1},{"type":2},{"type":6},{"type":1},{"type":1},{"type":0}],[{"type":1},{"type":1},{"type":1},{"type":2,"cost":8},{"type":1},{"type":1},{"type":1}],[{"type":1},{"type":1},{"type":2},{"type":1},{"type":1},{"type":1},{"type":0}],[{"type":1},{"type":1},{"type":1},{"type":1},{"type":1},{"type":1},{"type":6,"cityColor":3,"goodsGrowth":[11],"startingCubeCount":3}],[{"type":1},{"type":1},{"type":5},{"type":1},{"type":2},{"type":2,"cost":12},{"type":0}],[{"type":1},{"type":2},{"type":3},{"type":2},{"type":5},{"type":3},{"type":2,"cost":12}],[{"type":2},{"type":6,"cityColor":4,"goodsGrowth":[3],"startingCubeCount":2},{"type":3},{"type":2},{"type":2},{"type":5},{"type":0}],[{"type":0},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":0}],[{"type":2,"cost":6},{"type":2},{"type":6,"cityColor":2,"goodsGrowth":[4],"startingCubeCount":2},{"type":2},{"type":6,"cityColor":1,"startingCubeCount":4},{"type":2,"cost":8},{"type":0}],[{"type":6},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":6}],[{"type":2,"cost":6},{"type":2},{"type":3},{"type":5},{"type":2},{"type":2,"cost":8},{"type":0}],[{"type":0},{"type":3},{"type":2},{"type":2},{"type":2},{"type":2},{"type":0}],[{"type":3},{"type":6,"cityColor":4,"goodsGrowth":[8],"startingCubeCount":2},{"type":5},{"type":2},{"type":2},{"type":5},{"type":0}],[{"type":0},{"type":6,"cityColor":2,"goodsGrowth":[2],"startingCubeCount":2},{"type":2},{"type":2},{"type":5},{"type":2},{"type":2,"cost":8}],[{"type":2,"cost":7},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2,"cost":9},{"type":0}],[{"type":6},{"type":3},{"type":2},{"type":2},{"type":2},{"type":6,"cityColor":4,"goodsGrowth":[10],"startingCubeCount":2},{"type":6,"cityColor":5,"goodsGrowth":[5],"startingCubeCount":2}],[{"type":2,"cost":7},{"type":3},{"type":4},{"type":4},{"type":2},{"type":2,"cost":9},{"type":0}],[{"type":0},{"type":2},{"type":5},{"type":5},{"type":4},{"type":4},{"type":2,"cost":9}],[{"type":2},{"type":3},{"type":2},{"type":2},{"type":4},{"type":4},{"type":0}],[{"type":0},{"type":2},{"type":2},{"type":2},{"type":2},{"type":5},{"type":5}],[{"type":2,"cost":11},{"type":2},{"type":2},{"type":6,"cityColor":2,"goodsGrowth":[7],"startingCubeCount":2},{"type":4},{"type":4},{"type":0}],[{"type":6},{"type":5},{"type":6,"cityColor":4,"goodsGrowth":[1],"startingCubeCount":2},{"type":2},{"type":2},{"type":4},{"type":2}],[{"type":2,"cost":11},{"type":2},{"type":2},{"type":2},{"type":2},{"type":4},{"type":0}],[{"type":0},{"type":4},{"type":4},{"type":2},{"type":2},{"type":5},{"type":4}],[{"type":2},{"type":5},{"type":4},{"type":6,"cityColor":2,"goodsGrowth":[6],"startingCubeCount":2},{"type":4},{"type":4},{"type":0}],[{"type":0},{"type":4},{"type":2,"cost":9},{"type":4},{"type":4},{"type":4},{"type":2,"cost":10}],[{"type":2,"cost":10},{"type":2,"cost":9},{"type":2,"cost":9},{"type":4},{"type":4},{"type":2,"cost":10},{"type":0}],[{"type":6},{"type":4},{"type":6,"cityColor":5,"goodsGrowth":[0],"startingCubeCount":2},{"type":4},{"type":4},{"type":4},{"type":6,"cityColor":3,"goodsGrowth":[9],"startingCubeCount":2}]],"teleportLinks":[{"left":{"hex":{"x":1,"y":14},"direction":1},"right":{"hex":{"x":1,"y":13},"direction":4},"cost":2,"costLocation":{"x":1,"y":14},"costLocationEdge":1}]}
+{
+  "hexes": [
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "mapData": {
+          "portNumber": 1
+        }
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2,
+        "cost": 8
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 6,
+        "cityColor": 3,
+        "goodsGrowth": [
+          11
+        ],
+        "startingCubeCount": 3
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 5
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2,
+        "cost": 12
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2,
+        "cost": 12
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "cityColor": 4,
+        "goodsGrowth": [
+          3
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 0
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 2,
+        "cost": 6
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "cityColor": 2,
+        "goodsGrowth": [
+          4
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "cityColor": 1,
+        "startingCubeCount": 4
+      },
+      {
+        "type": 2,
+        "cost": 8
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 6,
+        "mapData": {
+          "portNumber": 2
+        }
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "mapData": {
+          "portNumber": 6
+        }
+      }
+    ],
+    [
+      {
+        "type": 2,
+        "cost": 6
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 5
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2,
+        "cost": 8
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 0
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 3
+      },
+      {
+        "type": 6,
+        "cityColor": 4,
+        "goodsGrowth": [
+          8
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 5
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 0
+      },
+      {
+        "type": 6,
+        "cityColor": 2,
+        "goodsGrowth": [
+          2
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2,
+        "cost": 8
+      }
+    ],
+    [
+      {
+        "type": 2,
+        "cost": 7
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2,
+        "cost": 9
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 6,
+        "mapData": {
+          "portNumber": 3
+        }
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "cityColor": 4,
+        "goodsGrowth": [
+          10
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 6,
+        "cityColor": 5,
+        "goodsGrowth": [
+          5
+        ],
+        "startingCubeCount": 2
+      }
+    ],
+    [
+      {
+        "type": 2,
+        "cost": 7
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2,
+        "cost": 9
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 0
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5
+      },
+      {
+        "type": 5
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2,
+        "cost": 9
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 0
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5
+      },
+      {
+        "type": 5
+      }
+    ],
+    [
+      {
+        "type": 2,
+        "cost": 11
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "cityColor": 2,
+        "goodsGrowth": [
+          7
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 6,
+        "mapData": {
+          "portNumber": 4
+        }
+      },
+      {
+        "type": 5
+      },
+      {
+        "type": 6,
+        "cityColor": 4,
+        "goodsGrowth": [
+          1
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 2,
+        "cost": 11
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 0
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5
+      },
+      {
+        "type": 4
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 5
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 6,
+        "cityColor": 2,
+        "goodsGrowth": [
+          6
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 0
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2,
+        "cost": 9
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2,
+        "cost": 10
+      }
+    ],
+    [
+      {
+        "type": 2,
+        "cost": 10
+      },
+      {
+        "type": 2,
+        "cost": 9
+      },
+      {
+        "type": 2,
+        "cost": 9
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2,
+        "cost": 10
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 6,
+        "mapData": {
+          "portNumber": 5
+        }
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 6,
+        "cityColor": 5,
+        "goodsGrowth": [
+          0
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 6,
+        "cityColor": 3,
+        "goodsGrowth": [
+          9
+        ],
+        "startingCubeCount": 2
+      }
+    ]
+  ],
+  "teleportLinks": [
+    {
+      "left": {
+        "hex": {
+          "x": 1,
+          "y": 14
+        },
+        "direction": 1
+      },
+      "right": {
+        "hex": {
+          "x": 1,
+          "y": 13
+        },
+        "direction": 4
+      },
+      "cost": 2,
+      "costLocation": {
+        "x": 1,
+        "y": 14
+      },
+      "costLocationEdge": 1
+    }
+  ]
+}

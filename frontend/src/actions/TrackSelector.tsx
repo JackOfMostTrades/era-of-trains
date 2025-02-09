@@ -38,7 +38,7 @@ export function TrackSelector(props: TrackSelectorProps) {
                 }
 
                 let renderer = new HexRenderer(false, false, userSession);
-                renderer.renderHex({x: 0, y: 0}, props.map.getHexType(props.coordinate));
+                renderer.renderHex({x: 0, y: 0}, props.map.getHexType(props.coordinate), undefined);
                 for (let exit of mapTileState.getTileState(props.coordinate).routes) {
                     renderer.renderTownTrack({x: 0, y: 0}, exit.left, props.gameState.playerColor[exit.owner]);
                 }

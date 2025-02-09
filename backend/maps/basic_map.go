@@ -24,12 +24,13 @@ type teleportLink struct {
 }
 
 type basicMapHex struct {
-	HexType           HexType      `json:"type"`
-	Name              string       `json:"name,omitempty"`
-	CityColor         common.Color `json:"cityColor,omitempty"`
-	GoodsGrowth       []int        `json:"goodsGrowth,omitempty"`
-	StartingCubeCount int          `json:"startingCubeCount,omitempty"`
-	Cost              int          `json:"cost,omitempty"`
+	HexType           HexType                `json:"type"`
+	Name              string                 `json:"name,omitempty"`
+	CityColor         common.Color           `json:"cityColor,omitempty"`
+	GoodsGrowth       []int                  `json:"goodsGrowth,omitempty"`
+	StartingCubeCount int                    `json:"startingCubeCount,omitempty"`
+	Cost              int                    `json:"cost,omitempty"`
+	MapData           map[string]interface{} `json:"mapData,omitempty"`
 }
 
 type basicMap struct {

@@ -20,7 +20,7 @@ import UserSessionContext from "../UserSessionContext.tsx";
 function TrackTileDisplay({ tile }: {tile: TrackTile}) {
     let userSession = useContext(UserSessionContext);
     let renderer = new HexRenderer(false, false, userSession);
-    renderer.renderHex({x: 0, y: 0}, HexType.PLAINS);
+    renderer.renderHex({x: 0, y: 0}, HexType.PLAINS, undefined);
     for (let route of new MapTrackTile(tile, 0).getRoutes()) {
         renderer.renderTrack({x: 0, y: 0}, route[0], route[1], undefined);
     }

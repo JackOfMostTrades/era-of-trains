@@ -1,12 +1,12 @@
-import { ReactNode } from "react";
+import {ReactNode} from "react";
 import * as australiaRaw from "../../../backend/maps/australia.json";
 import * as germanyRaw from "../../../backend/maps/germany.json";
 import * as rustBeltRaw from "../../../backend/maps/rust_belt.json";
 import * as scotlandRaw from "../../../backend/maps/scotland.json";
 import * as southernUsRaw from "../../../backend/maps/southern_us.json";
-import { BuildAction, Color, Coordinate, GameState } from "../api/api.ts";
+import {BuildAction, Color, Coordinate, GameState} from "../api/api.ts";
 import Australia from "./australia.tsx";
-import { BasicMap, TeleportLink } from "./basic_map.tsx";
+import {BasicMap, TeleportLink} from "./basic_map.tsx";
 import Germany from "./germany.tsx";
 import RustBelt from "./rust_belt.tsx";
 import Scotland from "./scotland.tsx";
@@ -25,6 +25,7 @@ export enum HexType {
 
 export interface CityProperties {
     label: string
+    name: string|undefined
     color: Color
     darkCity: boolean
 }
@@ -34,6 +35,7 @@ export interface GameMap {
     getHeight(): number;
     getHexType(hex: Coordinate): HexType;
     getCityProperties(gameState: GameState|undefined, hex: Coordinate): CityProperties|undefined;
+    getLocationName(hex: Coordinate): string|undefined;
     getCityColor(goodsGrowthNumber: number): Color;
     getTeleportLinks(gameState: GameState|undefined, pendingBuildAction: BuildAction|undefined): TeleportLink[];
     getSpecialTrackPricing(hex: Coordinate): number|undefined;

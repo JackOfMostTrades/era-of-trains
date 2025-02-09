@@ -1,4 +1,4 @@
-import {ReactNode} from "react";
+import {ReactNode, useId} from "react";
 import {Color, Coordinate, Direction, PlayerColor} from "../../api/api.ts";
 import {CityProperties, HexType} from "../../maps";
 import {UserSession} from "../../UserSessionContext.tsx";
@@ -115,6 +115,19 @@ function hexEdgeOffset(direction: Direction): {dx: number, dy: number} {
     }
 }
 
+function HexName({centerX, centerY, name}: {centerX: number, centerY: number, name: string}) {
+    const pathId = useId();
+
+    return <>
+        <path id={"curve" + pathId} stroke="none" fill="none" d={`M ${centerX - 3.6} ${centerY} a 2.9 2.6 0 0 0 7.2 0`}/>
+        <text fontSize={1.4} fill="white" dominantBaseline="middle" textAnchor="middle">
+            <textPath xlinkHref={"#curve" + pathId} startOffset="50%">
+                {name}
+            </textPath>
+        </text>
+    </>
+}
+
 export class HexRenderer {
     private width: number;
     private height: number;
@@ -193,12 +206,16 @@ export class HexRenderer {
         this.paths.push(<polygon stroke={strokeColor} strokeWidth={0.2} fill={cityColor} points={points} onClick={onClick}/>);
         this.paths.push(<circle cx={pos.x + 5.7735} cy={pos.y + 5} r={2.5} fill='#FFFFFF' onClick={onClick}/>);
         this.paths.push(<text fontSize={2.5} x={pos.x + 5.7735} y={pos.y+5.3} dominantBaseline="middle" textAnchor="middle">{cityProperties.label}</text>);
+        if (cityProperties.name) {
+            let center = this.getHexCenter(hex);
+            this.paths.push(<HexName centerX={center.x} centerY={center.y} name={cityProperties.name} />);
+        }
 
         this.width = Math.max(this.width, hex.x);
         this.height = Math.max(this.height, hex.y);
     }
 
-    public renderHex(hex: Coordinate, hexType: HexType) {
+    public renderHex(hex: Coordinate, hexType: HexType, locationName: string|undefined) {
         if (hexType === HexType.OFFBOARD) {
             return;
         }
@@ -246,6 +263,10 @@ export class HexRenderer {
 
         if (hexType === HexType.TOWN) {
             this.paths.push(<circle cx={pos.x + 5.7735} cy={pos.y + 5} r={2.5} fill='#FFFFFF' onClick={onClick}/>);
+            if (locationName) {
+                let center = this.getHexCenter(hex);
+                this.paths.push(<HexName centerX={center.x} centerY={center.y} name={locationName} />);
+            }
         }
 
         this.width = Math.max(this.width, hex.x);

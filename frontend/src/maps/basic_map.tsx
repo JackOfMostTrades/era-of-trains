@@ -9,6 +9,7 @@ interface BasicMapHex {
     goodsGrowth?: number[];
     startingCubeCount?: number;
     cost?: number;
+    mapData?: { [key: string]: any }
 }
 
 export interface TeleportLinkEdge {
@@ -45,8 +46,16 @@ export class BasicMap implements GameMap {
         return this.hexes[hex.y][hex.x].type;
     }
 
+    public getLocationName(hex: Coordinate): string|undefined {
+        return this.hexes[hex.y][hex.x].name;
+    }
+
     public getCityProperties(_: GameState|undefined, hex: Coordinate): CityProperties|undefined {
         let city = this.hexes[hex.y][hex.x];
+        if (city.type != HexType.CITY) {
+            return undefined;
+        }
+
         let label: string;
         if (city.goodsGrowth) {
             label = city.goodsGrowth.map(n => (n % 6) + 1).join(',');
@@ -65,6 +74,7 @@ export class BasicMap implements GameMap {
         }
         return {
             label: label,
+            name: city.name,
             color: color,
             darkCity: darkCity
         };

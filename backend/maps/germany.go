@@ -26,24 +26,15 @@ func (m *germanyMap) PostSetupHook(gameState *common.GameState, randProvider com
 }
 
 func (m *germanyMap) getPortNumber(hex common.Coordinate) int {
-	if hex.X == 3 && hex.Y == 1 {
-		return 1
+	mapData := m.Hexes[hex.Y][hex.X].MapData
+	if mapData != nil {
+		if portNumber, ok := mapData["portNumber"]; ok {
+			if portNumberVal, ok := portNumber.(float64); ok {
+				return int(portNumberVal)
+			}
+		}
 	}
-	if hex.X == 0 && hex.Y == 10 {
-		return 2
-	}
-	if hex.X == 0 && hex.Y == 16 {
-		return 3
-	}
-	if hex.X == 0 && hex.Y == 22 {
-		return 4
-	}
-	if hex.X == 0 && hex.Y == 28 {
-		return 5
-	}
-	if hex.X == 6 && hex.Y == 10 {
-		return 6
-	}
+
 	return 0
 }
 

@@ -6,53 +6,26 @@ import {ReactNode} from "react";
 class Germany extends BasicMap {
 
     private getPortNumber(hex: Coordinate): number {
-        if (hex.x === 3 && hex.y === 1) {
-            return 1;
+        let mapData = this.hexes[hex.y][hex.x].mapData;
+        if (mapData && mapData.portNumber) {
+            return mapData.portNumber;
         }
-        if (hex.x === 0 && hex.y === 10) {
-            return 2;
-        }
-        if (hex.x === 0 && hex.y === 16) {
-            return 3;
-        }
-        if (hex.x === 0 && hex.y === 22) {
-            return 4;
-        }
-        if (hex.x === 0 && hex.y === 28) {
-            return 5;
-        }
-        if (hex.x === 6 && hex.y === 10) {
-            return 6;
-        }
-
         return 0;
     }
 
     public getCityProperties(gameState: GameState|undefined, hex: Coordinate): CityProperties | undefined {
-        let portNumber = this.getPortNumber(hex);
-        if (portNumber === 0) {
-            return super.getCityProperties(gameState, hex);
-        } else {
-            if (gameState && gameState.mapState) {
+        let cityProperties = super.getCityProperties(gameState, hex);
+        if (cityProperties) {
+            let portNumber = this.getPortNumber(hex);
+            if (portNumber && gameState && gameState.mapState) {
                 let portColors = gameState.mapState["portColors"] as Color[] | undefined;
                 if (portColors) {
-                    let color = portColors[portNumber - 1];
-                    return {
-                        color: color,
-                        darkCity: false,
-                        label: ""
-                    };
-                }
-            } else {
-                return {
-                    color: Color.NONE,
-                    darkCity: false,
-                    label: "",
+                    cityProperties.color = portColors[portNumber - 1];
                 }
             }
         }
 
-        return undefined;
+        return cityProperties;
     }
 
     public getBuildLimit(_gameState: GameState | undefined, _player: string): number {

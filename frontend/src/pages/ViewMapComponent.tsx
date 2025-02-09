@@ -40,7 +40,7 @@ class RenderMapBuilder {
         if (cityProperties) {
             this.hexRenderer.renderCityHex(hex, cityProperties);
         } else {
-            this.hexRenderer.renderHex(hex, this.map.getHexType(hex));
+            this.hexRenderer.renderHex(hex, this.map.getHexType(hex), this.map.getLocationName(hex));
         }
     }
 
