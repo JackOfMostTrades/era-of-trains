@@ -133,9 +133,21 @@ function PlayerStatus({game, map, onConfirmMove}: { game: ViewGameResponse, map:
     let playerColumns: ReactNode[] = [];
     for (let playerId of playerInfoOrder) {
         let nickname = playerById[playerId].nickname;
+        let deltaLabel: string|null;
+        if (game.gameState.playerIncome[playerId] >= 0) {
+            let delta = game.gameState.playerIncome[playerId] - game.gameState.playerLoco[playerId] - game.gameState.playerShares[playerId];
+            if (delta >= 0) {
+                deltaLabel = "(+$" + delta + ")";
+            } else {
+                deltaLabel = "(-$" + Math.abs(delta) + ")";
+            }
+        } else {
+            deltaLabel = null;
+        }
+
         playerColumns.push(<Grid.Column key={playerId}><Segment>
                 Player: <PlayerColorAndName nickname={nickname} color={game.gameState.playerColor[playerId]} /><br/>
-                Cash: ${game.gameState.playerCash[playerId]}<br/>
+                Cash: ${game.gameState.playerCash[playerId]} {deltaLabel}<br/>
                 Shares: {game.gameState.playerShares[playerId]}<br/>
                 Income: {game.gameState.playerIncome[playerId]}<br/>
                 Loco: {game.gameState.playerLoco[playerId]}<br/>
