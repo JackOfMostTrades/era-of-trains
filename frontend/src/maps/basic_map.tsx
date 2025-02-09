@@ -74,7 +74,6 @@ export class BasicMap implements GameMap {
         }
         return {
             label: label,
-            name: city.name,
             color: color,
             darkCity: darkCity
         };

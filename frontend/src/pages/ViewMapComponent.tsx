@@ -32,13 +32,13 @@ class RenderMapBuilder {
     }
 
     public renderCityHex(hex: Coordinate, cityProperties: CityProperties) {
-        this.hexRenderer.renderCityHex(hex, cityProperties);
+        this.hexRenderer.renderCityHex(hex, cityProperties, this.map.getLocationName(hex));
     }
 
     public renderHex(hex: Coordinate) {
         let cityProperties: CityProperties|undefined = getCityProperties(this.gameState, this.map, hex);
         if (cityProperties) {
-            this.hexRenderer.renderCityHex(hex, cityProperties);
+            this.hexRenderer.renderCityHex(hex, cityProperties, this.map.getLocationName(hex));
         } else {
             this.hexRenderer.renderHex(hex, this.map.getHexType(hex), this.map.getLocationName(hex));
         }

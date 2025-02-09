@@ -15,7 +15,7 @@ export function NewCitySelector(props: NewCitySelectorProps) {
     let columns: ReactNode[] = [];
     for (let newCityNum = 0; newCityNum < 8; newCityNum++) {
         let renderer = new HexRenderer(false, false, userSession);
-        renderer.renderCityHex({x: 0, y: 0}, urbCityProperties(newCityNum));
+        renderer.renderCityHex({x: 0, y: 0}, urbCityProperties(newCityNum), undefined);
 
         let classNames = "track-select";
         if (newCityNum === props.selected) {

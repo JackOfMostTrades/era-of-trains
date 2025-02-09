@@ -168,7 +168,7 @@ export class HexRenderer {
         return pos;
     }
 
-    public renderCityHex(hex: Coordinate, cityProperties: CityProperties) {
+    public renderCityHex(hex: Coordinate, cityProperties: CityProperties, locationName: string|undefined) {
         let pos = this.getHexXY(hex);
 
         let onClick: undefined | (() => void);
@@ -204,11 +204,11 @@ export class HexRenderer {
         }
         points = `${pos.x + 0.8},${pos.y + 5} ${pos.x + 3.225},${pos.y + 0.8} ${pos.x + 8.075},${pos.y + 0.8} ${pos.x + 10.747},${pos.y + 5} ${pos.x + 8.075},${pos.y + 9.2} ${pos.x + 3.225},${pos.y + 9.2}`
         this.paths.push(<polygon stroke={strokeColor} strokeWidth={0.2} fill={cityColor} points={points} onClick={onClick}/>);
-        this.paths.push(<circle cx={pos.x + 5.7735} cy={pos.y + 5} r={2.5} fill='#FFFFFF' onClick={onClick}/>);
+        this.paths.push(<circle cx={pos.x + 5.7735} cy={pos.y + 5} r={2.2} fill='#FFFFFF' onClick={onClick}/>);
         this.paths.push(<text fontSize={2.5} x={pos.x + 5.7735} y={pos.y+5.3} dominantBaseline="middle" textAnchor="middle">{cityProperties.label}</text>);
-        if (cityProperties.name) {
+        if (locationName) {
             let center = this.getHexCenter(hex);
-            this.paths.push(<HexName centerX={center.x} centerY={center.y} name={cityProperties.name} />);
+            this.paths.push(<HexName centerX={center.x} centerY={center.y} name={locationName} />);
         }
 
         this.width = Math.max(this.width, hex.x);
@@ -262,7 +262,7 @@ export class HexRenderer {
         this.paths.push(<polygon stroke='#000000' strokeWidth={0.1} fill={color} points={points} onClick={onClick}/>);
 
         if (hexType === HexType.TOWN) {
-            this.paths.push(<circle cx={pos.x + 5.7735} cy={pos.y + 5} r={2.5} fill='#FFFFFF' onClick={onClick}/>);
+            this.paths.push(<circle cx={pos.x + 5.7735} cy={pos.y + 5} r={2.2} fill='#FFFFFF' onClick={onClick}/>);
             if (locationName) {
                 let center = this.getHexCenter(hex);
                 this.paths.push(<HexName centerX={center.x} centerY={center.y} name={locationName} />);

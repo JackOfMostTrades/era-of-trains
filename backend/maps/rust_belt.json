@@ -1,1 +1,700 @@
-{"hexes":[[{"type":2},{"type":6,"name":"Apples","cityColor":5,"goodsGrowth":[5],"startingCubeCount":2},{"type":1},{"type":2},{"type":1},{"type":1},{"type":1},{"type":1},{"type":2}],[{"type":2},{"type":1},{"type":2},{"type":2},{"type":1},{"type":1},{"type":1},{"type":2},{"type":2}],[{"type":2},{"type":2},{"type":2},{"type":2},{"type":1},{"type":2},{"type":1},{"type":2},{"type":6,"cityColor":3,"goodsGrowth":[11],"startingCubeCount":2}],[{"type":2},{"type":2},{"type":2},{"type":5,"name":"Bananas"},{"type":1},{"type":2},{"type":1},{"type":2},{"type":1}],[{"type":2},{"type":2},{"type":2},{"type":2},{"type":1},{"type":2},{"type":1},{"type":2},{"type":3}],[{"type":6,"cityColor":4,"goodsGrowth":[4],"startingCubeCount":2},{"type":2},{"type":2},{"type":2},{"type":1},{"type":2},{"type":1},{"type":2},{"type":5}],[{"type":2},{"type":3},{"type":5},{"type":2},{"type":1},{"type":5},{"type":2},{"type":2},{"type":1}],[{"type":2},{"type":3},{"type":2},{"type":5},{"type":1},{"type":2},{"type":6,"cityColor":2,"goodsGrowth":[8],"startingCubeCount":2},{"type":1},{"type":2}],[{"type":2},{"type":2},{"type":3},{"type":2},{"type":1},{"type":2},{"type":2},{"type":1},{"type":2}],[{"type":2},{"type":2},{"type":2},{"type":2},{"type":1},{"type":2},{"type":1},{"type":5},{"type":4}],[{"type":2},{"type":2},{"type":3},{"type":2},{"type":1},{"type":2},{"type":5},{"type":2},{"type":2}],[{"type":2},{"type":2},{"type":2},{"type":6,"cityColor":2,"goodsGrowth":[0],"startingCubeCount":2},{"type":5},{"type":2},{"type":2},{"type":2},{"type":6,"cityColor":2,"goodsGrowth":[10],"startingCubeCount":3}],[{"type":2},{"type":2},{"type":3},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":3}],[{"type":2},{"type":2},{"type":5},{"type":2},{"type":2},{"type":5},{"type":2},{"type":2},{"type":4}],[{"type":2},{"type":6,"cityColor":4,"goodsGrowth":[3],"startingCubeCount":2},{"type":3},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":3}],[{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":3},{"type":4}],[{"type":2},{"type":2},{"type":3},{"type":5},{"type":5},{"type":5},{"type":6,"cityColor":4,"goodsGrowth":[7],"startingCubeCount":2},{"type":3},{"type":6,"cityColor":3,"goodsGrowth":[9],"startingCubeCount":3}],[{"type":2},{"type":2},{"type":3},{"type":2},{"type":2},{"type":2},{"type":3},{"type":2},{"type":4}],[{"type":2},{"type":2},{"type":2},{"type":3},{"type":2},{"type":2},{"type":3},{"type":2},{"type":4}],[{"type":2},{"type":2},{"type":6,"cityColor":2,"goodsGrowth":[1],"startingCubeCount":2},{"type":2},{"type":6,"cityColor":4,"goodsGrowth":[6],"startingCubeCount":2},{"type":3},{"type":5},{"type":4},{"type":4}],[{"type":6,"cityColor":5,"goodsGrowth":[2],"startingCubeCount":2},{"type":2},{"type":2},{"type":3},{"type":2},{"type":3},{"type":2},{"type":4},{"type":4}]],"teleportLinks":null}
+{
+  "hexes": [
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "name": "Duluth",
+        "cityColor": 5,
+        "goodsGrowth": [
+          5
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "name": "Toronto",
+        "cityColor": 3,
+        "goodsGrowth": [
+          11
+        ],
+        "startingCubeCount": 2
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Green Bay"
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      }
+    ],
+    [
+      {
+        "type": 6,
+        "name": "Minneapolis",
+        "cityColor": 4,
+        "goodsGrowth": [
+          4
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Buffalo"
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 5,
+        "name": "La Crosse"
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 5,
+        "name": "Grand Rapids"
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Milwaukee"
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "name": "Detroit",
+        "cityColor": 2,
+        "goodsGrowth": [
+          8
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 5,
+        "name": "Cleveland"
+      },
+      {
+        "type": 4
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Toledo"
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "name": "Chicago",
+        "cityColor": 2,
+        "goodsGrowth": [
+          0
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 5,
+        "name": "Michigan City"
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "name": "Pittsburgh",
+        "cityColor": 2,
+        "goodsGrowth": [
+          10
+        ],
+        "startingCubeCount": 3
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Rock Island"
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Fort Wayne"
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "name": "Des Moines",
+        "cityColor": 4,
+        "goodsGrowth": [
+          3
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 4
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 5,
+        "name": "Springfield"
+      },
+      {
+        "type": 5,
+        "name": "Terre Haute"
+      },
+      {
+        "type": 5,
+        "name": "Indianapolis"
+      },
+      {
+        "type": 6,
+        "name": "Cincinnati",
+        "cityColor": 4,
+        "goodsGrowth": [
+          7
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 6,
+        "name": "Wheeling",
+        "cityColor": 3,
+        "goodsGrowth": [
+          9
+        ],
+        "startingCubeCount": 3
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "name": "St Louis",
+        "cityColor": 2,
+        "goodsGrowth": [
+          1
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "name": "Evansville",
+        "cityColor": 4,
+        "goodsGrowth": [
+          6
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 5,
+        "name": "Lexington"
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      }
+    ],
+    [
+      {
+        "type": 6,
+        "name": "Kansas City",
+        "cityColor": 5,
+        "goodsGrowth": [
+          2
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      }
+    ]
+  ],
+  "teleportLinks": null
+}

@@ -38,7 +38,7 @@ export function TrackSelector(props: TrackSelectorProps) {
                 }
 
                 let renderer = new HexRenderer(false, false, userSession);
-                renderer.renderHex({x: 0, y: 0}, props.map.getHexType(props.coordinate), undefined);
+                renderer.renderHex({x: 0, y: 0}, props.map.getHexType(props.coordinate), props.map.getLocationName(props.coordinate));
                 for (let exit of mapTileState.getTileState(props.coordinate).routes) {
                     renderer.renderTownTrack({x: 0, y: 0}, exit.left, props.gameState.playerColor[exit.owner]);
                 }
@@ -63,7 +63,7 @@ export function TrackSelector(props: TrackSelectorProps) {
                 }
 
                 let renderer = new HexRenderer(false, false, userSession);
-                renderer.renderHex({x: 0, y: 0}, props.map.getHexType(props.coordinate));
+                renderer.renderHex({x: 0, y: 0}, props.map.getHexType(props.coordinate), props.map.getLocationName(props.coordinate));
                 renderTrackTile(mapTileState.getTileState(props.coordinate).routes,
                     props.gameState, props.activePlayer, {x: 0, y: 0}, trackTile, rotation as Rotation, renderer);
                 let classNames = "track-select";

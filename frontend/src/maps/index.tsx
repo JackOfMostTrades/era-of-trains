@@ -25,7 +25,6 @@ export enum HexType {
 
 export interface CityProperties {
     label: string
-    name: string|undefined
     color: Color
     darkCity: boolean
 }
