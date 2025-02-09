@@ -2,10 +2,13 @@ import {ReactNode} from "react";
 import {BuildAction, Color, Coordinate, Direction, GameState} from "../api/api.ts";
 import {CityProperties, GameMap, HexType} from "./index.tsx";
 
-interface BasicCity {
-    color: Color;
-    coordinate: Coordinate;
-    goodsGrowth: number[];
+interface BasicMapHex {
+    type: HexType;
+    name?: string;
+    cityColor?: Color;
+    goodsGrowth?: number[];
+    startingCubeCount?: number;
+    cost?: number;
 }
 
 export interface TeleportLinkEdge {
@@ -21,18 +24,11 @@ export interface TeleportLink {
     costLocationEdge: Direction|-1;
 }
 
-interface SpecialTrackPricing {
-    cost: number;
-    hex: Coordinate;
-}
-
 export const RIVER_COLOR = "#009bb2";
 
 export class BasicMap implements GameMap {
-    protected hexes: HexType[][] = [];
-    protected cities: BasicCity[] = [];
+    protected hexes: BasicMapHex[][] = [];
     protected teleportLinks: TeleportLink[] = [];
-    protected specialTrackPricing: SpecialTrackPricing[] = [];
 
     public getWidth(): number {
         return this.hexes[0].length;
@@ -46,36 +42,46 @@ export class BasicMap implements GameMap {
         if (hex.x < 0 || hex.y < 0 || hex.y >= this.hexes.length || hex.x >= this.hexes[0].length) {
             return HexType.OFFBOARD;
         }
-        return this.hexes[hex.y][hex.x];
+        return this.hexes[hex.y][hex.x].type;
     }
 
     public getCityProperties(_: GameState|undefined, hex: Coordinate): CityProperties|undefined {
-        for (let city of this.cities) {
-            if (city.coordinate.x === hex.x && city.coordinate.y === hex.y) {
-                let label = city.goodsGrowth.map(n => (n%6)+1).join(',');
-                let color = city.color;
-                let darkCity = false;
-                for (let goodsGrowth of city.goodsGrowth) {
-                    if (goodsGrowth >= 6) {
-                        darkCity = true;
-                        break;
-                    }
+        let city = this.hexes[hex.y][hex.x];
+        let label: string;
+        if (city.goodsGrowth) {
+            label = city.goodsGrowth.map(n => (n % 6) + 1).join(',');
+        } else {
+            label = "";
+        }
+        let color = city.cityColor || Color.NONE;
+        let darkCity = false;
+        if (city.goodsGrowth) {
+            for (let goodsGrowth of city.goodsGrowth) {
+                if (goodsGrowth >= 6) {
+                    darkCity = true;
+                    break;
                 }
-                return {
-                    label: label,
-                    color: color,
-                    darkCity: darkCity
-                };
             }
         }
+        return {
+            label: label,
+            color: color,
+            darkCity: darkCity
+        };
 
         return undefined;
     }
 
     public getCityColor(goodsGrowthNumber: number): Color {
-        for (let city of this.cities) {
-            if (city.goodsGrowth.indexOf(goodsGrowthNumber) !== -1) {
-                return city.color;
+        for (let y = 0; y < this.hexes.length; y++) {
+            for (let x = 0; x < this.hexes[y].length; x++) {
+                let city = this.hexes[y][x];
+                if (city.goodsGrowth && city.goodsGrowth.indexOf(goodsGrowthNumber) !== -1) {
+                    if (city.cityColor) {
+                        return city.cityColor;
+                    }
+                    return Color.NONE;
+                }
             }
         }
         return Color.NONE;
@@ -86,12 +92,9 @@ export class BasicMap implements GameMap {
     }
 
     public getSpecialTrackPricing(hex: Coordinate): number|undefined {
-        if (this.specialTrackPricing) {
-            for (let pricing of this.specialTrackPricing) {
-                if (pricing.hex.x === hex.x && pricing.hex.y === hex.y) {
-                    return pricing.cost;
-                }
-            }
+        let h = this.hexes[hex.y][hex.x];
+        if (h.cost) {
+            return h.cost;
         }
         return undefined;
     }
@@ -128,9 +131,7 @@ export class BasicMap implements GameMap {
 
     protected initializeFromJson(src: any) {
         this.hexes = src.hexes;
-        this.cities = src.cities;
         this.teleportLinks = src.teleportLinks;
-        this.specialTrackPricing = src.specialTrackPricing;
     }
 
     public static fromJson(src: any): BasicMap {

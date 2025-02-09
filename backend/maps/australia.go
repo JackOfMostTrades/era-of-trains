@@ -58,18 +58,25 @@ func (b *australiaMap) PopulateStartingCubes(gameState *common.GameState, randPr
 		return fmt.Errorf("failed to find 12 blue cubes for Australia, found %d", count)
 	}
 
-	for _, city := range b.Cities {
-		if city.GoodsGrowth[0] < 6 {
-			continue
-		}
+	for y := 0; y < len(b.Hexes); y++ {
+		for x := 0; x < len(b.Hexes[y]); x++ {
+			hex := b.Hexes[y][x]
+			if hex.HexType != CITY_HEX_TYPE {
+				continue
+			}
+			if len(hex.GoodsGrowth) < 1 || hex.GoodsGrowth[0] < 6 {
+				continue
+			}
 
-		gameState.Cubes = append(gameState.Cubes, &common.BoardCube{
-			Color: common.BLUE,
-			Hex:   city.Coordinate,
-		}, &common.BoardCube{
-			Color: common.BLUE,
-			Hex:   city.Coordinate,
-		})
+			coord := common.Coordinate{X: x, Y: y}
+			gameState.Cubes = append(gameState.Cubes, &common.BoardCube{
+				Color: common.BLUE,
+				Hex:   coord,
+			}, &common.BoardCube{
+				Color: common.BLUE,
+				Hex:   coord,
+			})
+		}
 	}
 	return b.basicMap.PopulateStartingCubes(gameState, randProvider)
 }

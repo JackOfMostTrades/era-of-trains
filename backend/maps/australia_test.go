@@ -70,19 +70,29 @@ func TestPopulateStartingCubes(t *testing.T) {
 	err := gameMap.PopulateStartingCubes(gameState, &common.CryptoRandProvider{})
 	assert.Equal(t, nil, err)
 
-	for _, city := range gameMap.Cities {
-		var cubes []*common.BoardCube
-		for _, cube := range gameState.Cubes {
-			if cube.Hex == city.Coordinate {
-				cubes = append(cubes, cube)
+	for y := 0; y < len(gameMap.Hexes); y++ {
+		for x := 0; x < len(gameMap.Hexes[y]); x++ {
+			hex := gameMap.Hexes[y][x]
+			if hex.HexType != CITY_HEX_TYPE {
+				continue
 			}
-		}
-		if city.GoodsGrowth[0] >= 6 {
-			assert.Equal(t, common.BLUE, cubes[0])
-			assert.Equal(t, common.BLUE, cubes[1])
-			assert.Equal(t, 4, len(cubes))
-		} else {
-			assert.Equal(t, 3, len(cubes))
+			if len(hex.GoodsGrowth) < 1 || hex.GoodsGrowth[0] < 6 {
+				continue
+			}
+
+			var cubes []*common.BoardCube
+			for _, cube := range gameState.Cubes {
+				if cube.Hex.X == x && cube.Hex.Y == y {
+					cubes = append(cubes, cube)
+				}
+			}
+			if len(hex.GoodsGrowth) >= 1 && hex.GoodsGrowth[0] >= 6 {
+				assert.Equal(t, common.BLUE, cubes[0])
+				assert.Equal(t, common.BLUE, cubes[1])
+				assert.Equal(t, 4, len(cubes))
+			} else {
+				assert.Equal(t, 3, len(cubes))
+			}
 		}
 	}
 }

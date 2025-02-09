@@ -10,21 +10,9 @@ import (
 	"github.com/JackOfMostTrades/eot/backend/common"
 )
 
-type basicCity struct {
-	Color      common.Color      `json:"color"`
-	Coordinate common.Coordinate `json:"coordinate"`
-	// Numbers for goods growth, 0-5 for white, 6-11 for black
-	GoodsGrowth []int `json:"goodsGrowth"`
-}
-
-type startingCubeSpec struct {
-	Number     int               `json:"number"`
-	Coordinate common.Coordinate `json:"coordinate"`
-}
-
-type specialTrackPricing struct {
-	Cost int               `json:"cost"`
-	Hex  common.Coordinate `json:"hex"`
+type teleportLinkEdge struct {
+	Hex       common.Coordinate `json:"hex"`
+	Direction common.Direction  `json:"direction"`
 }
 
 type teleportLink struct {
@@ -35,52 +23,52 @@ type teleportLink struct {
 	CostLocationEdge common.Direction  `json:"costLocationEdge"`
 }
 
-type teleportLinkEdge struct {
-	Hex       common.Coordinate `json:"hex"`
-	Direction common.Direction  `json:"direction"`
+type basicMapHex struct {
+	HexType           HexType      `json:"type"`
+	Name              string       `json:"name,omitempty"`
+	CityColor         common.Color `json:"cityColor,omitempty"`
+	GoodsGrowth       []int        `json:"goodsGrowth,omitempty"`
+	StartingCubeCount int          `json:"startingCubeCount,omitempty"`
+	Cost              int          `json:"cost,omitempty"`
 }
 
 type basicMap struct {
 	*AbstractGameMapImpl
 
 	// Rectangular array height*width in size (y dimension is first)
-	Hexes         [][]HexType        `json:"hexes"`
-	Cities        []basicCity        `json:"cities"`
-	StartingCubes []startingCubeSpec `json:"startingCubes"`
-	TeleportLinks []teleportLink     `json:"teleportLinks"`
-	// Hexes with unusual track costs
-	SpecialTrackPricing []specialTrackPricing `json:"specialTrackPricing,omitempty"`
+	Hexes         [][]*basicMapHex `json:"hexes"`
+	TeleportLinks []teleportLink   `json:"teleportLinks"`
 }
 
 func (b *basicMap) PopulateStartingCubes(gameState *common.GameState, randProvider common.RandProvider) error {
-	for _, startingCubeSpec := range b.StartingCubes {
-		for i := 0; i < startingCubeSpec.Number; i++ {
-			cube, err := gameState.DrawCube(randProvider)
-			if err != nil {
-				return fmt.Errorf("failed to draw cube: %v", err)
+	for y := 0; y < len(b.Hexes); y++ {
+		for x := 0; x < len(b.Hexes[y]); x++ {
+			for i := 0; i < b.Hexes[y][x].StartingCubeCount; i++ {
+				cube, err := gameState.DrawCube(randProvider)
+				if err != nil {
+					return fmt.Errorf("failed to draw cube: %v", err)
+				}
+				gameState.Cubes = append(gameState.Cubes, &common.BoardCube{
+					Color: cube,
+					Hex:   common.Coordinate{X: x, Y: y},
+				})
 			}
-			gameState.Cubes = append(gameState.Cubes, &common.BoardCube{
-				Color: cube,
-				Hex:   startingCubeSpec.Coordinate,
-			})
 		}
 	}
 	return nil
 }
 
 func (b *basicMap) GetCityColorForHex(gameState *common.GameState, hex common.Coordinate) common.Color {
-	for _, city := range b.Cities {
-		if city.Coordinate.Equals(hex) {
-			return city.Color
-		}
-	}
-	return common.NONE_COLOR
+	return b.Hexes[hex.Y][hex.X].CityColor
 }
 
 func (b *basicMap) GetCityHexForGoodsGrowth(goodsGrowth int) common.Coordinate {
-	for _, city := range b.Cities {
-		if slices.Index(city.GoodsGrowth, goodsGrowth) != -1 {
-			return city.Coordinate
+	for y := 0; y < len(b.Hexes); y++ {
+		for x := 0; x < len(b.Hexes[y]); x++ {
+			hex := b.Hexes[y][x]
+			if slices.Index(hex.GoodsGrowth, goodsGrowth) != -1 {
+				return common.Coordinate{X: x, Y: y}
+			}
 		}
 	}
 	return common.Coordinate{X: -1, Y: -1}
@@ -98,26 +86,14 @@ func (b *basicMap) GetHexType(hex common.Coordinate) HexType {
 	if hex.X < 0 || hex.Y < 0 || hex.Y >= len(b.Hexes) || hex.X >= len(b.Hexes[hex.Y]) {
 		return OFFBOARD_HEX_TYPE
 	}
-	return b.Hexes[hex.Y][hex.X]
+	return b.Hexes[hex.Y][hex.X].HexType
 }
 
 func (b *basicMap) GetTrackBuildCost(gameState *common.GameState, player string, hexType HexType, hex common.Coordinate, trackType tiles.TrackType, isUpgrade bool) (int, error) {
 	if !isUpgrade {
-		for _, pricing := range b.SpecialTrackPricing {
-			if pricing.Hex.X == hex.X && pricing.Hex.Y == hex.Y {
-				cost := pricing.Cost
-				switch trackType {
-				case tiles.SIMPLE_TRACK_TYPE:
-					break
-				case tiles.COMPLEX_COEXISTING_TRACK_TYPE:
-					cost += 1
-				case tiles.COMPLEX_CROSSING_TRACK_TYPE:
-					cost += 2
-				default:
-					panic(fmt.Errorf("Unhandled track type: %d", trackType))
-				}
-				return cost, nil
-			}
+		boardHex := b.Hexes[hex.Y][hex.X]
+		if boardHex.Cost != 0 {
+			return boardHex.Cost, nil
 		}
 	}
 
