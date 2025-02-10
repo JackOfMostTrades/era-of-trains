@@ -35,6 +35,7 @@
       },
       {
         "type": 6,
+        "name": "To Copenhagen",
         "mapData": {
           "portNumber": 1
         }
@@ -117,6 +118,7 @@
       },
       {
         "type": 6,
+        "name": "To Königsberg",
         "cityColor": 3,
         "goodsGrowth": [
           11
@@ -132,7 +134,8 @@
         "type": 1
       },
       {
-        "type": 5
+        "type": 5,
+        "name": "Hamburg"
       },
       {
         "type": 1
@@ -162,7 +165,8 @@
         "type": 2
       },
       {
-        "type": 5
+        "type": 5,
+        "name": "Rostock"
       },
       {
         "type": 3
@@ -178,6 +182,7 @@
       },
       {
         "type": 6,
+        "name": "Bremen & Olden.",
         "cityColor": 4,
         "goodsGrowth": [
           3
@@ -194,7 +199,8 @@
         "type": 2
       },
       {
-        "type": 5
+        "type": 5,
+        "name": "Szczecin"
       },
       {
         "type": 0
@@ -233,6 +239,7 @@
       },
       {
         "type": 6,
+        "name": "Hannover",
         "cityColor": 2,
         "goodsGrowth": [
           4
@@ -244,6 +251,7 @@
       },
       {
         "type": 6,
+        "name": "Berlin",
         "cityColor": 1,
         "startingCubeCount": 4
       },
@@ -258,6 +266,7 @@
     [
       {
         "type": 6,
+        "name": "To Rotterdam",
         "mapData": {
           "portNumber": 2
         }
@@ -279,6 +288,7 @@
       },
       {
         "type": 6,
+        "name": "To Warsaw",
         "mapData": {
           "portNumber": 6
         }
@@ -296,7 +306,8 @@
         "type": 3
       },
       {
-        "type": 5
+        "type": 5,
+        "name": "Magdeburg"
       },
       {
         "type": 2
@@ -338,6 +349,7 @@
       },
       {
         "type": 6,
+        "name": "Essen",
         "cityColor": 4,
         "goodsGrowth": [
           8
@@ -345,7 +357,8 @@
         "startingCubeCount": 2
       },
       {
-        "type": 5
+        "type": 5,
+        "name": "Kassel"
       },
       {
         "type": 2
@@ -354,7 +367,8 @@
         "type": 2
       },
       {
-        "type": 5
+        "type": 5,
+        "name": "Görlitz"
       },
       {
         "type": 0
@@ -366,6 +380,7 @@
       },
       {
         "type": 6,
+        "name": "Düsseldorf & Col.",
         "cityColor": 2,
         "goodsGrowth": [
           2
@@ -379,7 +394,8 @@
         "type": 2
       },
       {
-        "type": 5
+        "type": 5,
+        "name": "Leipzig"
       },
       {
         "type": 2
@@ -417,6 +433,7 @@
     [
       {
         "type": 6,
+        "name": "To Antwerp",
         "mapData": {
           "portNumber": 3
         }
@@ -435,6 +452,7 @@
       },
       {
         "type": 6,
+        "name": "Dresden",
         "cityColor": 4,
         "goodsGrowth": [
           10
@@ -443,6 +461,7 @@
       },
       {
         "type": 6,
+        "name": "To Breslau",
         "cityColor": 5,
         "goodsGrowth": [
           5
@@ -483,10 +502,12 @@
         "type": 2
       },
       {
-        "type": 5
+        "type": 5,
+        "name": "Frankfurt"
       },
       {
-        "type": 5
+        "type": 5,
+        "name": "Würzburg"
       },
       {
         "type": 4
@@ -539,10 +560,12 @@
         "type": 2
       },
       {
-        "type": 5
+        "type": 5,
+        "name": "Pilsen"
       },
       {
-        "type": 5
+        "type": 5,
+        "name": "Prague"
       }
     ],
     [
@@ -558,6 +581,7 @@
       },
       {
         "type": 6,
+        "name": "Nuremberg",
         "cityColor": 2,
         "goodsGrowth": [
           7
@@ -577,15 +601,18 @@
     [
       {
         "type": 6,
+        "name": "To Paris",
         "mapData": {
           "portNumber": 4
         }
       },
       {
-        "type": 5
+        "type": 5,
+        "name": "Saarbrücken"
       },
       {
         "type": 6,
+        "name": "Stuttgart",
         "cityColor": 4,
         "goodsGrowth": [
           1
@@ -646,7 +673,8 @@
         "type": 2
       },
       {
-        "type": 5
+        "type": 5,
+        "name": "Passau"
       },
       {
         "type": 4
@@ -657,13 +685,15 @@
         "type": 2
       },
       {
-        "type": 5
+        "type": 5,
+        "name": "Freiburg"
       },
       {
         "type": 4
       },
       {
         "type": 6,
+        "name": "Munich",
         "cityColor": 2,
         "goodsGrowth": [
           6
@@ -735,6 +765,7 @@
     [
       {
         "type": 6,
+        "name": "To Lyon",
         "mapData": {
           "portNumber": 5
         }
@@ -744,6 +775,7 @@
       },
       {
         "type": 6,
+        "name": "To Zürich",
         "cityColor": 5,
         "goodsGrowth": [
           0
@@ -761,6 +793,7 @@
       },
       {
         "type": 6,
+        "name": "To Vienna",
         "cityColor": 3,
         "goodsGrowth": [
           9

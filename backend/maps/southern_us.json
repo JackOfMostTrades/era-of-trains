@@ -1,1 +1,689 @@
-{"hexes":[[{"type":0},{"type":0},{"type":0},{"type":0},{"type":0},{"type":0},{"type":0},{"type":0}],[{"type":2},{"type":3},{"type":6,"cityColor":4,"goodsGrowth":[0],"startingCubeCount":1},{"type":4},{"type":6,"cityColor":2,"goodsGrowth":[6],"startingCubeCount":1},{"type":4},{"type":2},{"type":6,"cityColor":4,"goodsGrowth":[7],"startingCubeCount":1}],[{"type":2},{"type":2},{"type":2},{"type":2},{"type":4},{"type":4},{"type":4},{"type":2}],[{"type":2},{"type":3},{"type":2},{"type":2},{"type":4},{"type":4},{"type":5},{"type":2}],[{"type":2},{"type":5},{"type":2},{"type":2},{"type":4},{"type":4},{"type":4},{"type":2}],[{"type":2},{"type":3},{"type":2},{"type":5},{"type":4},{"type":4},{"type":2},{"type":2}],[{"type":6,"cityColor":2,"goodsGrowth":[1],"startingCubeCount":1},{"type":2},{"type":3},{"type":2},{"type":4},{"type":4},{"type":2},{"type":2}],[{"type":2},{"type":2},{"type":5},{"type":2},{"type":4},{"type":2},{"type":5},{"type":2}],[{"type":2},{"type":5},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2}],[{"type":2},{"type":2},{"type":2},{"type":2},{"type":6,"cityColor":2,"goodsGrowth":[8],"startingCubeCount":4},{"type":2},{"type":2},{"type":2}],[{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":5},{"type":2}],[{"type":2},{"type":2},{"type":5},{"type":2},{"type":2},{"type":2},{"type":3},{"type":6,"cityColor":5,"goodsGrowth":[9],"startingCubeCount":3}],[{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":5},{"type":2},{"type":3}],[{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":1}],[{"type":6,"cityColor":4,"goodsGrowth":[2],"startingCubeCount":1},{"type":5},{"type":5},{"type":6,"cityColor":4,"goodsGrowth":[5],"startingCubeCount":1},{"type":5},{"type":2},{"type":2},{"type":6,"cityColor":3,"goodsGrowth":[10],"startingCubeCount":3}],[{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":1}],[{"type":2},{"type":2},{"type":3},{"type":2},{"type":3},{"type":2},{"type":2},{"type":1}],[{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":1}],[{"type":2},{"type":2},{"type":3},{"type":2},{"type":3},{"type":2},{"type":2},{"type":1}],[{"type":2},{"type":2},{"type":2},{"type":2},{"type":5},{"type":2},{"type":6,"cityColor":2,"goodsGrowth":[11],"startingCubeCount":1},{"type":1}],[{"type":2},{"type":5},{"type":6,"cityColor":5,"goodsGrowth":[4],"startingCubeCount":3},{"type":2},{"type":3},{"type":2},{"type":2},{"type":1}],[{"type":3},{"type":1},{"type":1},{"type":2},{"type":2},{"type":2},{"type":2},{"type":1}],[{"type":6,"cityColor":3,"goodsGrowth":[3],"startingCubeCount":3},{"type":1},{"type":1},{"type":1},{"type":1},{"type":1},{"type":2},{"type":1}]],"teleportLinks":null}
+{
+  "hexes": [
+    [
+      {
+        "type": 0
+      },
+      {
+        "type": 0
+      },
+      {
+        "type": 0
+      },
+      {
+        "type": 0
+      },
+      {
+        "type": 0
+      },
+      {
+        "type": 0
+      },
+      {
+        "type": 0
+      },
+      {
+        "type": 0
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 6,
+        "name": "Nashville",
+        "cityColor": 4,
+        "goodsGrowth": [
+          0
+        ],
+        "startingCubeCount": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 6,
+        "name": "Knoxville",
+        "cityColor": 2,
+        "goodsGrowth": [
+          6
+        ],
+        "startingCubeCount": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "name": "Raleigh",
+        "cityColor": 4,
+        "goodsGrowth": [
+          7
+        ],
+        "startingCubeCount": 1
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 5,
+        "name": "Charlotte"
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Jackson"
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Chattanooga"
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 6,
+        "name": "Memphis",
+        "cityColor": 2,
+        "goodsGrowth": [
+          1
+        ],
+        "startingCubeCount": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Decatur"
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Columbia"
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Tupelo"
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "name": "Atlanta",
+        "cityColor": 2,
+        "goodsGrowth": [
+          8
+        ],
+        "startingCubeCount": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Augusta"
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Birmingham"
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 6,
+        "name": "Charleston",
+        "cityColor": 5,
+        "goodsGrowth": [
+          9
+        ],
+        "startingCubeCount": 3
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Macon"
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 6,
+        "name": "Jackson",
+        "cityColor": 4,
+        "goodsGrowth": [
+          2
+        ],
+        "startingCubeCount": 1
+      },
+      {
+        "type": 5,
+        "name": "Meridian"
+      },
+      {
+        "type": 5,
+        "name": "Selma"
+      },
+      {
+        "type": 6,
+        "name": "Montgomery",
+        "cityColor": 4,
+        "goodsGrowth": [
+          5
+        ],
+        "startingCubeCount": 1
+      },
+      {
+        "type": 5,
+        "name": "Columbus"
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "name": "Savannah",
+        "cityColor": 3,
+        "goodsGrowth": [
+          10
+        ],
+        "startingCubeCount": 3
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Tallahassee"
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "name": "Jacksonville",
+        "cityColor": 2,
+        "goodsGrowth": [
+          11
+        ],
+        "startingCubeCount": 1
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Biloxi"
+      },
+      {
+        "type": 6,
+        "name": "Mobile",
+        "cityColor": 5,
+        "goodsGrowth": [
+          4
+        ],
+        "startingCubeCount": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 3
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 6,
+        "name": "New Orleans",
+        "cityColor": 3,
+        "goodsGrowth": [
+          3
+        ],
+        "startingCubeCount": 3
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      }
+    ]
+  ],
+  "teleportLinks": null
+}

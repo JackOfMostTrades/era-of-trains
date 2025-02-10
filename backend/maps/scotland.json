@@ -1,1 +1,335 @@
-{"hexes":[[{"type":1},{"type":1},{"type":2},{"type":1}],[{"type":1},{"type":3},{"type":6,"cityColor":3,"goodsGrowth":[3],"startingCubeCount":2},{"type":1}],[{"type":5},{"type":5},{"type":3},{"type":1}],[{"type":1},{"type":4},{"type":1},{"type":1}],[{"type":1},{"type":2},{"type":5},{"type":2}],[{"type":2},{"type":4,"cost":5},{"type":2},{"type":6,"cityColor":4,"goodsGrowth":[4],"startingCubeCount":2}],[{"type":1},{"type":4,"cost":5},{"type":4},{"type":2}],[{"type":6,"cityColor":3,"goodsGrowth":[2],"startingCubeCount":2},{"type":4},{"type":4},{"type":3}],[{"type":1},{"type":4},{"type":3},{"type":5}],[{"type":2},{"type":2},{"type":3},{"type":1}],[{"type":1},{"type":3},{"type":5},{"type":1}],[{"type":3},{"type":3},{"type":1},{"type":1}],[{"type":1},{"type":6,"cityColor":2,"goodsGrowth":[1],"startingCubeCount":2},{"type":3},{"type":2}],[{"type":5},{"type":4},{"type":6,"cityColor":2,"goodsGrowth":[0],"startingCubeCount":2},{"type":2}],[{"type":1},{"type":3},{"type":2},{"type":2}],[{"type":1},{"type":4,"cost":5},{"type":2},{"type":5}],[{"type":5},{"type":6,"cityColor":4,"goodsGrowth":[5],"startingCubeCount":2},{"type":2},{"type":2}]],"teleportLinks":[{"left":{"hex":{"x":0,"y":2},"direction":1},"right":{"hex":{"x":1,"y":2},"direction":5},"cost":6,"costLocation":{"x":0,"y":1},"costLocationEdge":-1},{"left":{"hex":{"x":0,"y":13},"direction":4},"right":{"hex":{"x":0,"y":16},"direction":0},"cost":6,"costLocation":{"x":0,"y":14},"costLocationEdge":-1}]}
+{
+  "hexes": [
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 6,
+        "name": "Wick",
+        "cityColor": 3,
+        "goodsGrowth": [
+          3
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 5,
+        "name": "Stornoway"
+      },
+      {
+        "type": 5,
+        "name": "Ullapool"
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Inverness"
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 4,
+        "cost": 5
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "name": "Aberdeen",
+        "cityColor": 4,
+        "goodsGrowth": [
+          4
+        ],
+        "startingCubeCount": 2
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 4,
+        "cost": 5
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 6,
+        "name": "Oban",
+        "cityColor": 3,
+        "goodsGrowth": [
+          2
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 3
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 5,
+        "name": "Dundee"
+      }
+    ],
+    [
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 5,
+        "name": "Kirkcaldy"
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 3
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 6,
+        "name": "Glasgow",
+        "cityColor": 2,
+        "goodsGrowth": [
+          1
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 5,
+        "name": "Ayr"
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 6,
+        "name": "Edinburgh",
+        "cityColor": 2,
+        "goodsGrowth": [
+          0
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 4,
+        "cost": 5
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Berwick"
+      }
+    ],
+    [
+      {
+        "type": 5,
+        "name": "Belfast"
+      },
+      {
+        "type": 6,
+        "name": "Stranraer",
+        "cityColor": 4,
+        "goodsGrowth": [
+          5
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      }
+    ]
+  ],
+  "teleportLinks": [
+    {
+      "left": {
+        "hex": {
+          "x": 0,
+          "y": 2
+        },
+        "direction": 1
+      },
+      "right": {
+        "hex": {
+          "x": 1,
+          "y": 2
+        },
+        "direction": 5
+      },
+      "cost": 6,
+      "costLocation": {
+        "x": 0,
+        "y": 1
+      },
+      "costLocationEdge": -1
+    },
+    {
+      "left": {
+        "hex": {
+          "x": 0,
+          "y": 13
+        },
+        "direction": 4
+      },
+      "right": {
+        "hex": {
+          "x": 0,
+          "y": 16
+        },
+        "direction": 0
+      },
+      "cost": 6,
+      "costLocation": {
+        "x": 0,
+        "y": 14
+      },
+      "costLocationEdge": -1
+    }
+  ]
+}

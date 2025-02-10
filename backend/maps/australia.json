@@ -1,1 +1,729 @@
-{"hexes":[[{"type":1},{"type":1},{"type":1},{"type":1},{"type":6,"cityColor":3,"goodsGrowth":[3],"startingCubeCount":3},{"type":4},{"type":1},{"type":4},{"type":1}],[{"type":1},{"type":1},{"type":1},{"type":4},{"type":4},{"type":1},{"type":1},{"type":1},{"type":1}],[{"type":1},{"type":1},{"type":1},{"type":4},{"type":4},{"type":5},{"type":1},{"type":4},{"type":1}],[{"type":1},{"type":1},{"type":4},{"type":4},{"type":4},{"type":4},{"type":4},{"type":6,"cityColor":5,"goodsGrowth":[6],"startingCubeCount":2},{"type":1}],[{"type":1},{"type":1},{"type":6,"cityColor":3,"goodsGrowth":[2],"startingCubeCount":3},{"type":5},{"type":4},{"type":2},{"type":4},{"type":4},{"type":1}],[{"type":1},{"type":1},{"type":4},{"type":2},{"type":2},{"type":5},{"type":2},{"type":4},{"type":1}],[{"type":1},{"type":1},{"type":4},{"type":2},{"type":2},{"type":2},{"type":2},{"type":4},{"type":6,"cityColor":2,"goodsGrowth":[7],"startingCubeCount":2}],[{"type":1},{"type":4},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":4},{"type":1}],[{"type":1},{"type":6,"cityColor":5,"goodsGrowth":[1],"startingCubeCount":3},{"type":2},{"type":2},{"type":2},{"type":6,"cityColor":3,"goodsGrowth":[4],"startingCubeCount":3},{"type":2},{"type":2},{"type":4}],[{"type":4},{"type":4},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":4},{"type":5}],[{"type":1},{"type":4},{"type":2},{"type":2},{"type":6,"cityColor":5,"goodsGrowth":[5],"startingCubeCount":3},{"type":2},{"type":2},{"type":2},{"type":4}],[{"type":4},{"type":4},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":4},{"type":4}],[{"type":1},{"type":4},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":4},{"type":1}],[{"type":5},{"type":4},{"type":2},{"type":2},{"type":2},{"type":2},{"type":2},{"type":4},{"type":6,"cityColor":5,"goodsGrowth":[8],"startingCubeCount":2}],[{"type":1},{"type":4},{"type":4},{"type":2},{"type":4},{"type":2},{"type":2},{"type":4},{"type":4},{"type":1}],[{"type":1},{"type":4},{"type":5},{"type":4},{"type":4},{"type":5},{"type":4},{"type":4},{"type":4}],[{"type":1},{"type":6,"cityColor":4,"goodsGrowth":[0],"startingCubeCount":3},{"type":4},{"type":4},{"type":1},{"type":4},{"type":4},{"type":4},{"type":4}],[{"type":1},{"type":4},{"type":4},{"type":1},{"type":1},{"type":4},{"type":4},{"type":4},{"type":4}],[{"type":1},{"type":4},{"type":4},{"type":1},{"type":1},{"type":1},{"type":6,"cityColor":5,"goodsGrowth":[11],"startingCubeCount":2},{"type":4},{"type":6,"cityColor":2,"goodsGrowth":[9],"startingCubeCount":2}],[{"type":1},{"type":5},{"type":1},{"type":1},{"type":1},{"type":1},{"type":4},{"type":4},{"type":1}],[{"type":1},{"type":1},{"type":1},{"type":1},{"type":1},{"type":1},{"type":4},{"type":6,"cityColor":3,"goodsGrowth":[10],"startingCubeCount":2},{"type":4}],[{"type":1},{"type":1},{"type":1},{"type":1},{"type":1},{"type":1},{"type":4},{"type":4},{"type":1}]],"teleportLinks":null}
+{
+  "hexes": [
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 6,
+        "name": "Darwin",
+        "cityColor": 3,
+        "goodsGrowth": [
+          3
+        ],
+        "startingCubeCount": 3
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 5,
+        "name": "Katherine"
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 6,
+        "name": "Cairns",
+        "cityColor": 5,
+        "goodsGrowth": [
+          6
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 6,
+        "name": "Broome",
+        "cityColor": 3,
+        "goodsGrowth": [
+          2
+        ],
+        "startingCubeCount": 3
+      },
+      {
+        "type": 5,
+        "name": "The Kimberly"
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 5,
+        "name": "Tennant Creek"
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 6,
+        "name": "Townsville",
+        "cityColor": 2,
+        "goodsGrowth": [
+          7
+        ],
+        "startingCubeCount": 2
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 6,
+        "name": "Exmouth",
+        "cityColor": 5,
+        "goodsGrowth": [
+          1
+        ],
+        "startingCubeCount": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "name": "Alice Springs",
+        "cityColor": 3,
+        "goodsGrowth": [
+          4
+        ],
+        "startingCubeCount": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      }
+    ],
+    [
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 5,
+        "name": "Rockhampton"
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 6,
+        "name": "Uluru",
+        "cityColor": 5,
+        "goodsGrowth": [
+          5
+        ],
+        "startingCubeCount": 3
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      }
+    ],
+    [
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 5,
+        "name": "Geraldton"
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 6,
+        "name": "Brisbane",
+        "cityColor": 5,
+        "goodsGrowth": [
+          8
+        ],
+        "startingCubeCount": 2
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 5,
+        "name": "Kalgoorlie-Boul."
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 5,
+        "name": "Flinders Ranges"
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 6,
+        "name": "Perth",
+        "cityColor": 4,
+        "goodsGrowth": [
+          0
+        ],
+        "startingCubeCount": 3
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 6,
+        "name": "Adelaide",
+        "cityColor": 5,
+        "goodsGrowth": [
+          11
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 6,
+        "name": "Sydney",
+        "cityColor": 2,
+        "goodsGrowth": [
+          9
+        ],
+        "startingCubeCount": 2
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 5,
+        "name": "Albany"
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 1
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 6,
+        "name": "Melbourne",
+        "cityColor": 3,
+        "goodsGrowth": [
+          10
+        ],
+        "startingCubeCount": 2
+      },
+      {
+        "type": 4
+      }
+    ],
+    [
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 1
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 4
+      },
+      {
+        "type": 1
+      }
+    ]
+  ],
+  "teleportLinks": null
+}
