@@ -52,13 +52,13 @@ func (server *GameServer) notifyPlayer(gameId string, userId string) error {
 	}
 
 	if finishedFlag != 0 {
-		if email.Valid {
+		if emailNotificationsEnabled != 0 && email.Valid {
 			err = server.sendGameFinishedEmail(gameId, gameName, email.String)
 			if err != nil {
 				slog.Error("failed to send game finished email", "error", err, "gameId", gameId, "userId", userId)
 			}
 		}
-		err = server.sendGameFinishedWebhooks(gameId, gameName, webhooks)
+		err = server.sendGameFinishedWebhooks(discordUserId.String, nickname, gameId, gameName, webhooks)
 		if err != nil {
 			slog.Error("failed to send game finished webhook", "error", err, "gameId", gameId, "userId", userId)
 		}
@@ -111,13 +111,22 @@ func (server *GameServer) sendGameFinishedEmail(gameId string, gameName string, 
 	return nil
 }
 
-func (server *GameServer) sendGameFinishedWebhooks(gameId string, gameName string, webhooks []string) error {
+func (server *GameServer) sendGameFinishedWebhooks(discordUserId string, nickname string, gameId string, gameName string, webhooks []string) error {
 	gameLink := "https://eot.coderealms.io/games/" + gameId
-	message := "Your game [" + gameName + "](" + gameLink + ") has finished."
+	var mention string
+	if discordUserId != "" {
+		mention = "<@" + discordUserId + ">"
+	} else {
+		mention = nickname
+	}
+	message := fmt.Sprintf("%s your game [%s](%s) has finished.", mention, gameName, gameLink)
 
 	for _, webhook := range webhooks {
 		body, err := json.Marshal(map[string]interface{}{
 			"content": message,
+			"allowed_mentions": map[string]interface{}{
+				"parse": []string{"users"},
+			},
 		})
 		if err != nil {
 			return err
