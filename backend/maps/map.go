@@ -23,7 +23,7 @@ type GameMap interface {
 	GetBuildLimit(gameState *common.GameState, player string) (int, error)
 	GetTownBuildCost(gameState *common.GameState, player string, hex common.Coordinate, routeCount int, isUpgrade bool) int
 	GetTrackBuildCost(gameState *common.GameState, player string, hexType HexType, hex common.Coordinate, trackType tiles.TrackType, isUpgrade bool) (int, error)
-	GetTotalBuildCost(gameState *common.GameState, player string, townCosts []int, trackCosts []int, teleportCosts []int) int
+	GetTotalBuildCost(gameState *common.GameState, player string, costs []int) int
 	GetTeleportLinkBuildCost(gameState *common.GameState, player string, hex common.Coordinate, direction common.Direction) int
 	GetIncomeReduction(gameState *common.GameState, player string) (int, error)
 	PostSetupHook(gameState *common.GameState, randProvider common.RandProvider) error
@@ -145,17 +145,9 @@ func (*AbstractGameMapImpl) GetTrackBuildCost(gameState *common.GameState, playe
 	return 0, fmt.Errorf("cannot place track type %v on hex type: %v", trackType, hexType)
 }
 
-func (*AbstractGameMapImpl) GetTotalBuildCost(gameState *common.GameState, player string,
-	townCosts []int, trackCosts []int, teleportCosts []int) int {
-
+func (*AbstractGameMapImpl) GetTotalBuildCost(gameState *common.GameState, player string, costs []int) int {
 	totalCost := 0
-	for _, cost := range townCosts {
-		totalCost += cost
-	}
-	for _, cost := range trackCosts {
-		totalCost += cost
-	}
-	for _, cost := range teleportCosts {
+	for _, cost := range costs {
 		totalCost += cost
 	}
 	return totalCost

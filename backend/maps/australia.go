@@ -11,25 +11,18 @@ type australiaMap struct {
 	*basicMap
 }
 
-func (b *australiaMap) GetTotalBuildCost(gameState *common.GameState, player string,
-	townCosts []int, trackCosts []int, teleportCosts []int) int {
-
-	baseCost := b.basicMap.GetTotalBuildCost(
-		gameState, player, townCosts, trackCosts, teleportCosts)
+func (b *australiaMap) GetTotalBuildCost(gameState *common.GameState, player string, costs []int) int {
+	baseCost := b.basicMap.GetTotalBuildCost(gameState, player, costs)
 
 	action := gameState.PlayerActions[player]
 	if action != common.ENGINEER_SPECIAL_ACTION {
 		return baseCost
 	}
 
-	allCosts := []int{}
-	allCosts = append(allCosts, townCosts...)
-	allCosts = append(allCosts, trackCosts...)
-	allCosts = append(allCosts, teleportCosts...)
-	if len(allCosts) == 0 {
+	if len(costs) == 0 {
 		return baseCost
 	}
-	return baseCost - slices.Max(allCosts)
+	return baseCost - slices.Max(costs)
 }
 
 func (b *australiaMap) GetDeliveryBonus(coordinate common.Coordinate, color common.Color) int {

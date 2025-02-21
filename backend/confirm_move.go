@@ -39,31 +39,30 @@ type ChooseAction struct {
 }
 
 type TownPlacement struct {
-	Track common.Direction  `json:"track"`
-	Hex   common.Coordinate `json:"hex"`
-}
-
-type TrackRedirect struct {
-	Track common.Direction  `json:"track"`
-	Hex   common.Coordinate `json:"hex"`
+	Track []common.Direction `json:"track"`
 }
 
 type TrackPlacement struct {
-	Tile     tiles.TrackTile   `json:"tile"`
-	Rotation int               `json:"rotation"`
-	Hex      common.Coordinate `json:"hex"`
+	Tile     tiles.TrackTile `json:"tile"`
+	Rotation int             `json:"rotation"`
 }
 
 type TeleportLinkPlacement struct {
-	Track common.Direction  `json:"track"`
-	Hex   common.Coordinate `json:"hex"`
+	Track common.Direction `json:"track"`
+}
+
+type BuildStep struct {
+	Hex common.Coordinate `json:"hex"`
+	// One of...
+	// A=0, B=1, ...
+	Urbanization          *int                   `json:"urbanization,omitempty"`
+	TownPlacement         *TownPlacement         `json:"townPlacement,omitempty"`
+	TrackPlacement        *TrackPlacement        `json:"trackPlacement,omitempty"`
+	TeleportLinkPlacement *TeleportLinkPlacement `json:"teleportLinkPlacement,omitempty"`
 }
 
 type BuildAction struct {
-	Urbanization           *common.Urbanization     `json:"urbanization"`
-	TownPlacements         []*TownPlacement         `json:"townPlacements"`
-	TrackPlacements        []*TrackPlacement        `json:"trackPlacements"`
-	TeleportLinkPlacements []*TeleportLinkPlacement `json:"teleportLinkPlacements"`
+	Steps []*BuildStep `json:"steps"`
 }
 
 type MoveGoodsAction struct {

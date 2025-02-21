@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetTotalBuildCost(t *testing.T) {
-	testCase := func(expectedCost int, action common.SpecialAction, townCosts []int, trackCosts []int, teleportCosts []int) func(t *testing.T) {
+	testCase := func(expectedCost int, action common.SpecialAction, costs []int) func(t *testing.T) {
 		return func(t *testing.T) {
 			playerId := "123"
 			gameMap := &australiaMap{&basicMap{}}
@@ -16,21 +16,19 @@ func TestGetTotalBuildCost(t *testing.T) {
 				PlayerActions: map[string]common.SpecialAction{playerId: action},
 			}
 
-			cost := gameMap.GetTotalBuildCost(gameState, playerId, townCosts, trackCosts, teleportCosts)
+			cost := gameMap.GetTotalBuildCost(gameState, playerId, costs)
 			assert.Equal(t, expectedCost, cost)
 		}
 	}
 
-	emptyArray := []int{}
-
 	t.Run("regular costs for non-engineer",
-		testCase(15, common.FIRST_BUILD_SPECIAL_ACTION, []int{4}, []int{5}, []int{6}))
+		testCase(15, common.FIRST_BUILD_SPECIAL_ACTION, []int{4, 5, 6}))
 
 	t.Run("handles empty arrays gracefully",
-		testCase(0, common.ENGINEER_SPECIAL_ACTION, emptyArray, emptyArray, emptyArray))
+		testCase(0, common.ENGINEER_SPECIAL_ACTION, []int{}))
 
 	t.Run("ignores the most expensive element",
-		testCase(19, common.ENGINEER_SPECIAL_ACTION, []int{4, 1}, []int{3, 5}, []int{9, 6}))
+		testCase(19, common.ENGINEER_SPECIAL_ACTION, []int{4, 1, 3, 5, 9, 6}))
 }
 
 func TestGetBuildLimit(t *testing.T) {

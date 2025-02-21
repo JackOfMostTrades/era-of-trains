@@ -69,22 +69,11 @@ func (m *germanyMap) GetBuildLimit(gameState *common.GameState, player string) (
 	return 3, nil
 }
 
-func (m *germanyMap) GetTotalBuildCost(gameState *common.GameState, player string,
-	townCosts []int, trackCosts []int, teleportCosts []int) int {
-
+func (m *germanyMap) GetTotalBuildCost(gameState *common.GameState, player string, costs []int) int {
 	if gameState.PlayerActions[player] == common.ENGINEER_SPECIAL_ACTION {
 		maxCost := 0
 		totalCost := 0
-		for _, cost := range townCosts {
-			totalCost += cost
-		}
-		for _, cost := range trackCosts {
-			totalCost += cost
-			if cost > maxCost {
-				maxCost = cost
-			}
-		}
-		for _, cost := range teleportCosts {
+		for _, cost := range costs {
 			totalCost += cost
 			if cost > maxCost {
 				maxCost = cost
@@ -93,7 +82,7 @@ func (m *germanyMap) GetTotalBuildCost(gameState *common.GameState, player strin
 		totalCost -= maxCost / 2
 		return totalCost
 	} else {
-		return m.basicMap.GetTotalBuildCost(gameState, player, townCosts, trackCosts, teleportCosts)
+		return m.basicMap.GetTotalBuildCost(gameState, player, costs)
 	}
 }
 
