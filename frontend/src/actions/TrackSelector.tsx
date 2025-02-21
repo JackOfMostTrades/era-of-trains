@@ -20,7 +20,7 @@ interface TrackSelectorProps {
     map: GameMap;
     gameState: GameState;
     activePlayer: string;
-    onClick: (newTrackPlacement: {tile: TrackTile, rotation: number}|undefined, newTownRoutes: Array<Direction>) => void
+    onClick: (newTrackPlacement: {tile: TrackTile, rotation: number}|undefined, townRoutes: Array<Direction>|undefined) => void
 }
 
 export function TrackSelector(props: TrackSelectorProps) {
@@ -47,10 +47,17 @@ export function TrackSelector(props: TrackSelectorProps) {
                 for (let newExit of newExits) {
                     renderer.renderTownTrack({x: 0, y: 0}, newExit, props.gameState.playerColor[props.activePlayer]);
                 }
+                let allExits: Direction[] = [];
+                for (let exit of mapTileState.getTileState(props.coordinate).routes) {
+                    allExits.push(exit.left);
+                }
+                for (let exit of newExits) {
+                    allExits.push(exit);
+                }
                 let classNames = "track-select";
 
                 tracks.push(<div className={classNames} onClick={() => {
-                    props.onClick(undefined, newExits);
+                    props.onClick(undefined, allExits);
                 }}>{renderer.render()}</div>);
             }
         }
@@ -68,7 +75,7 @@ export function TrackSelector(props: TrackSelectorProps) {
                     props.gameState, props.activePlayer, {x: 0, y: 0}, trackTile, rotation as Rotation, renderer);
                 let classNames = "track-select";
 
-                tracks.push(<div className={classNames} onClick={() => props.onClick({tile: trackTile, rotation: rotation}, [])}>{renderer.render()}</div>);
+                tracks.push(<div className={classNames} onClick={() => props.onClick({tile: trackTile, rotation: rotation}, undefined)}>{renderer.render()}</div>);
             }
         }
     }

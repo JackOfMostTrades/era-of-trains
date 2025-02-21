@@ -139,14 +139,16 @@ function ViewMapComponent({gameState, activePlayer, map}: {gameState: GameState|
                 }
             }
         }
-        if (pendingBuildAction && pendingBuildAction.teleportLinkPlacements) {
-            for (let playerLink of pendingBuildAction.teleportLinkPlacements) {
-                let hex = playerLink.hex;
-                let step = playerLink.track;
-                if ((hex.x === teleportLink.left.hex.x && hex.y === teleportLink.left.hex.y && step === teleportLink.left.direction) ||
-                    (hex.x === teleportLink.right.hex.x && hex.y === teleportLink.right.hex.y && step === teleportLink.right.direction)) {
-                    owner = activePlayer;
-                    break;
+        if (pendingBuildAction && pendingBuildAction.steps) {
+            for (let step of pendingBuildAction.steps) {
+                if (step.teleportLinkPlacement) {
+                    let hex = step.hex;
+                    let dir = step.teleportLinkPlacement.track;
+                    if ((hex.x === teleportLink.left.hex.x && hex.y === teleportLink.left.hex.y && dir === teleportLink.left.direction) ||
+                        (hex.x === teleportLink.right.hex.x && hex.y === teleportLink.right.hex.y && dir === teleportLink.right.direction)) {
+                        owner = activePlayer;
+                        break;
+                    }
                 }
             }
         }
@@ -181,9 +183,9 @@ function ViewMapComponent({gameState, activePlayer, map}: {gameState: GameState|
 
                     // If there is a track placement on this hex, skip rendering here
                     let hasTilePlacement = false;
-                    if (pendingBuildAction && pendingBuildAction.trackPlacements) {
-                        for (let trackPlacement of pendingBuildAction.trackPlacements) {
-                            if (trackPlacement.hex.x === hex.x && trackPlacement.hex.y === hex.y) {
+                    if (pendingBuildAction && pendingBuildAction.steps) {
+                        for (let step of pendingBuildAction.steps) {
+                            if (step.trackPlacement && step.hex.x === hex.x && step.hex.y === hex.y) {
                                 hasTilePlacement = true;
                                 break;
                             }
@@ -218,23 +220,36 @@ function ViewMapComponent({gameState, activePlayer, map}: {gameState: GameState|
         }
 
         // Render pending build action
-        if (pendingBuildAction) {
+        if (pendingBuildAction && pendingBuildAction.steps) {
             let mapTileState = new MapTileState(map, gameState);
 
-            if (pendingBuildAction.urbanization) {
-                renderer.renderCityHex(pendingBuildAction.urbanization.hex, urbCityProperties(pendingBuildAction.urbanization.city));
-            }
-            for (let townPlacement of pendingBuildAction.townPlacements) {
-                renderer.renderTownTrack(townPlacement.hex, townPlacement.track, activePlayer);
-            }
-            for (let trackPlacement of pendingBuildAction.trackPlacements) {
-                renderTrackTile(mapTileState.getTileState(trackPlacement.hex).routes,
+            for (let step of pendingBuildAction.steps) {
+                if (step.urbanization !== undefined) {
+                    renderer.renderCityHex(step.hex, urbCityProperties(step.urbanization));
+                }
+                if (step.townPlacement) {
+                    for (let track of step.townPlacement.track) {
+                        let existing = false;
+                        for (let route of mapTileState.getTileState(step.hex).routes) {
+                            if (route.left === track || route.right === track) {
+                                existing = true;
+                                break;
+                            }
+                        }
+                        if (!existing) {
+                            renderer.renderTownTrack(step.hex, track, activePlayer);
+                        }
+                    }
+                }
+                if (step.trackPlacement) {
+                    renderTrackTile(mapTileState.getTileState(step.hex).routes,
                         gameState,
                         activePlayer,
-                        trackPlacement.hex,
-                        trackPlacement.tile,
-                        trackPlacement.rotation as Rotation,
+                        step.hex,
+                        step.trackPlacement.tile,
+                        step.trackPlacement.rotation as Rotation,
                         renderer.hexRenderer);
+                }
             }
         }
 

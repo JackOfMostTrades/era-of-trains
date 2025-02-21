@@ -23,8 +23,12 @@ class Scotland extends BasicMap {
     public getTeleportLinks(gameState: GameState|undefined, pendingBuildAction: BuildAction|undefined): TeleportLink[] {
         let teleportLinks = super.getTeleportLinks(gameState, pendingBuildAction).slice();
         let urbs: Urbanization[] = [];
-        if (pendingBuildAction && pendingBuildAction.urbanization) {
-            urbs.push(pendingBuildAction.urbanization);
+        if (pendingBuildAction && pendingBuildAction.steps) {
+            for (let step of pendingBuildAction.steps) {
+                if (step.urbanization !== undefined) {
+                    urbs.push({hex: step.hex, city: step.urbanization});
+                }
+            }
         }
         if (gameState && gameState.urbanizations) {
             for (let urb of gameState.urbanizations) {

@@ -275,26 +275,30 @@ export interface ChooseAction {
 }
 
 export interface TownPlacement {
-    track: Direction;
-    hex: Coordinate;
+    track: Direction[];
 }
 
 export interface TrackPlacement {
     tile: TrackTile;
     rotation: number;
-    hex: Coordinate;
 }
 
 export interface TeleportLinkPlacement {
     track: Direction;
+}
+
+export interface BuildStep {
     hex: Coordinate;
+
+    // One of...
+    urbanization?: number|undefined;
+    townPlacement?: TownPlacement;
+    trackPlacement?: TrackPlacement;
+    teleportLinkPlacement?: TeleportLinkPlacement;
 }
 
 export interface BuildAction {
-    urbanization?: Urbanization;
-    townPlacements: TownPlacement[];
-    trackPlacements: TrackPlacement[];
-    teleportLinkPlacements: TeleportLinkPlacement[];
+    steps?: BuildStep[]
 }
 
 export interface MoveGoodsAction {
