@@ -223,6 +223,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                                onClick={(newTrackTile, townRoutes) => {
                     let newAction = Object.assign({}, action);
                     newAction.steps = action.steps?.slice() || [];
+                    clearBuildsForHex(newAction, buildingTrackHex);
                     if (newTrackTile) {
                         newAction.steps.push({
                             hex: buildingTrackHex,
