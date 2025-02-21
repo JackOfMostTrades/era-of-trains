@@ -467,6 +467,29 @@ export class HexRenderer {
         this.height = Math.max(this.height, hex.y);
     }
 
+    public highlightHex(hex: Coordinate) {
+        let pos = this.getHexXY(hex);
+
+        let onClick: undefined | (() => void);
+        if (this.emitOnClick) {
+            onClick = () => {
+                let event = new CustomEvent('mapClickEvent', {
+                    detail: {
+                        x: hex.x,
+                        y: hex.y,
+                    }
+                });
+                document.dispatchEvent(event);
+            }
+        }
+
+        let points = `${pos.x},${pos.y + 5} ${pos.x + 2.887},${pos.y} ${pos.x + 8.661},${pos.y} ${pos.x + 11.547},${pos.y + 5} ${pos.x + 8.661},${pos.y + 10} ${pos.x + 2.887},${pos.y + 10}`
+        this.paths.push(<polygon strokeWidth={0} fill="#ffffff" opacity={0.3} points={points} onClick={onClick}/>);
+
+        this.width = Math.max(this.width, hex.x);
+        this.height = Math.max(this.height, hex.y);
+    }
+
     public renderTeleportLink(id: {hex: Coordinate, direction: Direction}, hex: Coordinate, offset: Direction|-1, fillColor: PlayerColor|undefined, cost: number|undefined) {
 
         let pos: {x: number, y: number};

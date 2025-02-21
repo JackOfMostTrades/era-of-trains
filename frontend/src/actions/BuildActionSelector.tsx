@@ -78,6 +78,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                     document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
                 } else {
                     setBuildingTrackHex(e.detail);
+                    document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: e.detail }));
                 }
             }
         };
@@ -143,6 +144,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                 urbanizeButton = <>
                     <Button secondary disabled={action.steps?.find(step => step.urbanization !== undefined) !== undefined} icon onClick={() => {
                         setBuildingTrackHex(undefined);
+                        document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: undefined }));
                         setUrbanizeSelection(0);
                         setShowUrbanize(true);
                     }}><Icon name="home" /> Urbanize</Button>
@@ -162,6 +164,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                     setAction(newAction);
                     document.dispatchEvent(new CustomEvent('pendingBuildAction', {detail: newAction}));
                     setBuildingTrackHex(undefined);
+                    document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: undefined }));
                     return onDone();
                 }).catch(err => {
                     setError(err);
@@ -203,6 +206,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                         setAction(newAction);
                         document.dispatchEvent(new CustomEvent('pendingBuildAction', {detail: newAction}));
                         setBuildingTrackHex(undefined);
+                        document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: undefined }));
                     }}>Restart Action</Button>
                 </div>
             </>;
@@ -239,7 +243,10 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                     setAction(newAction);
                     document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
                 }} />
-            <Button primary onClick={() => setBuildingTrackHex(undefined)}>OK</Button>
+            <Button primary onClick={() => {
+                document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: undefined }));
+                setBuildingTrackHex(undefined)
+            }}>OK</Button>
             <Button negative onClick={() => {
                 let newAction = Object.assign({}, action);
                 newAction.steps = newAction.steps?.slice();
@@ -247,6 +254,7 @@ function BuildActionSelector({game, onDone}: {game: ViewGameResponse, onDone: ()
                 setAction(newAction);
                 document.dispatchEvent(new CustomEvent('pendingBuildAction', { detail: newAction }));
                 setBuildingTrackHex(undefined);
+                document.dispatchEvent(new CustomEvent('buildingTrackHex', { detail: undefined }));
             }}>Cancel</Button>
         </Segment>}
     </>

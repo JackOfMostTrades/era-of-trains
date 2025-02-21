@@ -80,6 +80,10 @@ class RenderMapBuilder {
         this.hexRenderer.renderArrow(hex, direction, color);
     }
 
+    public highlightHex(hex: Coordinate) {
+        return this.hexRenderer.highlightHex(hex);
+    }
+
     public render(): ReactNode {
         return this.hexRenderer.render();
     }
@@ -87,8 +91,17 @@ class RenderMapBuilder {
 
 function ViewMapComponent({gameState, activePlayer, map}: {gameState: GameState|undefined, activePlayer: string, map: GameMap}) {
     let userSession = useContext(UserSessionContext);
+    let [selectedHex, setSelectedHex] = useState<Coordinate|undefined>(undefined);
     let [pendingBuildAction, setPendingBuildAction] = useState<BuildAction|undefined>(undefined);
     let [pendingMoveGoods, setPendingMoveGoods] = useState<MoveGoodsStep|undefined>(undefined)
+
+    useEffect(() => {
+        const handler = (e:CustomEventInit<Coordinate|undefined>) => {
+            setSelectedHex(e.detail);
+        };
+        document.addEventListener('buildingTrackHex', handler);
+        return () => document.removeEventListener('buildingTrackHex', handler);
+    }, []);
 
     useEffect(() => {
         const handler = (e:CustomEventInit<BuildAction>) => {
@@ -298,6 +311,10 @@ function ViewMapComponent({gameState, activePlayer, map}: {gameState: GameState|
                     renderer.renderArrow(hex, option.direction, option.owner);
                 }
             }
+        }
+
+        if (selectedHex) {
+            renderer.highlightHex(selectedHex);
         }
     }
 
