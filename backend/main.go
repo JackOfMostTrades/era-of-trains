@@ -80,7 +80,8 @@ func handleJsonRequest[ReqT any, ResT any](ctx *RequestContext, handler func(ctx
 	decoder.DisallowUnknownFields()
 	err := decoder.Decode(req)
 	if err != nil {
-		http.Error(ctx.HttpResponse, err.Error(), http.StatusBadRequest)
+		http.Error(ctx.HttpResponse,
+			fmt.Sprintf("Failed to read the request body. Most likely this means you need to refresh the page and try again. Please try refreshing before reporting an issue. Additional details: %s", err.Error()), http.StatusBadRequest)
 		return
 	}
 	s, err := handler(ctx, req)
