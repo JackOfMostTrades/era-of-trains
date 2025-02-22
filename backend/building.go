@@ -224,6 +224,13 @@ func (performer *buildActionPerformer) handleUrbanization(hex common.Coordinate,
 	return nil
 }
 
+func countsForHexPlacement(step *api.BuildStep) bool {
+	if step.Urbanization != nil || step.TownPlacement != nil || step.TrackPlacement != nil {
+		return true
+	}
+	return false
+}
+
 func (handler *confirmMoveHandler) performBuildAction(buildAction *api.BuildAction) error {
 
 	gameState := handler.gameState
@@ -231,7 +238,14 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *api.BuildActi
 
 	// Validate no repeated hexes in the steps
 	for i := 0; i < len(buildAction.Steps); i++ {
+		if !countsForHexPlacement(buildAction.Steps[i]) {
+			continue
+		}
 		for j := i + 1; j < len(buildAction.Steps); j++ {
+			if !countsForHexPlacement(buildAction.Steps[j]) {
+				continue
+			}
+
 			if buildAction.Steps[i].Hex.Equals(buildAction.Steps[j].Hex) {
 				return invalidMoveErr("cannot perform multiple builds on the same hex on the same turn")
 			}
