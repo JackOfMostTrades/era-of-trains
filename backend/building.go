@@ -268,42 +268,8 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *api.BuildActi
 		return invalidMoveErr("cannot exceed track placement limit (%d)", placementLimit)
 	}
 
-	// Now apply cost
+	// Apply builds and count up the costs
 	var costs []int
-	for _, step := range buildAction.Steps {
-		if step.Urbanization != nil {
-			continue
-		}
-		if step.TownPlacement != nil {
-			cost, err := performer.determineTownBuildCost(step.Hex, step.TownPlacement)
-			if err != nil {
-				return err
-			}
-			costs = append(costs, cost)
-		}
-		if step.TrackPlacement != nil {
-			cost, err := performer.determineTrackBuildCost(step.Hex, step.TrackPlacement)
-			if err != nil {
-				return err
-			}
-			costs = append(costs, cost)
-		}
-		if step.TeleportLinkPlacement != nil {
-			cost := handler.gameMap.GetTeleportLinkBuildCost(gameState, handler.activePlayer,
-				step.Hex, step.TeleportLinkPlacement.Track)
-			if cost == 0 {
-				return invalidMoveErr("invalid teleport link placement (no teleport link exists in the target hex/direction)")
-			}
-			costs = append(costs, cost)
-		}
-	}
-	totalCost := handler.gameMap.GetTotalBuildCost(gameState, handler.activePlayer, costs)
-	if totalCost > gameState.PlayerCash[performer.activePlayer] {
-		return invalidMoveErr("invalid build: cost %d exceeds player's funds: %d",
-			totalCost, gameState.PlayerCash[performer.activePlayer])
-	}
-	gameState.PlayerCash[performer.activePlayer] -= totalCost
-
 	for _, step := range buildAction.Steps {
 		if step.Urbanization != nil {
 			err := performer.handleUrbanization(step.Hex, *step.Urbanization)
@@ -314,7 +280,12 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *api.BuildActi
 				handler.ActivePlayerNick(), 'A'+*step.Urbanization, renderHexCoordinate(step.Hex))
 		}
 		if step.TownPlacement != nil {
-			err := performer.attemptTownPlacement(step.Hex, step.TownPlacement)
+			cost, err := performer.determineTownBuildCost(step.Hex, step.TownPlacement)
+			if err != nil {
+				return err
+			}
+			costs = append(costs, cost)
+			err = performer.attemptTownPlacement(step.Hex, step.TownPlacement)
 			if err != nil {
 				return err
 			}
@@ -322,7 +293,12 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *api.BuildActi
 				handler.ActivePlayerNick(), renderHexCoordinate(step.Hex))
 		}
 		if step.TrackPlacement != nil {
-			err := performer.attemptTrackPlacement(step.Hex, step.TrackPlacement)
+			cost, err := performer.determineTrackBuildCost(step.Hex, step.TrackPlacement)
+			if err != nil {
+				return err
+			}
+			costs = append(costs, cost)
+			err = performer.attemptTrackPlacement(step.Hex, step.TrackPlacement)
 			if err != nil {
 				return err
 			}
@@ -330,6 +306,12 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *api.BuildActi
 				handler.ActivePlayerNick(), renderHexCoordinate(step.Hex))
 		}
 		if step.TeleportLinkPlacement != nil {
+			cost := handler.gameMap.GetTeleportLinkBuildCost(gameState, handler.activePlayer,
+				step.Hex, step.TeleportLinkPlacement.Track)
+			if cost == 0 {
+				return invalidMoveErr("invalid teleport link placement (no teleport link exists in the target hex/direction)")
+			}
+			costs = append(costs, cost)
 			err := performer.attemptTeleportLinkPlacement(step.Hex, step.TeleportLinkPlacement)
 			if err != nil {
 				return err
@@ -339,6 +321,12 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *api.BuildActi
 		}
 	}
 
+	totalCost := handler.gameMap.GetTotalBuildCost(gameState, handler.activePlayer, costs)
+	if totalCost > gameState.PlayerCash[performer.activePlayer] {
+		return invalidMoveErr("invalid build: cost %d exceeds player's funds: %d",
+			totalCost, gameState.PlayerCash[performer.activePlayer])
+	}
+	gameState.PlayerCash[performer.activePlayer] -= totalCost
 	handler.Log("%s paid a total of $%d for track placements.", handler.ActivePlayerNick(), totalCost)
 
 	// Verify we have not exceeded any component limits by this build
