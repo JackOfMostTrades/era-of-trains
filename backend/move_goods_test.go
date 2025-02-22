@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/JackOfMostTrades/eot/backend/api"
 	"github.com/JackOfMostTrades/eot/backend/common"
 	"github.com/JackOfMostTrades/eot/backend/maps"
 	"github.com/stretchr/testify/assert"
@@ -9,7 +10,7 @@ import (
 )
 
 func TestBasicMoveGoods(t *testing.T) {
-	testCase := func(expectedError *HttpError, moveAction *MoveGoodsAction) func(t *testing.T) {
+	testCase := func(expectedError *api.HttpError, moveAction *api.MoveGoodsAction) func(t *testing.T) {
 		return func(t *testing.T) {
 			playerId := "player1"
 			playerTwo := "player2"
@@ -56,9 +57,9 @@ func TestBasicMoveGoods(t *testing.T) {
 			}
 			err := handler.handleMoveGoodsAction(moveAction)
 			if expectedError != nil {
-				if httpErr, ok := err.(*HttpError); ok {
-					assert.Equal(t, expectedError.code, httpErr.code)
-					assert.Equal(t, expectedError.description, httpErr.description)
+				if httpErr, ok := err.(*api.HttpError); ok {
+					assert.Equal(t, expectedError.Code, httpErr.Code)
+					assert.Equal(t, expectedError.Description, httpErr.Description)
 				} else {
 					assert.Fail(t, "Invalid error: %v", err)
 				}
@@ -69,12 +70,12 @@ func TestBasicMoveGoods(t *testing.T) {
 		}
 	}
 
-	t.Run("simple move", testCase(nil, &MoveGoodsAction{
+	t.Run("simple move", testCase(nil, &api.MoveGoodsAction{
 		StartingLocation: common.Coordinate{X: 0, Y: 0},
 		Color:            common.BLUE,
 		Path:             []common.Direction{common.SOUTH_EAST},
 	}))
-	t.Run("bad target color move", testCase(&HttpError{code: http.StatusBadRequest, description: "ending city must match cube color"}, &MoveGoodsAction{
+	t.Run("bad target color move", testCase(&api.HttpError{Code: http.StatusBadRequest, Description: "ending city must match cube color"}, &api.MoveGoodsAction{
 		StartingLocation: common.Coordinate{X: 0, Y: 0},
 		Color:            common.YELLOW,
 		Path:             []common.Direction{common.SOUTH_EAST},
@@ -127,14 +128,14 @@ func TestCannotMoveThroughMatchingCityColor(t *testing.T) {
 		gameState:    gameState,
 		activePlayer: playerId,
 	}
-	err := handler.handleMoveGoodsAction(&MoveGoodsAction{
+	err := handler.handleMoveGoodsAction(&api.MoveGoodsAction{
 		StartingLocation: common.Coordinate{X: 0, Y: 0},
 		Color:            common.BLUE,
 		Path:             []common.Direction{common.SOUTH_EAST, common.SOUTH_EAST},
 	})
-	if httpErr, ok := err.(*HttpError); ok {
-		assert.Equal(t, http.StatusBadRequest, httpErr.code)
-		assert.Equal(t, "cannot pass through city matching the cube color", httpErr.description)
+	if httpErr, ok := err.(*api.HttpError); ok {
+		assert.Equal(t, http.StatusBadRequest, httpErr.Code)
+		assert.Equal(t, "cannot pass through city matching the cube color", httpErr.Description)
 	} else {
 		assert.Fail(t, "Invalid error: %v", err)
 	}
@@ -202,14 +203,14 @@ func TestCannotRepeatCity(t *testing.T) {
 		gameState:    gameState,
 		activePlayer: playerId,
 	}
-	err := handler.handleMoveGoodsAction(&MoveGoodsAction{
+	err := handler.handleMoveGoodsAction(&api.MoveGoodsAction{
 		StartingLocation: common.Coordinate{X: 0, Y: 1},
 		Color:            common.RED,
 		Path:             []common.Direction{common.NORTH_EAST, common.NORTH_EAST, common.SOUTH_WEST, common.SOUTH_WEST},
 	})
-	if httpErr, ok := err.(*HttpError); ok {
-		assert.Equal(t, http.StatusBadRequest, httpErr.code)
-		assert.Equal(t, "cannot repeat a city in the delivery path", httpErr.description)
+	if httpErr, ok := err.(*api.HttpError); ok {
+		assert.Equal(t, http.StatusBadRequest, httpErr.Code)
+		assert.Equal(t, "cannot repeat a city in the delivery path", httpErr.Description)
 	} else {
 		assert.Fail(t, "Invalid error: %v", err)
 	}
@@ -262,14 +263,14 @@ func TestCannotEndInStartingCity(t *testing.T) {
 		gameState:    gameState,
 		activePlayer: playerId,
 	}
-	err := handler.handleMoveGoodsAction(&MoveGoodsAction{
+	err := handler.handleMoveGoodsAction(&api.MoveGoodsAction{
 		StartingLocation: common.Coordinate{X: 0, Y: 1},
 		Color:            common.PURPLE,
 		Path:             []common.Direction{common.NORTH_EAST, common.SOUTH_WEST},
 	})
-	if httpErr, ok := err.(*HttpError); ok {
-		assert.Equal(t, http.StatusBadRequest, httpErr.code)
-		assert.Equal(t, "cannot repeat a city in the delivery path", httpErr.description)
+	if httpErr, ok := err.(*api.HttpError); ok {
+		assert.Equal(t, http.StatusBadRequest, httpErr.Code)
+		assert.Equal(t, "cannot repeat a city in the delivery path", httpErr.Description)
 	} else {
 		assert.Fail(t, "Invalid error: %v", err)
 	}

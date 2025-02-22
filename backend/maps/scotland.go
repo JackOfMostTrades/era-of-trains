@@ -2,6 +2,7 @@ package maps
 
 import (
 	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/auction"
 	"github.com/JackOfMostTrades/eot/backend/common"
 )
 
@@ -9,21 +10,34 @@ type scotlandMap struct {
 	*basicMap
 }
 
-func (m *scotlandMap) PreAuctionHook(gameState *common.GameState, log LogFun) error {
-	if len(gameState.PlayerOrder) != 2 {
-		return nil
+type ScotlandAuctionPhase struct {
+	auction.StandardAuctionPhase
+}
+
+func (p *ScotlandAuctionPhase) PreAuctionHook(handler auction.ConfirmMoveHandler) error {
+	gameState := handler.GetGameState()
+	if len(gameState.PlayerOrder) == 2 {
+		if gameState.PlayerActions[gameState.PlayerOrder[0]] == common.TURN_ORDER_PASS_SPECIAL_ACTION {
+			// Player order doesn't change, but skip auction
+			handler.Log("Auction is skipped because because of special turn order pass behavior.")
+			gameState.AuctionState[gameState.PlayerOrder[1]] = -1
+			gameState.AuctionState[gameState.PlayerOrder[0]] = -2
+		} else if gameState.PlayerActions[gameState.PlayerOrder[1]] == common.TURN_ORDER_PASS_SPECIAL_ACTION {
+			handler.Log("Auction is skipped because because of special turn order pass behavior.")
+			gameState.AuctionState[gameState.PlayerOrder[0]] = -1
+			gameState.AuctionState[gameState.PlayerOrder[1]] = -2
+		}
 	}
-	if gameState.PlayerActions[gameState.PlayerOrder[0]] == common.TURN_ORDER_PASS_SPECIAL_ACTION {
-		// Player order doesn't change, but skip auction
-		log("Auction is skipped because because of special turn order pass behavior.")
-		gameState.AuctionState[gameState.PlayerOrder[1]] = -1
-		gameState.AuctionState[gameState.PlayerOrder[0]] = -2
-	} else if gameState.PlayerActions[gameState.PlayerOrder[1]] == common.TURN_ORDER_PASS_SPECIAL_ACTION {
-		log("Auction is skipped because because of special turn order pass behavior.")
-		gameState.AuctionState[gameState.PlayerOrder[0]] = -1
-		gameState.AuctionState[gameState.PlayerOrder[1]] = -2
+
+	err := p.StandardAuctionPhase.PreAuctionHook(handler)
+	if err != nil {
+		return err
 	}
 	return nil
+}
+
+func (*scotlandMap) GetAuctionPhase() auction.AuctionPhase {
+	return &ScotlandAuctionPhase{}
 }
 
 func (*scotlandMap) GetTurnLimit(playerCount int) int {

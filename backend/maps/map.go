@@ -2,6 +2,7 @@ package maps
 
 import (
 	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/auction"
 	"github.com/JackOfMostTrades/eot/backend/common"
 	"github.com/JackOfMostTrades/eot/backend/tiles"
 )
@@ -19,6 +20,7 @@ type GameMap interface {
 	GetSharesLimit() int
 	GetGoodsGrowthDiceCount(playerCount int) int
 	GetTeleportLink(gameState *common.GameState, src common.Coordinate, direction common.Direction) (*common.Coordinate, common.Direction)
+	GetAuctionPhase() auction.AuctionPhase
 
 	GetBuildLimit(gameState *common.GameState, player string) (int, error)
 	GetTownBuildCost(gameState *common.GameState, player string, hex common.Coordinate, routeCount int, isUpgrade bool) int
@@ -27,7 +29,6 @@ type GameMap interface {
 	GetTeleportLinkBuildCost(gameState *common.GameState, player string, hex common.Coordinate, direction common.Direction) int
 	GetIncomeReduction(gameState *common.GameState, player string) (int, error)
 	PostSetupHook(gameState *common.GameState, randProvider common.RandProvider) error
-	PreAuctionHook(gameState *common.GameState, log LogFun) error
 	PostBuildActionHook(gameState *common.GameState, player string) error
 	PostGoodsGrowthHook(gameState *common.GameState, randProvider common.RandProvider, log LogFun) error
 	GetDeliveryBonus(coordinate common.Coordinate, color common.Color) int
@@ -181,8 +182,8 @@ func (*AbstractGameMapImpl) PostSetupHook(gameState *common.GameState, randProvi
 	return nil
 }
 
-func (*AbstractGameMapImpl) PreAuctionHook(gameState *common.GameState, log LogFun) error {
-	return nil
+func (*AbstractGameMapImpl) GetAuctionPhase() auction.AuctionPhase {
+	return &auction.StandardAuctionPhase{}
 }
 
 func (*AbstractGameMapImpl) PostBuildActionHook(gameState *common.GameState, player string) error {

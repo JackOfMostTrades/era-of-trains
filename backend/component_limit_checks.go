@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/api"
 	"github.com/JackOfMostTrades/eot/backend/common"
 	"github.com/JackOfMostTrades/eot/backend/tiles"
 	"net/http"
@@ -15,7 +16,7 @@ func checkTownMarkerLimit(mapState *MapState) error {
 		}
 	}
 	if townMarkerCount > 8 {
-		return &HttpError{"Limit of town markers (8) is exceeded", http.StatusBadRequest}
+		return &api.HttpError{"Limit of town markers (8) is exceeded", http.StatusBadRequest}
 	}
 	return nil
 }

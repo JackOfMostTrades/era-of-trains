@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/api"
 	"math/rand"
 	"net/http"
 	"regexp"
@@ -121,16 +122,16 @@ func (server *GameServer) login(ctx *RequestContext, req *LoginRequest) (resp *L
 		err = row.Scan(&userId)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				return nil, &HttpError{fmt.Sprintf("invalid nickname: %s", req.DevNickname), http.StatusBadRequest}
+				return nil, &api.HttpError{fmt.Sprintf("invalid nickname: %s", req.DevNickname), http.StatusBadRequest}
 			}
 			return nil, fmt.Errorf("failed to lookup user: %v", err)
 		}
 	} else {
 		if req.AccessToken == "" {
-			return nil, &HttpError{"Missing access token", http.StatusBadRequest}
+			return nil, &api.HttpError{"Missing access token", http.StatusBadRequest}
 		}
 		if req.Provider == "" {
-			return nil, &HttpError{"Missing provider parameter", http.StatusBadRequest}
+			return nil, &api.HttpError{"Missing provider parameter", http.StatusBadRequest}
 		}
 
 		var getUserQuery string
@@ -150,7 +151,7 @@ func (server *GameServer) login(ctx *RequestContext, req *LoginRequest) (resp *L
 			getUserQuery = "SELECT id FROM users WHERE discord_user_id=?"
 			getUserQueryParam = userInfoResponse.Id
 		} else {
-			return nil, &HttpError{fmt.Sprintf("Unsupported provider parameter: %s", req.Provider), http.StatusBadRequest}
+			return nil, &api.HttpError{fmt.Sprintf("Unsupported provider parameter: %s", req.Provider), http.StatusBadRequest}
 		}
 
 		stmt, err := server.db.Prepare(getUserQuery)
@@ -200,17 +201,17 @@ type RegisterResponse struct {
 
 func (server *GameServer) register(ctx *RequestContext, req *RegisterRequest) (resp *RegisterResponse, err error) {
 	if req.Provider == "" {
-		return nil, &HttpError{"Missing provider parameter", http.StatusBadRequest}
+		return nil, &api.HttpError{"Missing provider parameter", http.StatusBadRequest}
 	}
 	if req.AccessToken == "" {
-		return nil, &HttpError{"Missing access token", http.StatusBadRequest}
+		return nil, &api.HttpError{"Missing access token", http.StatusBadRequest}
 	}
 	r, err := regexp.Compile("^[a-zA-Z0-9]+$")
 	if err != nil {
 		return nil, fmt.Errorf("failed to compile regex: %v", err)
 	}
 	if !r.MatchString(req.Nickname) {
-		return nil, &HttpError{fmt.Sprintf("invalid nickname: %s", req.Nickname), http.StatusBadRequest}
+		return nil, &api.HttpError{fmt.Sprintf("invalid nickname: %s", req.Nickname), http.StatusBadRequest}
 	}
 
 	stmt, err := server.db.Prepare("SELECT id FROM users WHERE nickname=?")
@@ -222,7 +223,7 @@ func (server *GameServer) register(ctx *RequestContext, req *RegisterRequest) (r
 	var existingUserId string
 	err = row.Scan(&existingUserId)
 	if err != sql.ErrNoRows {
-		return nil, &HttpError{fmt.Sprintf("user with nickname %s already exists", req.Nickname), http.StatusBadRequest}
+		return nil, &api.HttpError{fmt.Sprintf("user with nickname %s already exists", req.Nickname), http.StatusBadRequest}
 	}
 
 	var email sql.NullString
@@ -251,7 +252,7 @@ func (server *GameServer) register(ctx *RequestContext, req *RegisterRequest) (r
 			email.String = userInfoResponse.Email
 		}
 	} else {
-		return nil, &HttpError{fmt.Sprintf("unsupported provider parameter: %s", req.Provider), http.StatusBadRequest}
+		return nil, &api.HttpError{fmt.Sprintf("unsupported provider parameter: %s", req.Provider), http.StatusBadRequest}
 	}
 
 	stmt, err = server.db.Prepare("INSERT INTO users (id,nickname,email,email_notifications_enabled,google_user_id,discord_user_id,discord_turn_alerts_enabled) VALUES(?,?,?,1,?,?,0)")
@@ -298,15 +299,15 @@ type LinkProfileResponse struct {
 
 func (server *GameServer) linkProfile(ctx *RequestContext, req *LinkProfileRequest) (resp *LinkProfileResponse, err error) {
 	if req.AccessToken == "" {
-		return nil, &HttpError{"Missing access token", http.StatusBadRequest}
+		return nil, &api.HttpError{"Missing access token", http.StatusBadRequest}
 	}
 	if req.Provider == "" {
-		return nil, &HttpError{"Missing provider parameter", http.StatusBadRequest}
+		return nil, &api.HttpError{"Missing provider parameter", http.StatusBadRequest}
 	}
 	if req.Provider == "google" {
 		userInfo, err := getGoogleUserInfo(req.AccessToken)
 		if err != nil {
-			return nil, &HttpError{fmt.Sprintf("Failed to verify access token: %v", err), http.StatusBadRequest}
+			return nil, &api.HttpError{fmt.Sprintf("Failed to verify access token: %v", err), http.StatusBadRequest}
 		}
 		if userInfo.Id != "" {
 			stmt, err := server.db.Prepare("UPDATE users SET google_user_id=? WHERE id=?")
@@ -322,7 +323,7 @@ func (server *GameServer) linkProfile(ctx *RequestContext, req *LinkProfileReque
 	} else if req.Provider == "discord" {
 		userInfo, err := getDiscordUserInfo(req.AccessToken)
 		if err != nil {
-			return nil, &HttpError{fmt.Sprintf("Failed to verify access token: %v", err), http.StatusBadRequest}
+			return nil, &api.HttpError{fmt.Sprintf("Failed to verify access token: %v", err), http.StatusBadRequest}
 		}
 		if userInfo.Id != "" {
 			stmt, err := server.db.Prepare("UPDATE users SET discord_user_id=? WHERE id=?")
@@ -336,7 +337,7 @@ func (server *GameServer) linkProfile(ctx *RequestContext, req *LinkProfileReque
 			}
 		}
 	} else {
-		return nil, &HttpError{fmt.Sprintf("Unsupported provider parameter: %s", req.Provider), http.StatusBadRequest}
+		return nil, &api.HttpError{fmt.Sprintf("Unsupported provider parameter: %s", req.Provider), http.StatusBadRequest}
 	}
 
 	return &LinkProfileResponse{}, nil
@@ -373,10 +374,10 @@ type CreateGameResponse struct {
 
 func (server *GameServer) createGame(ctx *RequestContext, req *CreateGameRequest) (resp *CreateGameResponse, err error) {
 	if req.Name == "" {
-		return nil, &HttpError{"missing name parameter", http.StatusBadRequest}
+		return nil, &api.HttpError{"missing name parameter", http.StatusBadRequest}
 	}
 	if req.MinPlayers == 0 || req.MaxPlayers == 0 || req.MinPlayers > req.MaxPlayers {
-		return nil, &HttpError{"invalid or missing minPlayers/maxPlayers parameter", http.StatusBadRequest}
+		return nil, &api.HttpError{"invalid or missing minPlayers/maxPlayers parameter", http.StatusBadRequest}
 	}
 
 	stmt, err := server.db.Prepare("INSERT INTO games (id,created_at,name,min_players,max_players,map_name,owner_user_id,started,finished,invite_only) VALUES (?,?,?,?,?,?,?,0,0,?)")
@@ -426,13 +427,13 @@ func (server *GameServer) joinGame(ctx *RequestContext, req *JoinGameRequest) (r
 	err = row.Scan(&minPlayers, &maxPlayers, &startedFlag)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
+			return nil, &api.HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
 		}
 		return nil, fmt.Errorf("failed to fetch game row: %v", err)
 	}
 
 	if startedFlag != 0 {
-		return nil, &HttpError{"game has already started", http.StatusBadRequest}
+		return nil, &api.HttpError{"game has already started", http.StatusBadRequest}
 	}
 
 	joinedUsers, err := server.getJoinedUsers(req.GameId)
@@ -441,10 +442,10 @@ func (server *GameServer) joinGame(ctx *RequestContext, req *JoinGameRequest) (r
 	}
 
 	if _, ok := joinedUsers[ctx.User.Id]; ok {
-		return nil, &HttpError{"you have already joined this game", http.StatusBadRequest}
+		return nil, &api.HttpError{"you have already joined this game", http.StatusBadRequest}
 	}
 	if len(joinedUsers) >= maxPlayers {
-		return nil, &HttpError{"this game is already full", http.StatusBadRequest}
+		return nil, &api.HttpError{"this game is already full", http.StatusBadRequest}
 	}
 
 	stmt, err = server.db.Prepare("INSERT INTO game_player_map (game_id,player_user_id) VALUES (?,?)")
@@ -492,16 +493,16 @@ func (server *GameServer) leaveGame(ctx *RequestContext, req *LeaveGameRequest) 
 	err = row.Scan(&ownerUserId, &minPlayers, &startedFlag)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
+			return nil, &api.HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
 		}
 		return nil, fmt.Errorf("failed to fetch game row: %v", err)
 	}
 
 	if startedFlag != 0 {
-		return nil, &HttpError{"game has already started", http.StatusBadRequest}
+		return nil, &api.HttpError{"game has already started", http.StatusBadRequest}
 	}
 	if ownerUserId == ctx.User.Id {
-		return nil, &HttpError{"you cannot leave a game that you created", http.StatusBadRequest}
+		return nil, &api.HttpError{"you cannot leave a game that you created", http.StatusBadRequest}
 	}
 
 	joinedUsers, err := server.getJoinedUsers(req.GameId)
@@ -510,7 +511,7 @@ func (server *GameServer) leaveGame(ctx *RequestContext, req *LeaveGameRequest) 
 	}
 
 	if _, ok := joinedUsers[ctx.User.Id]; !ok {
-		return nil, &HttpError{"you are not joined to this game", http.StatusBadRequest}
+		return nil, &api.HttpError{"you are not joined to this game", http.StatusBadRequest}
 	}
 
 	stmt, err = server.db.Prepare("DELETE FROM game_player_map WHERE game_id=? AND player_user_id=?")
@@ -561,16 +562,16 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 	err = row.Scan(&ownerUserId, &minPlayers, &maxPlayers, &mapName, &startedFlag)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
+			return nil, &api.HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
 		}
 		return nil, fmt.Errorf("failed to fetch game row: %v", err)
 	}
 
 	if startedFlag != 0 {
-		return nil, &HttpError{"game has already started", http.StatusBadRequest}
+		return nil, &api.HttpError{"game has already started", http.StatusBadRequest}
 	}
 	if ownerUserId != ctx.User.Id {
-		return nil, &HttpError{"you are not the owner of this game", http.StatusBadRequest}
+		return nil, &api.HttpError{"you are not the owner of this game", http.StatusBadRequest}
 	}
 
 	joinedUsers, err := server.getJoinedUsers(req.GameId)
@@ -579,10 +580,10 @@ func (server *GameServer) startGame(ctx *RequestContext, req *StartGameRequest) 
 	}
 
 	if len(joinedUsers) < minPlayers {
-		return nil, &HttpError{"game does not have enough joined players yet", http.StatusBadRequest}
+		return nil, &api.HttpError{"game does not have enough joined players yet", http.StatusBadRequest}
 	}
 	if len(joinedUsers) > maxPlayers {
-		return nil, &HttpError{"game has too many joined players", http.StatusBadRequest}
+		return nil, &api.HttpError{"game has too many joined players", http.StatusBadRequest}
 	}
 
 	stmt, err = server.db.Prepare("UPDATE games SET started=1 WHERE id=?")
@@ -752,7 +753,7 @@ func (server *GameServer) viewGame(ctx *RequestContext, req *ViewGameRequest) (r
 	err = row.Scan(&name, &ownerUserId, &minPlayers, &maxPlayers, &mapName, &startedFlag, &finishedFlag, &gameStateStr, &activePlayerStr, &inviteOnlyFlag)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
+			return nil, &api.HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
 		}
 		return nil, fmt.Errorf("failed to fetch game row: %v", err)
 	}
@@ -1140,7 +1141,7 @@ type GetGameChatResponse struct {
 
 func (server *GameServer) getGameChat(ctx *RequestContext, req *GetGameChatRequest) (resp *GetGameChatResponse, err error) {
 	if req.GameId == "" {
-		return nil, &HttpError{"missing gameId parameter", http.StatusBadRequest}
+		return nil, &api.HttpError{"missing gameId parameter", http.StatusBadRequest}
 	}
 
 	stmt, err := server.db.Prepare("SELECT timestamp,user_id,message FROM game_chat WHERE game_id=? AND timestamp > ? ORDER BY timestamp ASC")
@@ -1184,10 +1185,10 @@ type SendGameChatResponse struct {
 
 func (server *GameServer) sendGameChat(ctx *RequestContext, req *SendGameChatRequest) (resp *SendGameChatResponse, err error) {
 	if req.GameId == "" {
-		return nil, &HttpError{"missing gameId parameter", http.StatusBadRequest}
+		return nil, &api.HttpError{"missing gameId parameter", http.StatusBadRequest}
 	}
 	if req.Message == "" {
-		return nil, &HttpError{"missing message parameter", http.StatusBadRequest}
+		return nil, &api.HttpError{"missing message parameter", http.StatusBadRequest}
 	}
 	users, err := server.getJoinedUsers(req.GameId)
 	if err != nil {
@@ -1195,7 +1196,7 @@ func (server *GameServer) sendGameChat(ctx *RequestContext, req *SendGameChatReq
 	}
 
 	if _, ok := users[ctx.User.Id]; !ok {
-		return nil, &HttpError{"can only send messages in games you are in", http.StatusBadRequest}
+		return nil, &api.HttpError{"can only send messages in games you are in", http.StatusBadRequest}
 	}
 
 	stmt, err := server.db.Prepare("INSERT INTO game_chat (game_id, timestamp, user_id, message) VALUES(?, ?, ?, ?)")
@@ -1221,7 +1222,7 @@ type PollGameStatusResponse struct {
 
 func (server *GameServer) pollGameStatus(ctx *RequestContext, req *PollGameStatusRequest) (resp *PollGameStatusResponse, err error) {
 	if req.GameId == "" {
-		return nil, &HttpError{"missing gameId parameter", http.StatusBadRequest}
+		return nil, &api.HttpError{"missing gameId parameter", http.StatusBadRequest}
 	}
 
 	stmt, err := server.db.Prepare("SELECT MAX(timestamp) FROM game_log WHERE game_id=?")
@@ -1280,15 +1281,15 @@ func (server *GameServer) undoMove(ctx *RequestContext, req *UndoMoveRequest) (r
 	err = row.Scan(&lastTimestamp, &lastPlayer, &lastWasReversible)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
+			return nil, &api.HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
 		}
 		return nil, err
 	}
 	if lastPlayer != ctx.User.Id {
-		return nil, &HttpError{"caller did not perform the last move", http.StatusBadRequest}
+		return nil, &api.HttpError{"caller did not perform the last move", http.StatusBadRequest}
 	}
 	if lastWasReversible == 0 {
-		return nil, &HttpError{"last move is not reversible", http.StatusBadRequest}
+		return nil, &api.HttpError{"last move is not reversible", http.StatusBadRequest}
 	}
 
 	var priorState string

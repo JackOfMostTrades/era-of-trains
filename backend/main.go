@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/api"
 	"github.com/JackOfMostTrades/eot/backend/common"
 	"github.com/JackOfMostTrades/eot/backend/maps"
 	_ "github.com/go-sql-driver/mysql"
@@ -25,27 +26,18 @@ type RequestContext struct {
 	User         *User
 }
 
-type HttpError struct {
-	description string
-	code        int
-}
-
-func (e *HttpError) Error() string {
-	return e.description
-}
-
 func (server *GameServer) assertAuthentication(ctx *RequestContext) error {
 	cookie, err := ctx.HttpRequest.Cookie("eot-session")
 	if err != nil {
 		if errors.Is(err, http.ErrNoCookie) {
-			return &HttpError{description: "Unauthenticated", code: http.StatusUnauthorized}
+			return &api.HttpError{Description: "Unauthenticated", Code: http.StatusUnauthorized}
 		}
-		return &HttpError{description: "Failed to parse cookies", code: http.StatusInternalServerError}
+		return &api.HttpError{Description: "Failed to parse cookies", Code: http.StatusInternalServerError}
 	}
 	session := cookie.Value
 	sessionData, err := server.validateSession(session)
 	if err != nil {
-		return &HttpError{description: fmt.Sprintf("Failed to parse session: %v", err), code: http.StatusBadRequest}
+		return &api.HttpError{Description: fmt.Sprintf("Failed to parse session: %v", err), Code: http.StatusBadRequest}
 	}
 
 	stmt, err := server.db.Prepare("SELECT id,nickname FROM users WHERE id=?")
@@ -86,8 +78,8 @@ func handleJsonRequest[ReqT any, ResT any](ctx *RequestContext, handler func(ctx
 	}
 	s, err := handler(ctx, req)
 	if err != nil {
-		if httpErr, ok := err.(*HttpError); ok {
-			http.Error(ctx.HttpResponse, httpErr.Error(), httpErr.code)
+		if httpErr, ok := err.(*api.HttpError); ok {
+			http.Error(ctx.HttpResponse, httpErr.Error(), httpErr.Code)
 			return
 		} else {
 			http.Error(ctx.HttpResponse, err.Error(), http.StatusInternalServerError)
@@ -116,8 +108,8 @@ func jsonHandler[ReqT any, ResT any](server *GameServer, handler func(ctx *Reque
 		}
 		err := server.assertAuthentication(ctx)
 		if err != nil {
-			if httpError, ok := err.(*HttpError); ok {
-				http.Error(w, httpError.Error(), httpError.code)
+			if httpError, ok := err.(*api.HttpError); ok {
+				http.Error(w, httpError.Error(), httpError.Code)
 			} else {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}

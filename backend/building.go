@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/api"
 	"github.com/JackOfMostTrades/eot/backend/common"
 	"github.com/JackOfMostTrades/eot/backend/maps"
 	"github.com/JackOfMostTrades/eot/backend/tiles"
 	"slices"
 )
 
-func (performer *buildActionPerformer) attemptTownPlacement(hex common.Coordinate, townPlacement *TownPlacement) error {
+func (performer *buildActionPerformer) attemptTownPlacement(hex common.Coordinate, townPlacement *api.TownPlacement) error {
 	mapState := newMapState(performer.gameMap, performer.gameState)
 	ts := mapState.GetTileState(hex)
 
@@ -85,7 +86,7 @@ func (performer *buildActionPerformer) attemptTownPlacement(hex common.Coordinat
 	return nil
 }
 
-func (performer *buildActionPerformer) attemptTeleportLinkPlacement(hex common.Coordinate, teleportLinkPlacement *TeleportLinkPlacement) error {
+func (performer *buildActionPerformer) attemptTeleportLinkPlacement(hex common.Coordinate, teleportLinkPlacement *api.TeleportLinkPlacement) error {
 	direction := teleportLinkPlacement.Track
 
 	otherHex, otherDirection := performer.gameMap.GetTeleportLink(performer.gameState, hex, direction)
@@ -118,7 +119,7 @@ func (performer *buildActionPerformer) attemptTeleportLinkPlacement(hex common.C
 	return nil
 }
 
-func (performer *buildActionPerformer) determineTownBuildCost(hex common.Coordinate, townPlacement *TownPlacement) (int, error) {
+func (performer *buildActionPerformer) determineTownBuildCost(hex common.Coordinate, townPlacement *api.TownPlacement) (int, error) {
 	ts := newMapState(performer.gameMap, performer.gameState).GetTileState(hex)
 
 	var cost int
@@ -126,7 +127,7 @@ func (performer *buildActionPerformer) determineTownBuildCost(hex common.Coordin
 	return cost, nil
 }
 
-func (performer *buildActionPerformer) determineTrackBuildCost(hex common.Coordinate, trackPlacement *TrackPlacement) (int, error) {
+func (performer *buildActionPerformer) determineTrackBuildCost(hex common.Coordinate, trackPlacement *api.TrackPlacement) (int, error) {
 	ts := newMapState(performer.gameMap, performer.gameState).GetTileState(hex)
 
 	hexType := performer.gameMap.GetHexType(hex)
@@ -139,7 +140,7 @@ func (performer *buildActionPerformer) determineTrackBuildCost(hex common.Coordi
 	return cost, nil
 }
 
-func (performer *buildActionPerformer) attemptTrackPlacement(hex common.Coordinate, trackPlacement *TrackPlacement) error {
+func (performer *buildActionPerformer) attemptTrackPlacement(hex common.Coordinate, trackPlacement *api.TrackPlacement) error {
 	tilePlacer := newTilePlacer(performer)
 	err := tilePlacer.applyTrackTilePlacement(hex,
 		trackPlacement.Tile,
@@ -223,7 +224,7 @@ func (performer *buildActionPerformer) handleUrbanization(hex common.Coordinate,
 	return nil
 }
 
-func (handler *confirmMoveHandler) performBuildAction(buildAction *BuildAction) error {
+func (handler *confirmMoveHandler) performBuildAction(buildAction *api.BuildAction) error {
 
 	gameState := handler.gameState
 	performer := newBuildActionPerformer(handler.gameMap, handler.gameState, handler.activePlayer)

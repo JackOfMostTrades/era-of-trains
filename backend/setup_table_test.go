@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/JackOfMostTrades/eot/backend/api"
 	"net/http"
 	"testing"
 	"time"
@@ -44,9 +45,9 @@ func TestCreateGameNameRequired(t *testing.T) {
 		MaxPlayers: 3,
 		MapName:    "rust_belt",
 	})
-	var httpError *HttpError
+	var httpError *api.HttpError
 	require.ErrorAs(t, err, &httpError)
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 
 	res, err := h.listGames(t, player1, &ListGamesRequest{})
 	require.NoError(t, err)
@@ -63,9 +64,9 @@ func TestCreateGameBadPlayerCounts(t *testing.T) {
 		MaxPlayers: 2,
 		MapName:    "rust_belt",
 	})
-	var httpError *HttpError
+	var httpError *api.HttpError
 	require.ErrorAs(t, err, &httpError)
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 
 	res, err := h.listGames(t, player1, &ListGamesRequest{})
 	require.NoError(t, err)
@@ -77,25 +78,25 @@ func TestCreateGamePlayerCountsRequired(t *testing.T) {
 	defer h.Close()
 
 	player1 := h.createUser(t)
-	
+
 	// Test missing min players
 	_, err := h.createGame(t, player1, &CreateGameRequest{
-		Name:       "game-name", 
+		Name:       "game-name",
 		MaxPlayers: 3,
 		MapName:    "rust_belt",
 	})
-	var httpError *HttpError
+	var httpError *api.HttpError
 	require.ErrorAs(t, err, &httpError)
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 
 	// Test missing max players
 	_, err = h.createGame(t, player1, &CreateGameRequest{
 		Name:       "game-name",
 		MinPlayers: 2,
-		MapName:    "rust_belt", 
+		MapName:    "rust_belt",
 	})
-	require.ErrorAs(t, err, &httpError) 
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	require.ErrorAs(t, err, &httpError)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 
 	// Verify no games were created
 	res, err := h.listGames(t, player1, &ListGamesRequest{})
@@ -131,9 +132,9 @@ func TestJoinGameInvalidGameId(t *testing.T) {
 
 	player2 := h.createUser(t)
 	_, err := h.joinGame(t, player2, &JoinGameRequest{GameId: "bad-game-id"})
-	var httpError *HttpError
+	var httpError *api.HttpError
 	require.ErrorAs(t, err, &httpError)
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 }
 
 func TestJoinGameAlreadyStarted(t *testing.T) {
@@ -156,9 +157,9 @@ func TestJoinGameAlreadyStarted(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = h.joinGame(t, h.createUser(t), &JoinGameRequest{GameId: "bad-game-id"})
-	var httpError *HttpError
+	var httpError *api.HttpError
 	require.ErrorAs(t, err, &httpError)
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 }
 
 func TestLeaveGame(t *testing.T) {
@@ -200,9 +201,9 @@ func TestLeaveGameInvalidGameId(t *testing.T) {
 
 	player := h.createUser(t)
 	_, err := h.leaveGame(t, player, &LeaveGameRequest{GameId: "bad-game-id"})
-	var httpError *HttpError
+	var httpError *api.HttpError
 	require.ErrorAs(t, err, &httpError)
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 }
 
 func TestLeaveGameNotJoined(t *testing.T) {
@@ -220,9 +221,9 @@ func TestLeaveGameNotJoined(t *testing.T) {
 
 	player2 := h.createUser(t)
 	_, err = h.leaveGame(t, player2, &LeaveGameRequest{GameId: createRes.Id})
-	var httpError *HttpError
+	var httpError *api.HttpError
 	require.ErrorAs(t, err, &httpError)
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 }
 
 func TestLeaveGameAlreadyStarted(t *testing.T) {
@@ -246,9 +247,9 @@ func TestLeaveGameAlreadyStarted(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = h.leaveGame(t, player2, &LeaveGameRequest{GameId: createRes.Id})
-	var httpError *HttpError
+	var httpError *api.HttpError
 	require.ErrorAs(t, err, &httpError)
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 }
 
 func TestStartGameNotCreator(t *testing.T) {
@@ -257,7 +258,7 @@ func TestStartGameNotCreator(t *testing.T) {
 
 	player1 := h.createUser(t)
 	createRes, err := h.createGame(t, player1, &CreateGameRequest{
-		Name:       "game-name", 
+		Name:       "game-name",
 		MinPlayers: 2,
 		MaxPlayers: 2,
 		MapName:    "rust_belt",
@@ -269,9 +270,9 @@ func TestStartGameNotCreator(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = h.startGame(t, player2, &StartGameRequest{GameId: createRes.Id})
-	var httpError *HttpError
+	var httpError *api.HttpError
 	require.ErrorAs(t, err, &httpError)
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 }
 
 func TestStartGameNotEnoughPlayers(t *testing.T) {
@@ -288,9 +289,9 @@ func TestStartGameNotEnoughPlayers(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = h.startGame(t, player1, &StartGameRequest{GameId: createRes.Id})
-	var httpError *HttpError
+	var httpError *api.HttpError
 	require.ErrorAs(t, err, &httpError)
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 }
 
 func TestStartGameAlreadyStarted(t *testing.T) {
@@ -314,9 +315,9 @@ func TestStartGameAlreadyStarted(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = h.startGame(t, player1, &StartGameRequest{GameId: createRes.Id})
-	var httpError *HttpError
+	var httpError *api.HttpError
 	require.ErrorAs(t, err, &httpError)
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 }
 
 func TestStartGameInvalidId(t *testing.T) {
@@ -325,9 +326,9 @@ func TestStartGameInvalidId(t *testing.T) {
 
 	player1 := h.createUser(t)
 	_, err := h.startGame(t, player1, &StartGameRequest{GameId: "invalid-id"})
-	var httpError *HttpError
+	var httpError *api.HttpError
 	require.ErrorAs(t, err, &httpError)
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 }
 
 func TestStartGameSuccess(t *testing.T) {
@@ -336,7 +337,7 @@ func TestStartGameSuccess(t *testing.T) {
 
 	player1 := h.createUser(t)
 	createRes, err := h.createGame(t, player1, &CreateGameRequest{
-		Name:       "game-name", 
+		Name:       "game-name",
 		MinPlayers: 2,
 		MaxPlayers: 2,
 		MapName:    "rust_belt",
@@ -410,7 +411,7 @@ func TestGetMyGamesEmpty(t *testing.T) {
 	defer h.Close()
 
 	player1 := h.createUser(t)
-	
+
 	res, err := h.getMyGames(t, player1, &GetMyGamesRequest{})
 	require.NoError(t, err)
 	assert.Equal(t, 0, len(res.Games))
@@ -436,9 +437,9 @@ func TestSetMyProfile(t *testing.T) {
 	// Update profile
 	_, err := h.setMyProfile(t, player1, &SetMyProfileRequest{
 		EmailNotificationsEnabled: true,
-		DiscordTurnAlertsEnabled: true,
-		ColorPreferences: []int{1, 2, 3},
-		Webhooks: []string{"https://example.com/webhook1", "https://example.com/webhook2"},
+		DiscordTurnAlertsEnabled:  true,
+		ColorPreferences:          []int{1, 2, 3},
+		Webhooks:                  []string{"https://example.com/webhook1", "https://example.com/webhook2"},
 	})
 	require.NoError(t, err)
 
@@ -521,9 +522,9 @@ func TestGameChatValidation(t *testing.T) {
 		GameId:  "non-existent-game",
 		Message: "Hello",
 	})
-	var httpError *HttpError
+	var httpError *api.HttpError
 	require.ErrorAs(t, err, &httpError)
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 
 	// Test sending empty message
 	_, err = h.sendGameChat(t, player1, &SendGameChatRequest{
@@ -531,7 +532,7 @@ func TestGameChatValidation(t *testing.T) {
 		Message: "",
 	})
 	require.ErrorAs(t, err, &httpError)
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 
 	// Test sending message as non-participant
 	_, err = h.sendGameChat(t, player2, &SendGameChatRequest{
@@ -539,7 +540,7 @@ func TestGameChatValidation(t *testing.T) {
 		Message: "Hello from outsider",
 	})
 	require.ErrorAs(t, err, &httpError)
-	assert.Equal(t, http.StatusBadRequest, httpError.code)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 
 	// Test getting chat from non-existent game
 	chatResp, err := h.getGameChat(t, player1, &GetGameChatRequest{
@@ -587,10 +588,10 @@ func TestPollGameStatusWithMoves(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	gameResp, err := h.viewGame(t, player1, &ViewGameRequest{GameId: game.Id})
 	require.NoError(t, err)
-	_, err = h.confirmMove(t, gameResp.ActivePlayer, &ConfirmMoveRequest{
-		GameId: game.Id,
-		ActionName: SharesActionName,
-		SharesAction: &SharesAction{Amount: 0},
+	_, err = h.confirmMove(t, gameResp.ActivePlayer, &api.ConfirmMoveRequest{
+		GameId:       game.Id,
+		ActionName:   api.SharesActionName,
+		SharesAction: &api.SharesAction{Amount: 0},
 	})
 	require.NoError(t, err)
 

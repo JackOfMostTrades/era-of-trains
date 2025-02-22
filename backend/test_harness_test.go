@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/api"
 	"github.com/JackOfMostTrades/eot/backend/common"
 	"github.com/JackOfMostTrades/eot/backend/maps"
 	"github.com/google/uuid"
@@ -92,7 +93,7 @@ func doApiCall[ReqT any, ResT any](h *TestHarness, t *testing.T, asUserId string
 		if err != nil {
 			t.Logf("failed to read error response body: %v", err)
 		}
-		return nil, &HttpError{description: string(resBody), code: res.StatusCode}
+		return nil, &api.HttpError{Description: string(resBody), Code: res.StatusCode}
 	}
 	defer res.Body.Close()
 	resBody := new(ResT)
@@ -141,8 +142,8 @@ func (h *TestHarness) listGames(t *testing.T, asUser string, req *ListGamesReque
 	return doApiCall[ListGamesRequest, ListGamesResponse](h, t, asUser, "/api/listGames", req)
 }
 
-func (h *TestHarness) confirmMove(t *testing.T, asUser string, req *ConfirmMoveRequest) (*ConfirmMoveResponse, error) {
-	return doApiCall[ConfirmMoveRequest, ConfirmMoveResponse](h, t, asUser, "/api/confirmMove", req)
+func (h *TestHarness) confirmMove(t *testing.T, asUser string, req *api.ConfirmMoveRequest) (*api.ConfirmMoveResponse, error) {
+	return doApiCall[api.ConfirmMoveRequest, api.ConfirmMoveResponse](h, t, asUser, "/api/confirmMove", req)
 }
 
 func (h *TestHarness) viewGame(t *testing.T, asUser string, req *ViewGameRequest) (*ViewGameResponse, error) {

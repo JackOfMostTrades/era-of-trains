@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/JackOfMostTrades/eot/backend/api"
 	"github.com/JackOfMostTrades/eot/backend/common"
 	"github.com/JackOfMostTrades/eot/backend/maps"
 	"github.com/stretchr/testify/assert"
@@ -13,9 +14,9 @@ import (
 )
 
 type GameStep struct {
-	Action               *ConfirmMoveRequest `json:"action"`
-	ExpectedGameState    *common.GameState   `json:"expectedGameState"`
-	ExpectedActivePlayer string              `json:"expectedActivePlayer"`
+	Action               *api.ConfirmMoveRequest `json:"action"`
+	ExpectedGameState    *common.GameState       `json:"expectedGameState"`
+	ExpectedActivePlayer string                  `json:"expectedActivePlayer"`
 }
 
 type GameLogTestCaseDefinition struct {
@@ -110,9 +111,9 @@ func TestExportGameLogTestCase(t *testing.T) {
 		err = rows.Scan(&actionStr, &newActivePlayer, &newGameStateStr)
 		require.NoError(t, err)
 
-		var action *ConfirmMoveRequest
+		var action *api.ConfirmMoveRequest
 		if actionStr.Valid {
-			action = new(ConfirmMoveRequest)
+			action = new(api.ConfirmMoveRequest)
 			err = json.Unmarshal([]byte(actionStr.String), action)
 			require.NoError(t, err)
 		}
