@@ -317,6 +317,52 @@ func TestUrbanizeAndConnect(t *testing.T) {
 	assert.Equal(t, []common.Direction{common.SOUTH_EAST, common.NORTH_EAST}, link.Steps)
 }
 
+func TestUrbanizeDangler(t *testing.T) {
+	playerId := "player1"
+	gameMap := &testMap{
+		hexes: [][]maps.HexType{
+			{maps.TOWN_HEX_TYPE, maps.CITY_HEX_TYPE},
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+		},
+	}
+	gameState := &common.GameState{
+		GamePhase:     common.BUILDING_GAME_PHASE,
+		PlayerCash:    map[string]int{playerId: 10},
+		PlayerActions: map[string]common.SpecialAction{playerId: common.URBANIZATION_SPECIAL_ACTION},
+		Links: []*common.Link{
+			{
+				SourceHex: common.Coordinate{X: 1, Y: 0},
+				Steps:     []common.Direction{common.SOUTH_WEST, common.NORTH_WEST},
+				Owner:     "",
+				Complete:  false,
+			},
+		},
+	}
+
+	handler := &confirmMoveHandler{
+		gameMap:      gameMap,
+		gameState:    gameState,
+		activePlayer: playerId,
+	}
+	urb := 0
+	err := handler.performBuildAction(&api.BuildAction{
+		Steps: []*api.BuildStep{
+			{
+				Hex:          common.Coordinate{X: 0, Y: 0},
+				Urbanization: &urb,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, len(gameState.Links))
+	link := gameState.Links[0]
+	assert.Equal(t, true, link.Complete)
+	assert.Equal(t, playerId, link.Owner)
+	assert.Equal(t, common.Coordinate{X: 1, Y: 0}, link.SourceHex)
+	assert.Equal(t, []common.Direction{common.SOUTH_WEST, common.NORTH_WEST}, link.Steps)
+}
+
 func TestBuildThroughTown(t *testing.T) {
 	playerId := "player1"
 	gameMap := &testMap{
