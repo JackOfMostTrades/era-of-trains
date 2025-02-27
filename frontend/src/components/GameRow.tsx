@@ -30,11 +30,20 @@ function GameRow({ game }: {game: GameSummary}) {
         }
     }
 
+    let activePlayer: string|undefined;
+    for (let user of game.joinedUsers) {
+        if (user.id === game.activePlayer) {
+            activePlayer = user.nickname;
+            break;
+        }
+    }
+
     return <TableRow>
         <TableCell><Link to={`/games/${game.id}`}>{game.name}</Link></TableCell>
         <TableCell>{playerCount}</TableCell>
         <TableCell>{mapNameToDisplayName(game.mapName)}</TableCell>
         <TableCell>{status}</TableCell>
+        <TableCell>{activePlayer}</TableCell>
     </TableRow>
 }
 

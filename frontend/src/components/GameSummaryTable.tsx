@@ -16,6 +16,7 @@ export function GameSummaryTable({games, title}: {games: GameSummary[], title: s
                     <TableHeaderCell>Number of Players</TableHeaderCell>
                     <TableHeaderCell>Map</TableHeaderCell>
                     <TableHeaderCell>Status</TableHeaderCell>
+                    <TableHeaderCell>Active Player</TableHeaderCell>
                 </TableRow>
             </TableHeader>
             <TableBody>{games.map(game => <GameRow key={game.id} game={game} />)}</TableBody>
