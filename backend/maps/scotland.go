@@ -40,7 +40,15 @@ func (*scotlandMap) GetAuctionPhase() auction.AuctionPhase {
 	return &ScotlandAuctionPhase{}
 }
 
-func (*scotlandMap) GetTurnLimit(playerCount int) int {
+func (*scotlandMap) GetTurnLimit(gameState *common.GameState, playerCount int) int {
+	if gameState.MapState != nil {
+		if turnLimit, ok := gameState.MapState["turnLimit"]; ok {
+			if turnLimitVal, ok := turnLimit.(float64); ok {
+				return int(turnLimitVal)
+			}
+		}
+	}
+
 	return 8
 }
 
