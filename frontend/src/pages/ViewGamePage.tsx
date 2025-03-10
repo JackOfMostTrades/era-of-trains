@@ -36,6 +36,7 @@ import PartsCountComponent from "./PartsCountComponent.tsx";
 
 function WaitingForPlayersPage({game, onJoin, onStart}: {game: ViewGameResponse, onJoin: () => Promise<void>, onStart: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
+    let {setError} = useContext(ErrorContext);
     let [loading, setLoading] = useState<boolean>(false);
 
     let joined = false;
@@ -66,6 +67,8 @@ function WaitingForPlayersPage({game, onJoin, onStart}: {game: ViewGameResponse,
                             return onJoin();
                         }).finally(() => {
                             setLoading(false);
+                        }).catch(err => {
+                            setError(err);
                         })
                     }}>Leave Game</Button>
                 </> : <>
@@ -75,6 +78,8 @@ function WaitingForPlayersPage({game, onJoin, onStart}: {game: ViewGameResponse,
                             return onJoin();
                         }).finally(() => {
                             setLoading(false);
+                        }).catch(err => {
+                            setError(err);
                         })
                     }}>Join Game</Button>
                 </>
