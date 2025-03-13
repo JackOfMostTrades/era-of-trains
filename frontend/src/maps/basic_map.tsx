@@ -108,7 +108,7 @@ export class BasicMap implements GameMap {
         return undefined;
     }
 
-    public getTurnLimit(_: GameState|undefined, playerCount: number): number {
+    public getTurnLimit(playerCount: number): number {
         if (playerCount === 6) {
             return 6
         } else if (playerCount === 5) {

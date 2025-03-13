@@ -907,7 +907,7 @@ func (handler *confirmMoveHandler) executeGoodsGrowthPhase(gameMap maps.GameMap)
 	handler.reversible = false
 
 	// Determine if the game is over
-	turnLimit := gameMap.GetTurnLimit(gameState, numPlayers)
+	turnLimit := gameMap.GetTurnLimit(numPlayers)
 	if gameState.TurnNumber > turnLimit {
 		handler.gameFinished = true
 	}

@@ -207,7 +207,7 @@ function PlayerStatus({game, map, onConfirmMove}: { game: ViewGameResponse, map:
                             <LabelDetail>{playerById[playerId].nickname}</LabelDetail>
                         </Label>
                     </>})}<br/>
-            Turn: {game.gameState.turnNumber} / {map.getTurnLimit(game.gameState, game.joinedUsers.length)} <br/>
+            Turn: {game.gameState.turnNumber} / {map.getTurnLimit(game.joinedUsers.length)} <br/>
         </Segment>
         <Segment className={"action-holder " + (game.activePlayer === userSession.userInfo?.user.id ? "my-turn" : "other-player-turn") }>
             {actionHolder}

@@ -55,11 +55,7 @@ class Scotland extends BasicMap {
         return teleportLinks;
     }
 
-    public getTurnLimit(gameState: GameState|undefined, _: number): number {
-        if (gameState && gameState.mapState && gameState.mapState["turnLimit"]) {
-            return gameState.mapState["turnLimit"];
-        }
-
+    public getTurnLimit(_: number): number {
         return 8;
     }
 

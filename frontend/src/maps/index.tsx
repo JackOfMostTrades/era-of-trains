@@ -38,7 +38,7 @@ export interface GameMap {
     getCityColor(goodsGrowthNumber: number): Color;
     getTeleportLinks(gameState: GameState|undefined, pendingBuildAction: BuildAction|undefined): TeleportLink[];
     getSpecialTrackPricing(hex: Coordinate): number|undefined;
-    getTurnLimit(gameState: GameState|undefined, playerCount: number): number
+    getTurnLimit(playerCount: number): number
     getSharesLimit(): number
     getBuildLimit(gameState: GameState|undefined, player: string): number;
     getMapInfo(): ReactNode;
