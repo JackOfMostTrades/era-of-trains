@@ -6,13 +6,16 @@ class Scotland extends BasicMap {
 
     public getMapInfo(): ReactNode {
         return <>
-            <p>This map is intended for two players only.</p>
-            <p>With two players, the first player in the auction pays full price, and the second (aka last) player pays nothing.</p>
+            <p>This map as released was intended for two players only, but the community here says it works as a very
+                challenging map for 3!</p>
+            <p>With two players, the first player in the auction pays full price, and the second (aka last) player pays
+                nothing. With three players, the top two players pay full and the last player pays nothing.</p>
             <p>In a two-player game, if a player takes Turn Order Pass then the next auction is skipped and that player
-                automatically becomes first player.</p>
+                automatically becomes first player. With more players, turn order pass works as normal.</p>
             <p>Both towns on either side of the ferry links need to be urbanized before the ferry link can be built.</p>
-            <p>Four dice are rolled for each of the light and dark goods growth phases.</p>
-            <p>The game lasts 8 turns.</p>
+            <p>Four dice are rolled for each of the light and dark goods growth phases (regardless of number of
+                players).</p>
+            <p>The game lasts 8 turns with two players. It lasts 6 turns with 3 or more players.</p>
             <p>If the town next to the light 2 city is urbanized, an existing link between the town and the city is
                 preserved (that player gets a disk between the two cities, representing a single link). If a link has
                 not already been built, then it will become an option to build the special link between the two cities
@@ -20,7 +23,7 @@ class Scotland extends BasicMap {
         </>;
     }
 
-    public getTeleportLinks(gameState: GameState|undefined, pendingBuildAction: BuildAction|undefined): TeleportLink[] {
+    public getTeleportLinks(gameState: GameState | undefined, pendingBuildAction: BuildAction | undefined): TeleportLink[] {
         let teleportLinks = super.getTeleportLinks(gameState, pendingBuildAction).slice();
         let urbs: Urbanization[] = [];
         if (pendingBuildAction && pendingBuildAction.steps) {
@@ -55,8 +58,11 @@ class Scotland extends BasicMap {
         return teleportLinks;
     }
 
-    public getTurnLimit(_: number): number {
-        return 8;
+    public getTurnLimit(playerCount: number): number {
+        if (playerCount >= 3) {
+            return 6
+        }
+        return 8
     }
 
     public getRiverLayer(): React.ReactNode {

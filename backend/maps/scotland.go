@@ -41,6 +41,9 @@ func (*scotlandMap) GetAuctionPhase() auction.AuctionPhase {
 }
 
 func (*scotlandMap) GetTurnLimit(playerCount int) int {
+	if playerCount >= 3 {
+		return 6
+	}
 	return 8
 }
 
