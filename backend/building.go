@@ -205,7 +205,8 @@ func (performer *buildActionPerformer) handleUrbanization(hex common.Coordinate,
 		if ts != nil {
 			for _, route := range ts.routes {
 				if route.Left == direction.Opposite() || route.Right == direction.Opposite() {
-					if !route.Link.Complete {
+					// If the link was previously incomplete and started from somewhere else, then it becomes completed
+					if !route.Link.Complete && !route.Link.SourceHex.Equals(hex) {
 						route.Link.Complete = true
 						// If it was unowned, the placer of the urbanization gets ownership
 						if route.Link.Owner == "" {

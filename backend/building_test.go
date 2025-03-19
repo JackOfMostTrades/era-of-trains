@@ -1277,3 +1277,63 @@ func TestRedirectJoinUnownedLinks(t *testing.T) {
 	assert.Equal(t, common.Coordinate{X: 0, Y: 0}, link.SourceHex)
 	assert.Equal(t, []common.Direction{common.SOUTH_EAST, common.NORTH_EAST, common.SOUTH_EAST, common.NORTH_EAST}, link.Steps)
 }
+
+func TestUrbStartOfDangler(t *testing.T) {
+	player1 := "player1"
+	player2 := "player2"
+	gameMap := &testMap{
+		hexes: [][]maps.HexType{
+			{maps.CITY_HEX_TYPE, maps.TOWN_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+			{maps.CITY_HEX_TYPE, maps.TOWN_HEX_TYPE, maps.TOWN_HEX_TYPE},
+		},
+	}
+	gameState := &common.GameState{
+		GamePhase:     common.BUILDING_GAME_PHASE,
+		PlayerCash:    map[string]int{player1: 10},
+		PlayerActions: map[string]common.SpecialAction{player2: common.URBANIZATION_SPECIAL_ACTION},
+		Links: []*common.Link{
+			{
+				SourceHex: common.Coordinate{X: 0, Y: 0},
+				Steps:     []common.Direction{common.SOUTH_EAST, common.NORTH_EAST},
+				Owner:     player1,
+				Complete:  true,
+			},
+			{
+				SourceHex: common.Coordinate{X: 1, Y: 0},
+				Steps:     []common.Direction{common.SOUTH_EAST, common.SOUTH_EAST},
+				Owner:     player1,
+				Complete:  false,
+			},
+		},
+	}
+
+	handler := &confirmMoveHandler{
+		gameMap:      gameMap,
+		gameState:    gameState,
+		activePlayer: player2,
+	}
+	urb := 0
+	err := handler.performBuildAction(&api.BuildAction{
+		Steps: []*api.BuildStep{
+			{
+				Hex:          common.Coordinate{X: 1, Y: 0},
+				Urbanization: &urb,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, 2, len(gameState.Links))
+	link := gameState.Links[0]
+	assert.Equal(t, true, link.Complete)
+	assert.Equal(t, player1, link.Owner)
+	assert.Equal(t, common.Coordinate{X: 0, Y: 0}, link.SourceHex)
+	assert.Equal(t, []common.Direction{common.SOUTH_EAST, common.NORTH_EAST}, link.Steps)
+
+	link = gameState.Links[1]
+	assert.Equal(t, false, link.Complete)
+	assert.Equal(t, player1, link.Owner)
+	assert.Equal(t, common.Coordinate{X: 1, Y: 0}, link.SourceHex)
+	assert.Equal(t, []common.Direction{common.SOUTH_EAST, common.SOUTH_EAST}, link.Steps)
+}
