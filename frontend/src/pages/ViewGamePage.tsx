@@ -1,7 +1,23 @@
-import {Button, Grid, Header, Label, LabelDetail, List, ListItem, Loader, Segment} from "semantic-ui-react";
-import {ReactNode, useContext, useEffect, useState} from "react";
-import {useParams} from "react-router";
 import {
+    Button,
+    Grid,
+    Header,
+    Label,
+    LabelDetail,
+    List,
+    ListItem,
+    Loader,
+    Modal,
+    ModalActions,
+    ModalContent,
+    ModalDescription,
+    ModalHeader,
+    Segment
+} from "semantic-ui-react";
+import {ReactNode, useContext, useEffect, useState} from "react";
+import {useNavigate, useParams} from "react-router";
+import {
+    DeleteGame,
     GamePhase,
     GetGameLogs,
     GetGameLogsResponse,
@@ -34,10 +50,41 @@ import GameChat from "../components/GameChat.tsx";
 import ErrorContext from "../ErrorContext.tsx";
 import PartsCountComponent from "./PartsCountComponent.tsx";
 
+function DeleteGameModal({open, gameId, onCancel}: {open: boolean, gameId: string, onCancel: () => void}) {
+    let [loading, setLoading] = useState<boolean>(false);
+    let navigate = useNavigate();
+    let {setError} = useContext(ErrorContext);
+
+    return (
+        <Modal open={open}>
+            <ModalHeader>Delete game?</ModalHeader>
+            <ModalContent>
+                <ModalDescription>
+                    <p>Are you sure you want to delete this game?</p>
+                </ModalDescription>
+            </ModalContent>
+            <ModalActions>
+                <Button primary loading={loading} disabled={loading} onClick={() => {
+                    setLoading(true)
+                    DeleteGame({gameId: gameId}).then(() => {
+                        navigate("/");
+                    }).finally(() => {
+                        setLoading(false);
+                    }).catch(err => {
+                        setError(err);
+                    })
+                }}>Yes, delete the game</Button>
+                <Button negative disabled={loading} onClick={onCancel}>Cancel</Button>
+            </ModalActions>
+        </Modal>
+    )
+}
+
 function WaitingForPlayersPage({game, onJoin, onStart}: {game: ViewGameResponse, onJoin: () => Promise<void>, onStart: () => Promise<void>}) {
     let userSession = useContext(UserSessionContext);
     let {setError} = useContext(ErrorContext);
     let [loading, setLoading] = useState<boolean>(false);
+    let [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
 
     let joined = false;
     for (let player of game?.joinedUsers) {
@@ -57,9 +104,17 @@ function WaitingForPlayersPage({game, onJoin, onStart}: {game: ViewGameResponse,
     const map = maps[game.mapName];
 
     return <>
+        <DeleteGameModal
+            open={deleteModalOpen}
+            gameId={game.id}
+            onCancel={() => setDeleteModalOpen(false)}
+            />
+
         <p>Waiting for players...</p>
         <List>{listItems}</List>
-        {isOwner ? null :
+        {isOwner ? <Button negative loading={loading} onClick={() => {
+                setDeleteModalOpen(true)
+            }}>Delete Game</Button> :
             joined ? <>
                     <Button negative loading={loading} onClick={() => {
                         setLoading(true)

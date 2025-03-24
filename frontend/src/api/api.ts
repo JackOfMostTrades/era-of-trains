@@ -251,6 +251,15 @@ export function LeaveGame(req: LeaveGameRequest): Promise<LeaveGameResponse> {
     return doApiCall('/api/leaveGame', req);
 }
 
+export interface DeleteGameRequest {
+    gameId: string
+}
+export interface DeleteGameResponse {
+}
+export function DeleteGame(req: DeleteGameRequest): Promise<DeleteGameResponse> {
+    return doApiCall('/api/deleteGame', req);
+}
+
 export interface StartGameRequest {
     gameId: string
 }
