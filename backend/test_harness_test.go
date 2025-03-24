@@ -134,6 +134,10 @@ func (h *TestHarness) leaveGame(t *testing.T, asUser string, req *LeaveGameReque
 	return doApiCall[LeaveGameRequest, LeaveGameResponse](h, t, asUser, "/api/leaveGame", req)
 }
 
+func (h *TestHarness) deleteGame(t *testing.T, asUser string, req *DeleteGameRequest) (*DeleteGameResponse, error) {
+	return doApiCall[DeleteGameRequest, DeleteGameResponse](h, t, asUser, "/api/deleteGame", req)
+}
+
 func (h *TestHarness) startGame(t *testing.T, asUser string, req *StartGameRequest) (*StartGameResponse, error) {
 	return doApiCall[StartGameRequest, StartGameResponse](h, t, asUser, "/api/startGame", req)
 }

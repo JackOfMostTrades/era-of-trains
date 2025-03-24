@@ -250,6 +250,7 @@ func (server *GameServer) createHttpMux() http.Handler {
 	mux.HandleFunc("/api/createGame", jsonHandler(server, server.createGame))
 	mux.HandleFunc("/api/joinGame", jsonHandler(server, server.joinGame))
 	mux.HandleFunc("/api/leaveGame", jsonHandler(server, server.leaveGame))
+	mux.HandleFunc("/api/deleteGame", jsonHandler(server, server.deleteGame))
 	mux.HandleFunc("/api/startGame", jsonHandler(server, server.startGame))
 	mux.HandleFunc("/api/listGames", jsonHandler(server, server.listGames))
 	mux.HandleFunc("/api/confirmMove", jsonHandler(server, server.confirmMove))

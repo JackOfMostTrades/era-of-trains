@@ -252,6 +252,59 @@ func TestLeaveGameAlreadyStarted(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, httpError.Code)
 }
 
+func TestDeleteGame(t *testing.T) {
+	h := NewTestHarness(t)
+	defer h.Close()
+
+	player1 := h.createUser(t)
+	createRes, err := h.createGame(t, player1, &CreateGameRequest{
+		Name:       "game-name",
+		MinPlayers: 2,
+		MaxPlayers: 2,
+		MapName:    "rust_belt",
+	})
+	require.NoError(t, err)
+
+	player2 := h.createUser(t)
+	_, err = h.joinGame(t, player2, &JoinGameRequest{GameId: createRes.Id})
+	require.NoError(t, err)
+
+	_, err = h.deleteGame(t, player1, &DeleteGameRequest{GameId: createRes.Id})
+	require.NoError(t, err)
+
+	_, err = h.viewGame(t, player1, &ViewGameRequest{GameId: createRes.Id})
+	var httpError *api.HttpError
+	require.ErrorAs(t, err, &httpError)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
+}
+
+func TestDeleteGameNotCreator(t *testing.T) {
+	h := NewTestHarness(t)
+	defer h.Close()
+
+	player1 := h.createUser(t)
+	createRes, err := h.createGame(t, player1, &CreateGameRequest{
+		Name:       "game-name",
+		MinPlayers: 2,
+		MaxPlayers: 2,
+		MapName:    "rust_belt",
+	})
+	require.NoError(t, err)
+
+	player2 := h.createUser(t)
+	_, err = h.joinGame(t, player2, &JoinGameRequest{GameId: createRes.Id})
+	require.NoError(t, err)
+
+	_, err = h.deleteGame(t, player2, &DeleteGameRequest{GameId: createRes.Id})
+	var httpError *api.HttpError
+	require.ErrorAs(t, err, &httpError)
+	assert.Equal(t, http.StatusBadRequest, httpError.Code)
+
+	viewRes, err := h.viewGame(t, player2, &ViewGameRequest{GameId: createRes.Id})
+	require.NoError(t, err)
+	assert.False(t, viewRes.Started)
+}
+
 func TestStartGameNotCreator(t *testing.T) {
 	h := NewTestHarness(t)
 	defer h.Close()

@@ -541,6 +541,65 @@ func (server *GameServer) leaveGame(ctx *RequestContext, req *LeaveGameRequest) 
 	return &LeaveGameResponse{}, nil
 }
 
+type DeleteGameRequest struct {
+	GameId string `json:"gameId"`
+}
+type DeleteGameResponse struct {
+}
+
+func (server *GameServer) deleteGame(ctx *RequestContext, req *LeaveGameRequest) (resp *DeleteGameResponse, err error) {
+	stmt, err := server.db.Prepare("SELECT owner_user_id,started FROM games WHERE id=?")
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare query: %v", err)
+	}
+	defer stmt.Close()
+	row := stmt.QueryRow(req.GameId)
+	var ownerUserId string
+	var startedFlag int
+	err = row.Scan(&ownerUserId, &startedFlag)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &api.HttpError{fmt.Sprintf("invalid game id: %s", req.GameId), http.StatusBadRequest}
+		}
+		return nil, fmt.Errorf("failed to fetch game row: %v", err)
+	}
+
+	if startedFlag != 0 {
+		return nil, &api.HttpError{"game has already started", http.StatusBadRequest}
+	}
+	if ownerUserId != ctx.User.Id {
+		return nil, &api.HttpError{"you cannot delete a game unless you created it", http.StatusBadRequest}
+	}
+
+	trx, err := server.db.BeginTx(ctx.HttpRequest.Context(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin sql transaction: %v", err)
+	}
+	defer trx.Rollback()
+	for _, query := range []string{
+		"DELETE FROM game_chat WHERE game_id=?",
+		"DELETE FROM game_log WHERE game_id=?",
+		"DELETE FROM game_player_map WHERE game_id=?",
+		"DELETE FROM games WHERE id=?",
+	} {
+		stmt, err = trx.Prepare(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to prepare query %s: %v", query, err)
+		}
+		defer stmt.Close()
+		_, err = stmt.Exec(req.GameId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to execute query: %v", err)
+		}
+	}
+	err = trx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
+	}
+
+	return &DeleteGameResponse{}, nil
+}
+
 type StartGameRequest struct {
 	GameId string `json:"gameId"`
 }
