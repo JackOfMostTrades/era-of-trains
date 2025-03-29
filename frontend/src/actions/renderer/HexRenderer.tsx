@@ -25,7 +25,7 @@ export function colorToHtml(color: Color, userSession: UserSession|undefined): s
 
 export function playerColorToHtml(color: PlayerColor|undefined, userSession: UserSession|undefined): string {
     if (color === undefined) {
-        return '#222222';
+        return '#111111';
     }
 
     let customColor = userSession?.userProfile?.customColors?.playerColors?.[color];
@@ -289,8 +289,14 @@ export class HexRenderer {
     public renderTownTrack(hex: Coordinate, direction: Direction, playerColor: PlayerColor|undefined) {
         let pos = this.getHexXY(hex);
 
+        let htmlColor = playerColorToHtml(playerColor, this.userSession);
+        let dashArray: string|undefined;
+        if (playerColor === undefined) {
+            dashArray = '1 0.25';
+        }
+
         let offset = hexEdgeOffset(direction);
-        this.paths.push(<line stroke={playerColorToHtml(playerColor, this.userSession)} strokeWidth={1} x1={pos.x+5.7735} y1={pos.y+5} x2={pos.x+offset.dx} y2={pos.y+offset.dy} />);
+        this.paths.push(<line stroke={htmlColor} strokeWidth={1} fill="none" strokeDasharray={dashArray} x1={pos.x+5.7735} y1={pos.y+5} x2={pos.x+offset.dx} y2={pos.y+offset.dy} />);
 
         this.width = Math.max(this.width, hex.x);
         this.height = Math.max(this.height, hex.y);
@@ -300,6 +306,10 @@ export class HexRenderer {
         let pos = this.getHexXY(hex);
 
         let htmlColor = playerColorToHtml(playerColor, this.userSession);
+        let dashArray: string|undefined;
+        if (playerColor === undefined) {
+            dashArray = '1 0.25';
+        }
 
         let leftOffset = hexEdgeOffset(left);
         let rightOffset = hexEdgeOffset(right);
@@ -310,13 +320,13 @@ export class HexRenderer {
             let controlX = 5.7735 + (leftOffset.dx - 5.7735)/4 + (rightOffset.dx - 5.7735)/4
             let controlY = 5 + (leftOffset.dy - 5)/4 + (rightOffset.dy - 5)/4
 
-            this.paths.push(<path stroke={htmlColor} strokeWidth={1} fill="none" d={`M ${pos.x+leftOffset.dx} ${pos.y+leftOffset.dy} Q ${pos.x+controlX} ${pos.y+controlY} ${pos.x+rightOffset.dx} ${pos.y+rightOffset.dy}`} />);
+            this.paths.push(<path stroke={htmlColor} strokeWidth={1} fill="none" strokeDasharray={dashArray} d={`M ${pos.x+leftOffset.dx} ${pos.y+leftOffset.dy} Q ${pos.x+controlX} ${pos.y+controlY} ${pos.x+rightOffset.dx} ${pos.y+rightOffset.dy}`} />);
         } else if (edgeDelta === 2 || edgeDelta === 4) {
             // Gentle curve
-            this.paths.push(<path stroke={htmlColor} strokeWidth={1} fill="none" d={`M ${pos.x+leftOffset.dx} ${pos.y+leftOffset.dy} Q ${pos.x+5.7735} ${pos.y+5} ${pos.x+rightOffset.dx} ${pos.y+rightOffset.dy}`} />);
+            this.paths.push(<path stroke={htmlColor} strokeWidth={1} fill="none" strokeDasharray={dashArray} d={`M ${pos.x+leftOffset.dx} ${pos.y+leftOffset.dy} Q ${pos.x+5.7735} ${pos.y+5} ${pos.x+rightOffset.dx} ${pos.y+rightOffset.dy}`} />);
         } else {
             // Straight
-            this.paths.push(<line stroke={htmlColor} strokeWidth={1} x1={pos.x+leftOffset.dx} y1={pos.y+leftOffset.dy} x2={pos.x+rightOffset.dx} y2={pos.y+rightOffset.dy} />);
+            this.paths.push(<line stroke={htmlColor} strokeWidth={1} fill="none" strokeDasharray={dashArray} x1={pos.x+leftOffset.dx} y1={pos.y+leftOffset.dy} x2={pos.x+rightOffset.dx} y2={pos.y+rightOffset.dy} />);
         }
 
         this.width = Math.max(this.width, hex.x);
