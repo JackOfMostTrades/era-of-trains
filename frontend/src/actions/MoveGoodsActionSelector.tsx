@@ -8,7 +8,16 @@ import {
     User,
     ViewGameResponse
 } from "../api/api.ts";
-import {Button, Header, Icon} from "semantic-ui-react";
+import {
+    Button,
+    Header,
+    Icon,
+    Modal,
+    ModalActions,
+    ModalContent,
+    ModalDescription,
+    ModalHeader
+} from "semantic-ui-react";
 import {ReactNode, useContext, useEffect, useState} from "react";
 import UserSessionContext from "../UserSessionContext.tsx";
 import {applyDirection, applyTeleport, oppositeDirection} from "../util.ts";
@@ -23,6 +32,25 @@ export interface Step {
     currentCubePosition?: Coordinate;
     nextStepOptions?: Array<{direction: Direction, owner: PlayerColor|undefined}>
     playerToLinkCount?: { [ playerId: string]: number }
+}
+
+function ConfirmPassModal({open, hasLocoOption, onConfirm, onCancel}: {open: boolean, hasLocoOption: boolean, onConfirm: () => void, onCancel: () => void}) {
+    return (
+        <Modal open={open}>
+            <ModalHeader>Pass your move goods actions?</ModalHeader>
+            <ModalContent>
+                <ModalDescription>
+                    <Header>Do you really want to pass?</Header>
+                    <p>Are you sure you want to pass instead of moving a good?</p>
+                    {hasLocoOption && <p>You also still have the option to increase locomotive instead!</p>}
+                </ModalDescription>
+            </ModalContent>
+            <ModalActions>
+                <Button primary onClick={onConfirm}>Yes, skip doing anything</Button>
+                <Button negative onClick={onCancel}>Cancel</Button>
+            </ModalActions>
+        </Modal>
+    )
 }
 
 function computeNextStop(game: ViewGameResponse, map: GameMap, current: Coordinate, direction: Direction): { end: Coordinate, moveAlong: Coordinate[], linkOwner: string }|undefined {
@@ -75,6 +103,7 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
     let {setError} = useContext(ErrorContext);
     let [step, setStep] = useState<Step>({})
     let [loading, setLoading] = useState<boolean>(false);
+    let [showConfirmPassModal, setShowConfirmPassModal] = useState<boolean>(false);
 
     let map = maps[game.mapName];
 
@@ -150,9 +179,9 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
         let activePlayer: User|undefined = playerById[game.activePlayer];
         content = <p>Waiting for {activePlayer?.nickname} to move goods...</p>
     } else {
-        let hasDoneLoco = false;
-        if (game.gameState.playerHasDoneLoco[game.activePlayer]) {
-            hasDoneLoco = true;
+        let hasLocoOption = true;
+        if (game.gameState.playerHasDoneLoco[game.activePlayer] || game.gameState.playerLoco[game.activePlayer] >= 6) {
+            hasLocoOption = false
         }
         let stepCountLabel: ReactNode = null;
         if (step.playerToLinkCount && step.steps && step.steps.length > 0) {
@@ -165,6 +194,26 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
         }
 
         content = <>
+            <ConfirmPassModal
+                open={showConfirmPassModal}
+                hasLocoOption={hasLocoOption}
+                onCancel={() => setShowConfirmPassModal(false)}
+                onConfirm={() => {
+                    setLoading(true);
+                    setShowConfirmPassModal(false);
+                    ConfirmMove({
+                        gameId: game.id,
+                        actionName: "move_goods",
+                        moveGoodsAction: {},
+                    }).then(() => {
+                        document.dispatchEvent(new CustomEvent('pendingMoveGoods', { detail: {} }));
+                        return onDone();
+                    }).catch(err => {
+                        setError(err);
+                    }).finally(() => {
+                        setLoading(false);
+                    });
+                }}/>
             <p>Select move goods action:<br/>To move a good, select the cube on the map, then click on one of the arrows that appears to indicate the link you want to move it along. Press the finish button when the cube is at its final destination.</p>
             <div>
                 <Button disabled={step.selectedColor === Color.NONE || !step.steps || step.steps.length === 0} primary icon onClick={() => {
@@ -186,7 +235,7 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                         setLoading(false);
                     });
                 }}><Icon name='square' /> Finish moving good{stepCountLabel}</Button>
-                <Button disabled={hasDoneLoco || game.gameState.playerLoco[game.activePlayer] >= 6} secondary icon onClick={() => {
+                <Button disabled={!hasLocoOption} secondary icon onClick={() => {
                     setLoading(true);
                     ConfirmMove({
                         gameId: game.id,
@@ -201,21 +250,7 @@ function MoveGoodsActionSelector({game, onDone}: {game: ViewGameResponse, onDone
                         setLoading(false);
                     });
                 }}><Icon name='train' /> Increase Locomotive</Button>
-                <Button negative loading={loading} onClick={() => {
-                    setLoading(true);
-                    ConfirmMove({
-                        gameId: game.id,
-                        actionName: "move_goods",
-                        moveGoodsAction: {},
-                    }).then(() => {
-                        document.dispatchEvent(new CustomEvent('pendingMoveGoods', { detail: {} }));
-                        return onDone();
-                    }).catch(err => {
-                        setError(err);
-                    }).finally(() => {
-                        setLoading(false);
-                    });
-                }}>Pass</Button>
+                <Button negative loading={loading} onClick={() => setShowConfirmPassModal(true)}>Pass</Button>
                 <Button negative secondary loading={loading} onClick={() => {
                     let newStep: Step = {
                         selectedColor: Color.NONE,
