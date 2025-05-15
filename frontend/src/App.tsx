@@ -29,6 +29,7 @@ import {createMedia} from '@artsy/fresnel'
 import ProfilePage from "./pages/ProfilePage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
 import LinkProfilePage from "./pages/LinkProfilePage.tsx";
+import {Announcements} from "./Announcements.tsx";
 
 const { MediaContextProvider, Media } = createMedia({
     breakpoints: {
@@ -158,6 +159,7 @@ function App() {
                     <div>
                         <DesktopMainMenu />
                         <MobileMainMenu />
+                        <Announcements />
 
                         <Container>
                             <ErrorDisplay />
