@@ -1337,3 +1337,45 @@ func TestUrbStartOfDangler(t *testing.T) {
 	assert.Equal(t, common.Coordinate{X: 1, Y: 0}, link.SourceHex)
 	assert.Equal(t, []common.Direction{common.SOUTH_EAST, common.SOUTH_EAST}, link.Steps)
 }
+
+func TestNoLoopingConnection(t *testing.T) {
+	player1 := "player1"
+	gameMap := &testMap{
+		hexes: [][]maps.HexType{
+			{maps.CITY_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+			{maps.PLAINS_HEX_TYPE, maps.PLAINS_HEX_TYPE},
+		},
+	}
+	gameState := &common.GameState{
+		GamePhase:  common.BUILDING_GAME_PHASE,
+		PlayerCash: map[string]int{player1: 10},
+	}
+
+	handler := &confirmMoveHandler{
+		gameMap:      gameMap,
+		gameState:    gameState,
+		activePlayer: player1,
+	}
+	err := handler.performBuildAction(&api.BuildAction{
+		Steps: []*api.BuildStep{
+			{
+				Hex: common.Coordinate{X: 0, Y: 1},
+				TrackPlacement: &api.TrackPlacement{
+					Tile:     tiles.SHARP_CURVE_TRACK_TILE,
+					Rotation: 2,
+				},
+			},
+			{
+				Hex: common.Coordinate{X: 0, Y: 2},
+				TrackPlacement: &api.TrackPlacement{
+					Tile:     tiles.SHARP_CURVE_TRACK_TILE,
+					Rotation: 4,
+				},
+			},
+		},
+	})
+	var invalidMove *invalidMoveError
+	require.ErrorAs(t, err, &invalidMove)
+	assert.Equal(t, invalidMove.Error(), "individual links are not allowed to start and end at the same town/city")
+}

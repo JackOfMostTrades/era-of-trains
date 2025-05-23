@@ -350,6 +350,10 @@ func (handler *confirmMoveHandler) performBuildAction(buildAction *api.BuildActi
 	if err != nil {
 		return err
 	}
+	err = handler.checkLoopingConnections()
+	if err != nil {
+		return err
+	}
 
 	// Remove ownership of any incomplete links not extended
 	for _, link := range gameState.Links {

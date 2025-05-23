@@ -72,3 +72,29 @@ func (handler *confirmMoveHandler) checkRouteConnections() error {
 
 	return nil
 }
+
+func (handler *confirmMoveHandler) checkLoopingConnections() error {
+	// This checks every completed link to verify it does not start and end at the same hex, since links are not
+	// allowed to connect directly back to the same city/town as where they started
+
+	for _, link := range handler.gameState.Links {
+		if !link.Complete {
+			continue
+		}
+
+		endHex := link.SourceHex
+		for _, step := range link.Steps {
+			if teleportDest, _ := handler.gameMap.GetTeleportLink(handler.gameState, endHex, step); teleportDest != nil {
+				endHex = *teleportDest
+			} else {
+				endHex = applyDirection(endHex, step)
+			}
+		}
+
+		if link.SourceHex.Equals(endHex) {
+			return invalidMoveErr("individual links are not allowed to start and end at the same town/city")
+		}
+	}
+
+	return nil
+}
