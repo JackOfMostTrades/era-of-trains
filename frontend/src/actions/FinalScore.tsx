@@ -92,7 +92,7 @@ function FinalScore({game}: {game: ViewGameResponse}) {
 
     return <>
         <Header as='h2'>Final Scores</Header>
-        <Table celled basic compact stackable>
+        <Table celled compact>
             <TableHeader>
                 <TableRow>
                     <TableHeaderCell/>
