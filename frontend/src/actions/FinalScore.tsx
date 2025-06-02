@@ -102,19 +102,19 @@ function FinalScore({game}: {game: ViewGameResponse}) {
             <TableBody>
                 <TableRow>
                     <TableCell>Income VPs</TableCell>
-                    {playerIds.map(playerId => <TableHeader key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.INCOME_VPS)!.get(playerId) : ""}</TableHeader>)}
+                    {playerIds.map(playerId => <TableCell key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.INCOME_VPS)!.get(playerId) : ""}</TableCell>)}
                 </TableRow>
                 <TableRow>
                     <TableCell>Shares VPs</TableCell>
-                    {playerIds.map(playerId => <TableHeader key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.SHARE_VPS)!.get(playerId) : ""}</TableHeader>)}
+                    {playerIds.map(playerId => <TableCell key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.SHARE_VPS)!.get(playerId) : ""}</TableCell>)}
                 </TableRow>
                 <TableRow>
                     <TableCell>Track VPs</TableCell>
-                    {playerIds.map(playerId => <TableHeader key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.TRACK_VPS)!.get(playerId) : ""}</TableHeader>)}
+                    {playerIds.map(playerId => <TableCell key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.TRACK_VPS)!.get(playerId) : ""}</TableCell>)}
                 </TableRow>
                 <TableRow>
                     <TableCell>Total VPs</TableCell>
-                    {playerIds.map(playerId => <TableHeader key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.TOTAL_VPS)!.get(playerId) : <span style={{fontStyle: "italic"}}>bankrupt</span>}</TableHeader>)}
+                    {playerIds.map(playerId => <TableCell key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.TOTAL_VPS)!.get(playerId) : <span style={{fontStyle: "italic"}}>bankrupt</span>}</TableCell>)}
                 </TableRow>
             </TableBody>
         </Table>
