@@ -1,7 +1,7 @@
 import {Coordinate, GameState, User, ViewGameResponse} from "../api/api.ts";
 import {GameMap, HexType, maps} from "../maps";
 import {applyDirection, applyTeleport} from "../util.ts";
-import {Header, List, ListItem} from "semantic-ui-react";
+import {Header, Table, TableBody, TableCell, TableHeader, TableRow} from "semantic-ui-react";
 
 function isCity(gameState: GameState, map: GameMap, hex: Coordinate): boolean {
     if (map.getHexType(hex) === HexType.CITY) {
@@ -18,6 +18,13 @@ function isCity(gameState: GameState, map: GameMap, hex: Coordinate): boolean {
     return false;
 }
 
+enum ScoreRow {
+    INCOME_VPS,
+    SHARE_VPS,
+    TRACK_VPS,
+    TOTAL_VPS,
+}
+
 function FinalScore({game}: {game: ViewGameResponse}) {
     if (!game.gameState) {
         return;
@@ -25,11 +32,16 @@ function FinalScore({game}: {game: ViewGameResponse}) {
 
     let map = maps[game.mapName];
 
-    let scores: { [playerId: string]: number} = {}
+    let scores: Map<ScoreRow, Map<string, number>> = new Map();
+    for (const row of [ScoreRow.INCOME_VPS, ScoreRow.SHARE_VPS, ScoreRow.TRACK_VPS, ScoreRow.TOTAL_VPS]) {
+        scores.set(row, new Map());
+    }
+
+    //let scores: { [playerId: string]: number} = {}
     for (let player of game.joinedUsers) {
         let income = game.gameState.playerIncome[player.id];
         if (income < 0) {
-            scores[player.id] = -1;
+            scores.get(ScoreRow.TOTAL_VPS)!.set(player.id, -1);
             continue;
         }
 
@@ -62,7 +74,10 @@ function FinalScore({game}: {game: ViewGameResponse}) {
             }
         }
 
-        scores[player.id] = income*3 - shares*3 + trackCount;
+        scores.get(ScoreRow.INCOME_VPS)!.set(player.id, income*3);
+        scores.get(ScoreRow.SHARE_VPS)!.set(player.id, shares*-3);
+        scores.get(ScoreRow.TRACK_VPS)!.set(player.id, trackCount);
+        scores.get(ScoreRow.TOTAL_VPS)!.set(player.id, income*3 - shares*3 + trackCount);
     }
 
     let playerIds = [];
@@ -72,17 +87,37 @@ function FinalScore({game}: {game: ViewGameResponse}) {
         playersById[player.id] = player;
     }
     playerIds.sort((a, b) => {
-        return scores[b] - scores[a];
+        return scores.get(ScoreRow.TOTAL_VPS)!.get(b)! - scores.get(ScoreRow.TOTAL_VPS)!.get(a)!;
     });
 
     return <>
         <Header as='h2'>Final Scores</Header>
-        <List>
-            {playerIds.map(playerId => {
-                let score = scores[playerId];
-                return <ListItem>{playersById[playerId].nickname}: {score < 0 ? <span style={{fontStyle: "italic"}}>bankrupt</span> : <span>{score}</span>}</ListItem>
-            })}
-        </List>
+        <Table celled basic compact stackable>
+            <TableHeader>
+                <TableRow>
+                    <TableHeader/>
+                    {playerIds.map(playerId => <TableHeader key={playerId}>{playersById[playerId].nickname}</TableHeader>)}
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                <TableRow>
+                    <TableCell>Income VPs</TableCell>
+                    {playerIds.map(playerId => <TableHeader key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.INCOME_VPS)!.get(playerId) : ""}</TableHeader>)}
+                </TableRow>
+                <TableRow>
+                    <TableCell>Shares VPs</TableCell>
+                    {playerIds.map(playerId => <TableHeader key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.SHARE_VPS)!.get(playerId) : ""}</TableHeader>)}
+                </TableRow>
+                <TableRow>
+                    <TableCell>Track VPs</TableCell>
+                    {playerIds.map(playerId => <TableHeader key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.TRACK_VPS)!.get(playerId) : ""}</TableHeader>)}
+                </TableRow>
+                <TableRow>
+                    <TableCell>Total VPs</TableCell>
+                    {playerIds.map(playerId => <TableHeader key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.TOTAL_VPS)!.get(playerId) : <span style={{fontStyle: "italic"}}>bankrupt</span>}</TableHeader>)}
+                </TableRow>
+            </TableBody>
+        </Table>
     </>
 }
 
