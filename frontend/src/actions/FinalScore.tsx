@@ -1,7 +1,7 @@
 import {Coordinate, GameState, User, ViewGameResponse} from "../api/api.ts";
 import {GameMap, HexType, maps} from "../maps";
 import {applyDirection, applyTeleport} from "../util.ts";
-import {Header, Table, TableBody, TableCell, TableHeader, TableRow} from "semantic-ui-react";
+import {Header, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow} from "semantic-ui-react";
 
 function isCity(gameState: GameState, map: GameMap, hex: Coordinate): boolean {
     if (map.getHexType(hex) === HexType.CITY) {
@@ -95,8 +95,8 @@ function FinalScore({game}: {game: ViewGameResponse}) {
         <Table celled basic compact stackable>
             <TableHeader>
                 <TableRow>
-                    <TableHeader/>
-                    {playerIds.map(playerId => <TableHeader key={playerId}>{playersById[playerId].nickname}</TableHeader>)}
+                    <TableHeaderCell/>
+                    {playerIds.map(playerId => <TableHeaderCell key={playerId}>{playersById[playerId].nickname}</TableHeaderCell>)}
                 </TableRow>
             </TableHeader>
             <TableBody>
