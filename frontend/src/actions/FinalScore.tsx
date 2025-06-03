@@ -112,7 +112,7 @@ function FinalScore({game}: {game: ViewGameResponse}) {
                     <TableCell>Track VPs</TableCell>
                     {playerIds.map(playerId => <TableCell key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.TRACK_VPS)!.get(playerId) : ""}</TableCell>)}
                 </TableRow>
-                <TableRow>
+                <TableRow warning>
                     <TableCell>Total VPs</TableCell>
                     {playerIds.map(playerId => <TableCell key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.TOTAL_VPS)!.get(playerId) : <span style={{fontStyle: "italic"}}>bankrupt</span>}</TableCell>)}
                 </TableRow>
