@@ -92,32 +92,34 @@ function FinalScore({game}: {game: ViewGameResponse}) {
 
     return <>
         <Header as='h2'>Final Scores</Header>
-        <Table celled compact>
-            <TableHeader>
-                <TableRow>
-                    <TableHeaderCell/>
-                    {playerIds.map(playerId => <TableHeaderCell key={playerId}>{playersById[playerId].nickname}</TableHeaderCell>)}
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                <TableRow>
-                    <TableCell>Income VPs</TableCell>
-                    {playerIds.map(playerId => <TableCell key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.INCOME_VPS)!.get(playerId) : ""}</TableCell>)}
-                </TableRow>
-                <TableRow>
-                    <TableCell>Shares VPs</TableCell>
-                    {playerIds.map(playerId => <TableCell key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.SHARE_VPS)!.get(playerId) : ""}</TableCell>)}
-                </TableRow>
-                <TableRow>
-                    <TableCell>Track VPs</TableCell>
-                    {playerIds.map(playerId => <TableCell key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.TRACK_VPS)!.get(playerId) : ""}</TableCell>)}
-                </TableRow>
-                <TableRow warning>
-                    <TableCell>Total VPs</TableCell>
-                    {playerIds.map(playerId => <TableCell key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.TOTAL_VPS)!.get(playerId) : <span style={{fontStyle: "italic"}}>bankrupt</span>}</TableCell>)}
-                </TableRow>
-            </TableBody>
-        </Table>
+        <div style={{overflowX: "auto"}}>
+            <Table celled compact unstackable>
+                <TableHeader>
+                    <TableRow>
+                        <TableHeaderCell/>
+                        {playerIds.map(playerId => <TableHeaderCell key={playerId}>{playersById[playerId].nickname}</TableHeaderCell>)}
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    <TableRow>
+                        <TableCell>Income VPs</TableCell>
+                        {playerIds.map(playerId => <TableCell key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.INCOME_VPS)!.get(playerId) : ""}</TableCell>)}
+                    </TableRow>
+                    <TableRow>
+                        <TableCell>Shares VPs</TableCell>
+                        {playerIds.map(playerId => <TableCell key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.SHARE_VPS)!.get(playerId) : ""}</TableCell>)}
+                    </TableRow>
+                    <TableRow>
+                        <TableCell>Track VPs</TableCell>
+                        {playerIds.map(playerId => <TableCell key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.TRACK_VPS)!.get(playerId) : ""}</TableCell>)}
+                    </TableRow>
+                    <TableRow warning>
+                        <TableCell>Total VPs</TableCell>
+                        {playerIds.map(playerId => <TableCell key={playerId}>{scores.get(ScoreRow.TOTAL_VPS)!.get(playerId)! >= 0 ? scores.get(ScoreRow.TOTAL_VPS)!.get(playerId) : <span style={{fontStyle: "italic"}}>bankrupt</span>}</TableCell>)}
+                    </TableRow>
+                </TableBody>
+            </Table>
+        </div>
     </>
 }
 
