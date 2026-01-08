@@ -27,6 +27,7 @@ type Config struct {
 	MacKey                   string                `json:"macKey"`
 	WorkingDirectory         string                `json:"workingDirectory"`
 	CgiMode                  bool                  `json:"cgiMode"`
+	CreateGameDisabled       bool                  `json:"createGameDisabled"`
 	HttpListenPort           int                   `json:"httpListenPort"`
 	Email                    *EmailConfig          `json:"email"`
 	Database                 *DatabaseConfig       `json:"database"`

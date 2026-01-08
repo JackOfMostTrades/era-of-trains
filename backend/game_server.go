@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/JackOfMostTrades/eot/backend/api"
 	"math/rand"
 	"net/http"
 	"regexp"
 	"time"
+
+	"github.com/JackOfMostTrades/eot/backend/api"
 
 	"github.com/JackOfMostTrades/eot/backend/common"
 	"github.com/JackOfMostTrades/eot/backend/maps"
@@ -373,6 +374,10 @@ type CreateGameResponse struct {
 }
 
 func (server *GameServer) createGame(ctx *RequestContext, req *CreateGameRequest) (resp *CreateGameResponse, err error) {
+	if server.config.CreateGameDisabled {
+		return nil, &api.HttpError{"creating new games is disabled", http.StatusMethodNotAllowed}
+	}
+
 	if req.Name == "" {
 		return nil, &api.HttpError{"missing name parameter", http.StatusBadRequest}
 	}
