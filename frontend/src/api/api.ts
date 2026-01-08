@@ -99,21 +99,6 @@ export function Logout(req: LogoutRequest): Promise<LogoutResponse> {
     return doApiCall('/api/logout', req);
 }
 
-export interface CreateGameRequest {
-    name: string;
-    minPlayers: number;
-    maxPlayers: number;
-    mapName: string;
-    inviteOnly: boolean;
-}
-export interface CreateGameResponse {
-    id: string;
-}
-
-export function CreateGame(req: CreateGameRequest): Promise<CreateGameResponse> {
-    return doApiCall('/api/createGame', req);
-}
-
 export type SpecialAction = 'first_move' | 'first_build' | 'engineer' | 'loco' | 'urbanization' | 'production' | 'turn_order_pass'
 
 export interface User {

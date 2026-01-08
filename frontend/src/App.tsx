@@ -16,7 +16,6 @@ import Home from "./pages/Home.tsx";
 import Games from "./pages/Games.tsx";
 import {NavLink, useNavigate} from "react-router";
 import {useContext} from "react";
-import NewGamePage from "./pages/NewGamePage.tsx";
 import ViewGamePage from "./pages/ViewGamePage.tsx";
 import {ErrorContextProvider} from "./ErrorContext.tsx";
 import ErrorDisplay from "./components/ErrorDisplay.tsx";
@@ -162,7 +161,6 @@ function App() {
                         <Container>
                             <ErrorDisplay />
                             <Routes>
-                                <Route path="/games/new" element={<NewGamePage />}/>
                                 <Route path="/games/:gameId" element={<ViewGamePage />}/>
                                 <Route path="/games" element={<Games />}/>
                                 <Route path="/mygames" element={<MyGames />}/>

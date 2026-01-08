@@ -1,6 +1,5 @@
-import {Button, Header, Loader} from "semantic-ui-react";
+import {Header, Loader} from "semantic-ui-react";
 import {useEffect, useState} from "react";
-import {Link} from "react-router";
 import {GameSummary, ListGames, ListGamesResponse} from "../api/api.ts";
 import {GameSummaryTable} from "../components/GameSummaryTable.tsx";
 
@@ -43,9 +42,6 @@ function Games() {
 
     return <>
         <Header as='h1'>Games</Header>
-        <Link to="/games/new">
-            <Button primary>Start New Game</Button>
-        </Link>
         {table}
     </>
 }
